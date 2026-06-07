@@ -30,9 +30,21 @@ Copied from `apps/tauri/icons/` to `src-tauri/icons/` and `public/`:
 
 ## Files ported with adaptation
 
-_None yet — Phase 1 will port `gateway_client.rs`, `state.rs`,
-`health.rs`, and the `auto_pair` / `inject_token_into_webview`
-utilities from `apps/tauri/src/`._
+### Phase 1
+
+- `src-tauri/src/gateway/client.rs` ← ported from
+  `apps/tauri/src/gateway_client.rs`. Same API for status/health/pairing,
+  but `GatewayClient::new` now trims trailing `/`, and the workspace creates
+  one client per call against the active `Connection.url` rather than
+  storing one client process-wide.
+- `src-tauri/src/gateway/health.rs` ← ported from `apps/tauri/src/health.rs`.
+  Tray-icon hooks removed; instead emits a `zeroclaw://health` Tauri event
+  payload (`HealthEvent { connection_id, url, healthy }`) the frontend
+  subscribes to.
+- `src-tauri/src/gateway/pair.rs` ← ported from
+  `apps/tauri/src/lib.rs::auto_pair` (lines 21-55). Wrapped into
+  `PairOutcome` enum, made connection-aware (managed/attach/remote),
+  and persists tokens via `ConnectionBook` instead of `AppState`.
 
 ## Files we intentionally did NOT copy
 
