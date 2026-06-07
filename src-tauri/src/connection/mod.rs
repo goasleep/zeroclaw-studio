@@ -10,6 +10,7 @@
 //!   just connect, never spawn, never kill.
 //! - `Remote`: gateway lives elsewhere (URL, SSH-tunneled, Tailscale).
 
+pub mod activator;
 pub mod discover;
 pub mod ssh;
 pub mod store;

@@ -9,7 +9,6 @@ import {
   type SshConfig,
   detectLocalBinary,
   discoverLocalGateway,
-  ensureToken,
   installInstructions,
   sshOpenTunnel,
 } from "@/api/tauri";
@@ -272,9 +271,9 @@ function LocalAttachForm({ onCreate }: { onCreate: (c: Connection) => Promise<vo
       )}
       {discovered === null && (
         <div className="rounded bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-          No running gateway detected on port {DEFAULT_PORT}. You can still add
-          a connection — it will go offline until you start the gateway with{" "}
-          <code>zeroclaw service start</code>.
+          No gateway running on port {DEFAULT_PORT} right now. That's fine —
+          if a local <code>zeroclaw</code> binary is installed, the workspace
+          will start it automatically when you save this connection.
         </div>
       )}
       {discovered && (
@@ -436,13 +435,11 @@ export function AddConnectionDialog({ initialPath, onClose }: Props) {
 
   async function create(conn: Connection) {
     await add(conn);
+    // activate() triggers the backend activator, which probes the gateway,
+    // spawns it if local + binary available, waits for health, and pairs.
+    // Progress is reported via zeroclaw://activation events the connection
+    // context picks up. No need to call ensureToken from here anymore.
     await activate(conn.id);
-    // Try to mint a token if pairing applies.
-    try {
-      await ensureToken(conn.id);
-    } catch {
-      // Surfaces in PairingBanner; non-fatal here.
-    }
     onClose();
   }
 

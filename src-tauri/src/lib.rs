@@ -11,7 +11,7 @@ use connection::ssh::TunnelRegistry;
 use connection::store::ConnectionBook;
 use runtime::supervisor::Supervisor;
 use std::sync::Arc;
-use tauri::Manager;
+use tauri::RunEvent;
 use workspace::fs::WorkspaceState;
 
 pub fn run() {
@@ -21,7 +21,12 @@ pub fn run() {
     let workspace_state = Arc::new(WorkspaceState::default());
     let watcher: Arc<WatcherHandle> = Arc::new(WatcherHandle::default());
 
-    tauri::Builder::default()
+    // Stash clones for the RunEvent handler below — they need to outlive
+    // the Builder closures.
+    let supervisor_for_exit = supervisor.clone();
+    let tunnels_for_exit = tunnels.clone();
+
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -39,6 +44,7 @@ pub fn run() {
             commands::connection::upsert_connection,
             commands::connection::remove_connection,
             commands::connection::set_active_connection,
+            commands::connection::reactivate,
             commands::gateway::discover_local_gateway,
             commands::gateway::ensure_token,
             commands::gateway::pair_with_code,
@@ -57,28 +63,56 @@ pub fn run() {
             commands::fs::workspace_watch_start,
             commands::fs::workspace_watch_stop,
         ])
-        .setup(move |app| {
-            let app_handle = app.handle().clone();
-            let book_for_setup = book.clone();
-            tauri::async_runtime::spawn(async move {
-                if let Err(e) = book_for_setup.load(&app_handle).await {
-                    eprintln!("failed to load connections: {e}");
-                }
-            });
-            gateway::health::spawn_health_poller(app.handle().clone(), book.clone());
-            Ok(())
-        })
-        .on_window_event(move |window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                let supervisor = supervisor.clone();
-                let tunnels = tunnels.clone();
-                let _ = window.app_handle().clone();
-                tauri::async_runtime::block_on(async move {
-                    runtime::supervisor::shutdown_on_exit(supervisor).await;
-                    tunnels.shutdown_all().await;
+        .setup({
+            let book = book.clone();
+            let supervisor = supervisor.clone();
+            move |app| {
+                let app_handle = app.handle().clone();
+                let book_for_setup = book.clone();
+                let supervisor_for_setup = supervisor.clone();
+                // Load saved connections, then auto-activate the persisted
+                // active one (if any) — this is the "open the app, it
+                // just works" path: spawn gateway if needed, pair, emit
+                // events the UI subscribes to.
+                tauri::async_runtime::spawn(async move {
+                    if let Err(e) = book_for_setup.load(&app_handle).await {
+                        eprintln!("failed to load connections: {e}");
+                        return;
+                    }
+                    if let Some(conn) = book_for_setup.active().await {
+                        connection::activator::activate(
+                            &app_handle,
+                            &conn,
+                            &book_for_setup,
+                            &supervisor_for_setup,
+                        )
+                        .await;
+                    }
                 });
+                gateway::health::spawn_health_poller(app.handle().clone(), book.clone());
+                Ok(())
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    // Drive the event loop ourselves so we can hook RunEvent::Exit — on
+    // macOS Cmd-Q the WindowEvent::Destroyed path either doesn't fire
+    // (Tauri tears down before window events propagate) or fires after
+    // the supervisor has been dropped; using RunEvent::Exit / ExitRequested
+    // guarantees we get a final chance to kill the spawned gateway.
+    app.run(move |_app_handle, event| {
+        if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
+            // Block here so the process doesn't exit until cleanup is done.
+            // tokio::runtime::Handle::block_on inside async_runtime works
+            // because Tauri's runloop is on the main thread but the async
+            // runtime is still spinning.
+            let supervisor = supervisor_for_exit.clone();
+            let tunnels = tunnels_for_exit.clone();
+            tauri::async_runtime::block_on(async move {
+                runtime::supervisor::shutdown_on_exit(supervisor).await;
+                tunnels.shutdown_all().await;
+            });
+        }
+    });
 }
