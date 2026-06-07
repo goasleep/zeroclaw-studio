@@ -1,0 +1,40 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Node
+node_modules/
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log
+
+# Frontend build output
+dist/
+.vite/
+.tsbuildinfo-node/
+*.tsbuildinfo
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+src-tauri/WixTools/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+
+# Env / local state
+.env
+.env.local
+.env.*.local
+
+# CodeGraph / per-tool
+.codegraph/
