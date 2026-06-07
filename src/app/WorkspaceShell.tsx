@@ -6,7 +6,7 @@
 //   - Inspector: selected file context, attachments queued for chat,
 //     misc per-feature side panels.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
@@ -18,11 +18,13 @@ import {
   MessageSquare,
   Server,
   Terminal,
-  Trash2,
 } from "lucide-react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
 import { FileTree } from "@/workspace/files/FileTree";
+import { ChatPanel } from "@/features/chat/ChatPanel";
+import { apiStatus } from "@/api/client";
+import { Trash2 } from "lucide-react";
 
 type Tab =
   | "chat"
@@ -120,6 +122,57 @@ function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
 }
 
 function Center({ tab }: { tab: Tab }) {
+  const [agents, setAgents] = useState<string[]>([]);
+  const [activeAgent, setActiveAgent] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== "chat") return;
+    void apiStatus()
+      .then((s) => {
+        const aliases = Object.keys((s.agents as Record<string, unknown>) ?? {});
+        setAgents(aliases);
+        if (aliases.length > 0 && !activeAgent) setActiveAgent(aliases[0]);
+      })
+      .catch(() => setAgents([]));
+  }, [tab, activeAgent]);
+
+  if (tab === "chat") {
+    if (agents.length === 0) {
+      return (
+        <section className="flex h-full items-center justify-center bg-neutral-950">
+          <p className="px-8 text-center text-xs text-neutral-500">
+            No agents configured on the active gateway yet.<br />
+            Set one up via Config → Agents (Phase 6) or with{" "}
+            <code className="text-neutral-300">zeroclaw quickstart</code>.
+          </p>
+        </section>
+      );
+    }
+    return (
+      <section className="flex h-full flex-col bg-neutral-950">
+        <header className="flex items-center gap-1 border-b border-neutral-800 px-2 py-1 text-xs">
+          {agents.map((alias) => (
+            <button
+              key={alias}
+              type="button"
+              onClick={() => setActiveAgent(alias)}
+              className={`rounded px-2 py-1 ${
+                activeAgent === alias
+                  ? "bg-orange-500/15 text-orange-200"
+                  : "text-neutral-400 hover:bg-neutral-900"
+              }`}
+            >
+              {alias}
+            </button>
+          ))}
+        </header>
+        <div className="flex-1 overflow-hidden">
+          {activeAgent && <ChatPanel agentAlias={activeAgent} />}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="flex h-full flex-col bg-neutral-950">
       <header className="border-b border-neutral-800 px-3 py-2 text-xs uppercase tracking-wide text-neutral-400">

@@ -74,7 +74,7 @@ workspace itself spawned. Externally-managed gateways are never touched.
 - **Phase 1** ✅ connection management — local managed/attach, remote http/ssh, welcome wizard
 - **Phase 2** ✅ auth + REST plumbing — apiFetch with bearer + 401 dispatch + ApiError, WS chat client, SSE events client
 - **Phase 3** ✅ workspace shell + file system pane — three resizable panels, notify-based watch, ignore rules, multi-select files queued for chat
-- **Phase 4** – chat parity (streaming WS)
+- **Phase 4** ✅ chat parity — streaming WS, frame taxonomy, tool calls, approval banner, markdown render, file-attachment integration
 - **Phase 5** – native quick-interaction capabilities
 - **Phase 6** – remaining `web/` feature parity
 - **Phase 7** – distribution + upstream PRs
