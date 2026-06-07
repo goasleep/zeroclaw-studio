@@ -1,30 +1,86 @@
-import { Cable } from "lucide-react";
+import { useState } from "react";
+import { ConnectionProvider, useConnections } from "@/app/connection-context";
+import { ConnectionPicker } from "@/app/ConnectionPicker";
+import { WelcomeScreen } from "@/app/WelcomeScreen";
+import { AddConnectionDialog } from "@/app/AddConnectionDialog";
 
-/**
- * Placeholder shell — Phase 0.
- *
- * The real workspace shell (resizable panes, file tree, connection picker)
- * lands in Phase 3. For now we just render a recognisable welcome card so
- * `pnpm tauri dev` opens to something coherent.
- */
+type AddPath = "remote" | "local-attach" | "local-install" | null;
+
+function Shell() {
+  const { connections, active, loading } = useConnections();
+  const [addPath, setAddPath] = useState<AddPath>(null);
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+        Loading…
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col bg-neutral-950 text-neutral-100">
+      <ConnectionPicker onAdd={() => setAddPath("remote")} />
+
+      <main className="flex-1 overflow-hidden">
+        {connections.length === 0 ? (
+          <WelcomeScreen onChoose={setAddPath} />
+        ) : active ? (
+          <PlaceholderActiveView />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+            Select a connection above, or add one.
+          </div>
+        )}
+      </main>
+
+      {addPath && (
+        <AddConnectionDialog
+          initialPath={addPath}
+          onClose={() => setAddPath(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Phase 1 ends here — Phase 3 replaces this with the real workspace shell. */
+function PlaceholderActiveView() {
+  const { active } = useConnections();
+  if (!active) return null;
+  return (
+    <div className="flex h-full flex-col gap-3 overflow-auto p-8 text-sm">
+      <h2 className="text-xl font-semibold">{active.name}</h2>
+      <dl className="grid max-w-md grid-cols-[120px_1fr] gap-y-1.5 text-xs">
+        <dt className="text-neutral-500">Transport</dt>
+        <dd className="font-mono">{active.transport}</dd>
+        <dt className="text-neutral-500">Lifecycle</dt>
+        <dd className="font-mono">{active.lifecycle}</dd>
+        <dt className="text-neutral-500">URL</dt>
+        <dd className="break-all font-mono">{active.url || "(pending)"}</dd>
+        <dt className="text-neutral-500">Auth</dt>
+        <dd className="font-mono">
+          {active.auth.token ? "token set" : "no token"}
+        </dd>
+        {active.binary_path && (
+          <>
+            <dt className="text-neutral-500">Binary</dt>
+            <dd className="break-all font-mono">{active.binary_path}</dd>
+          </>
+        )}
+      </dl>
+      <p className="mt-4 text-neutral-500">
+        Phase 3 replaces this view with the real workspace shell (file tree,
+        chat, inspector).
+      </p>
+    </div>
+  );
+}
+
 export function App() {
   return (
-    <main className="flex h-full items-center justify-center bg-neutral-950 text-neutral-100">
-      <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-10 text-center shadow-2xl">
-        <div className="rounded-xl bg-orange-500/10 p-3 text-orange-400">
-          <Cable size={28} />
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          ZeroClaw Workspace
-        </h1>
-        <p className="text-sm text-neutral-400">
-          Phase 0 scaffold — the connection picker and workspace shell arrive
-          in the next phases.
-        </p>
-        <p className="text-xs text-neutral-500">
-          Connect to a local or remote ZeroClaw gateway from one place.
-        </p>
-      </div>
-    </main>
+    <ConnectionProvider>
+      <Shell />
+    </ConnectionProvider>
   );
 }
