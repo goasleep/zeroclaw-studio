@@ -123,3 +123,38 @@ export const sshOpenTunnel = (id: string) =>
 
 export const sshCloseTunnel = (id: string) =>
   invoke<void>("ssh_close_tunnel", { id });
+
+// ---- Workspace FS commands ----
+
+export interface DirEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+  size: number | null;
+}
+
+export interface FileEvent {
+  path: string;
+  kind: "created" | "modified" | "removed" | "other";
+}
+
+export const workspaceOpenRoot = (path: string) =>
+  invoke<void>("workspace_open_root", { path });
+
+export const workspaceGetRoot = () =>
+  invoke<string | null>("workspace_get_root");
+
+export const workspaceListDir = (path: string) =>
+  invoke<DirEntry[]>("workspace_list_dir", { path });
+
+export const workspaceReadFile = (path: string) =>
+  invoke<string>("workspace_read_file", { path });
+
+export const workspaceWriteFile = (path: string, content: string) =>
+  invoke<void>("workspace_write_file", { path, content });
+
+export const workspaceWatchStart = (path?: string) =>
+  invoke<void>("workspace_watch_start", { path: path ?? null });
+
+export const workspaceWatchStop = () =>
+  invoke<void>("workspace_watch_stop");
