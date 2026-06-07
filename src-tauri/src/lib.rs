@@ -4,22 +4,31 @@ pub mod commands;
 pub mod connection;
 pub mod gateway;
 pub mod runtime;
+pub mod workspace;
 
+use commands::fs::WatcherHandle;
 use connection::ssh::TunnelRegistry;
 use connection::store::ConnectionBook;
 use runtime::supervisor::Supervisor;
+use std::sync::Arc;
 use tauri::Manager;
+use workspace::fs::WorkspaceState;
 
 pub fn run() {
     let book = ConnectionBook::new();
     let tunnels = TunnelRegistry::new();
     let supervisor = Supervisor::new();
+    let workspace_state = Arc::new(WorkspaceState::default());
+    let watcher: Arc<WatcherHandle> = Arc::new(WatcherHandle::default());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(book.clone())
         .manage(tunnels.clone())
         .manage(supervisor.clone())
+        .manage(workspace_state.clone())
+        .manage(watcher.clone())
         .invoke_handler(tauri::generate_handler![
             commands::connection::list_connections,
             commands::connection::get_active_connection,
@@ -36,6 +45,13 @@ pub fn run() {
             commands::runtime::runtime_status,
             commands::ssh::ssh_open_tunnel,
             commands::ssh::ssh_close_tunnel,
+            commands::fs::workspace_open_root,
+            commands::fs::workspace_get_root,
+            commands::fs::workspace_list_dir,
+            commands::fs::workspace_read_file,
+            commands::fs::workspace_write_file,
+            commands::fs::workspace_watch_start,
+            commands::fs::workspace_watch_stop,
         ])
         .setup(move |app| {
             let app_handle = app.handle().clone();
@@ -45,13 +61,11 @@ pub fn run() {
                     eprintln!("failed to load connections: {e}");
                 }
             });
-            // Health poller for the active connection.
             gateway::health::spawn_health_poller(app.handle().clone(), book.clone());
             Ok(())
         })
         .on_window_event(move |window, event| {
             if let tauri::WindowEvent::Destroyed = event {
-                // App is exiting — kill any managed gateway process WE spawned.
                 let supervisor = supervisor.clone();
                 let tunnels = tunnels.clone();
                 let _ = window.app_handle().clone();
