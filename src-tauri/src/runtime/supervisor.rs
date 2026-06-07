@@ -51,7 +51,12 @@ impl Supervisor {
 
     /// Spawn the gateway process. The binary, port, and any args come from
     /// the connection's stored config (already resolved by the caller).
-    pub async fn start(&self, connection_id: Uuid, binary_path: &std::path::Path, port: u16) -> Result<()> {
+    pub async fn start(
+        &self,
+        connection_id: Uuid,
+        binary_path: &std::path::Path,
+        port: u16,
+    ) -> Result<()> {
         let mut guard = self.process.lock().await;
         if guard.is_some() {
             anyhow::bail!("supervisor already has a running process");
@@ -111,7 +116,9 @@ impl Supervisor {
 
         // Rate-limit restarts.
         let now = std::time::Instant::now();
-        managed.restarts.retain(|t| now.duration_since(*t) < RESTART_WINDOW);
+        managed
+            .restarts
+            .retain(|t| now.duration_since(*t) < RESTART_WINDOW);
 
         if managed.restarts.len() >= MAX_RESTARTS as usize {
             eprintln!(
@@ -174,7 +181,13 @@ mod tests {
     #[tokio::test]
     async fn start_with_nonexistent_binary_errors() {
         let s = Supervisor::new();
-        let r = s.start(Uuid::new_v4(), PathBuf::from("/nonexistent/zeroclaw").as_path(), 42617).await;
+        let r = s
+            .start(
+                Uuid::new_v4(),
+                PathBuf::from("/nonexistent/zeroclaw").as_path(),
+                42617,
+            )
+            .await;
         assert!(r.is_err());
     }
 

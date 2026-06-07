@@ -162,7 +162,11 @@ mod tests {
 
     #[test]
     fn local_managed_defaults() {
-        let c = Connection::new_local_managed("My Mac", PathBuf::from("/usr/local/bin/zeroclaw"), 42617);
+        let c = Connection::new_local_managed(
+            "My Mac",
+            PathBuf::from("/usr/local/bin/zeroclaw"),
+            42617,
+        );
         assert_eq!(c.transport, Transport::Local);
         assert_eq!(c.lifecycle, Lifecycle::Managed);
         assert_eq!(c.url, "http://127.0.0.1:42617");
@@ -195,7 +199,10 @@ mod tests {
         };
         let c = Connection::new_remote_ssh("Pi", ssh);
         assert_eq!(c.transport, Transport::Ssh);
-        assert!(c.url.is_empty(), "url is set by ssh::ensure_tunnel after forward comes up");
+        assert!(
+            c.url.is_empty(),
+            "url is set by ssh::ensure_tunnel after forward comes up"
+        );
     }
 
     #[test]

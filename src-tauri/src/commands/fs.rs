@@ -25,11 +25,10 @@ pub async fn workspace_open_root(
 }
 
 #[tauri::command]
-pub async fn workspace_get_root(state: State<'_, Arc<WorkspaceState>>) -> Result<Option<String>, String> {
-    Ok(state
-        .root()
-        .await
-        .map(|p| p.to_string_lossy().to_string()))
+pub async fn workspace_get_root(
+    state: State<'_, Arc<WorkspaceState>>,
+) -> Result<Option<String>, String> {
+    Ok(state.root().await.map(|p| p.to_string_lossy().to_string()))
 }
 
 #[tauri::command]

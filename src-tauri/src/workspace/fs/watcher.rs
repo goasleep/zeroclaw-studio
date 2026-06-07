@@ -33,17 +33,12 @@ fn build_ignore_matcher(root: &Path) -> Gitignore {
     // Project-level .gitignore, if one exists.
     let _ = builder.add(root.join(".gitignore"));
 
-    builder
-        .build()
-        .unwrap_or_else(|_| Gitignore::empty())
+    builder.build().unwrap_or_else(|_| Gitignore::empty())
 }
 
 /// Spawn a `notify` watcher on `root`. All emitted events are filtered
 /// through the ignore matcher before being forwarded to the frontend.
-pub fn spawn_watcher<R: Runtime>(
-    root: &Path,
-    app: AppHandle<R>,
-) -> RecommendedWatcher {
+pub fn spawn_watcher<R: Runtime>(root: &Path, app: AppHandle<R>) -> RecommendedWatcher {
     let ignore = Arc::new(build_ignore_matcher(root));
     let root = root.to_path_buf();
 

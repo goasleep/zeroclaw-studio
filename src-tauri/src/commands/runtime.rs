@@ -23,7 +23,10 @@ pub async fn runtime_start(
     supervisor: State<'_, SharedSupervisor>,
     id: Uuid,
 ) -> Result<(), String> {
-    let conn = book.get(id).await.ok_or_else(|| "connection not found".to_string())?;
+    let conn = book
+        .get(id)
+        .await
+        .ok_or_else(|| "connection not found".to_string())?;
     let binary_path = conn
         .binary_path
         .clone()
@@ -43,7 +46,9 @@ pub async fn runtime_stop(supervisor: State<'_, SharedSupervisor>) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn runtime_status(supervisor: State<'_, SharedSupervisor>) -> Result<SupervisorStatus, String> {
+pub async fn runtime_status(
+    supervisor: State<'_, SharedSupervisor>,
+) -> Result<SupervisorStatus, String> {
     Ok(supervisor.status().await)
 }
 
