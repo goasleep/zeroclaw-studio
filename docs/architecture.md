@@ -72,7 +72,7 @@ workspace itself spawned. Externally-managed gateways are never touched.
 
 - **Phase 0** ✅ scaffold, empty window opens via `pnpm tauri dev`
 - **Phase 1** ✅ connection management — local managed/attach, remote http/ssh, welcome wizard
-- **Phase 2** – auth + REST plumbing
+- **Phase 2** ✅ auth + REST plumbing — apiFetch with bearer + 401 dispatch + ApiError, WS chat client, SSE events client
 - **Phase 3** – workspace shell + file system pane
 - **Phase 4** – chat parity (streaming WS)
 - **Phase 5** – native quick-interaction capabilities
