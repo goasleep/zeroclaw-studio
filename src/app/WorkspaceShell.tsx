@@ -23,6 +23,14 @@ import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
 import { FileTree } from "@/workspace/files/FileTree";
 import { ChatPanel } from "@/features/chat/ChatPanel";
+import { MemoryPanel } from "@/features/memory/MemoryPanel";
+import { ConfigPanel } from "@/features/config/ConfigPanel";
+import { CronPanel } from "@/features/cron/CronPanel";
+import { ToolsPanel } from "@/features/tools/ToolsPanel";
+import { LogsPanel } from "@/features/logs/LogsPanel";
+import { DoctorPanel } from "@/features/doctor/DoctorPanel";
+import { DevicesPanel } from "@/features/devices/DevicesPanel";
+import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { apiStatus } from "@/api/client";
 import { Trash2 } from "lucide-react";
 
@@ -33,7 +41,9 @@ type Tab =
   | "cron"
   | "tools"
   | "logs"
-  | "doctor";
+  | "doctor"
+  | "devices"
+  | "integrations";
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Bot }> = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -41,8 +51,10 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Bot }> = [
   { id: "config", label: "Config", icon: Cog },
   { id: "cron", label: "Cron", icon: ListChecks },
   { id: "tools", label: "Tools", icon: Bot },
+  { id: "integrations", label: "Integrations", icon: Server },
   { id: "logs", label: "Logs", icon: Terminal },
   { id: "doctor", label: "Doctor", icon: Server },
+  { id: "devices", label: "Devices", icon: Server },
 ];
 
 export function WorkspaceShell() {
@@ -175,11 +187,18 @@ function Center({ tab }: { tab: Tab }) {
 
   return (
     <section className="flex h-full flex-col bg-neutral-950">
-      <header className="border-b border-neutral-800 px-3 py-2 text-xs uppercase tracking-wide text-neutral-400">
+      <header className="border-b border-neutral-800 px-3 py-1.5 text-xs uppercase tracking-wide text-neutral-400">
         {tab}
       </header>
-      <div className="flex-1 overflow-auto p-6 text-sm text-neutral-300">
-        <PlaceholderPanel tab={tab} />
+      <div className="flex-1 overflow-hidden">
+        {tab === "memory" && <MemoryPanel />}
+        {tab === "config" && <ConfigPanel />}
+        {tab === "cron" && <CronPanel />}
+        {tab === "tools" && <ToolsPanel />}
+        {tab === "logs" && <LogsPanel />}
+        {tab === "doctor" && <DoctorPanel />}
+        {tab === "devices" && <DevicesPanel />}
+        {tab === "integrations" && <IntegrationsPanel />}
       </div>
     </section>
   );
@@ -250,12 +269,11 @@ function PlaceholderPanel({ tab }: { tab: Tab }) {
   return (
     <div className="space-y-2 text-neutral-400">
       <p>
-        <strong className="text-neutral-200">{tab}</strong> panel.
-      </p>
-      <p className="text-xs text-neutral-500">
-        Phase 4 wires up chat (streaming WS + tool calls + approvals). Phase 6
-        replicates memory, config, cron, tools, logs, and doctor.
+        <strong className="text-neutral-200">{tab}</strong> panel — not wired yet.
       </p>
     </div>
   );
 }
+
+// Re-export to keep tsc happy until any future tab actually uses it.
+export { PlaceholderPanel };
