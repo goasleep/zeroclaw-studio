@@ -6,6 +6,12 @@
   "permissions": [
     "core:default",
     "store:default",
-    "dialog:default"
+    "dialog:default",
+    "global-shortcut:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text",
+    "notification:default",
+    "deep-link:default"
   ]
 }

@@ -161,6 +161,21 @@ export function useChat(agentAlias: string) {
         if (frame.type === "session_start") {
           localStorage.setItem(SESSION_KEY(agentAlias), frame.session_id);
         }
+        // Bridge to native notification handler in App.tsx.
+        if (frame.type === "approval_request") {
+          window.dispatchEvent(
+            new CustomEvent("zeroclaw://approval-request", {
+              detail: { tool: frame.tool },
+            }),
+          );
+        }
+        if (frame.type === "done") {
+          window.dispatchEvent(
+            new CustomEvent("zeroclaw://chat-done", {
+              detail: { agent: agentAlias },
+            }),
+          );
+        }
       },
       onOpen: () => setConnected(true),
       onClose: () => setConnected(false),

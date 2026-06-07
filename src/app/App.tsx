@@ -1,16 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConnectionProvider, useConnections } from "@/app/connection-context";
 import { ConnectionPicker } from "@/app/ConnectionPicker";
 import { WelcomeScreen } from "@/app/WelcomeScreen";
 import { AddConnectionDialog } from "@/app/AddConnectionDialog";
 import { WorkspaceProvider } from "@/app/workspace-context";
 import { WorkspaceShell } from "@/app/WorkspaceShell";
+import { useGlobalQuickInvoke } from "@/workspace/shortcuts/useGlobalQuickInvoke";
+import { useNotifications } from "@/workspace/notifications/useNotifications";
+import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
 
 type AddPath = "remote" | "local-attach" | "local-install" | null;
 
 function Shell() {
   const { connections, active, loading } = useConnections();
   const [addPath, setAddPath] = useState<AddPath>(null);
+
+  // Native quick-interaction capabilities (Phase 5).
+  useGlobalQuickInvoke();
+  useNotifications();
+  useDeepLinks();
+
+  // React to zeroclaw:// deep-link commands — for now, just log; future
+  // phases route to specific agents/files.
+  useEffect(() => {
+    function onDeepLink(e: Event) {
+      const url = (e as CustomEvent<URL>).detail;
+      console.info("deep-link", url.host, url.pathname);
+    }
+    window.addEventListener("zeroclaw://deep-link", onDeepLink);
+    return () =>
+      window.removeEventListener("zeroclaw://deep-link", onDeepLink);
+  }, []);
 
   if (loading) {
     return (

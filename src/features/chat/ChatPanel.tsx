@@ -1,10 +1,11 @@
 // Chat panel — agent picker + messages + composer.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Brain,
   Check,
   CircleStop,
+  Clipboard,
   Loader2,
   Paperclip,
   RotateCcw,
@@ -19,11 +20,29 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { useChat, type ChatMessage } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
+import { readClipboardText } from "@/workspace/clipboard/clipboard";
 
 export function ChatPanel({ agentAlias }: { agentAlias: string }) {
   const chat = useChat(agentAlias);
   const { selectedFiles, clearSelection } = useWorkspace();
   const [draft, setDraft] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Global shortcut (Phase 5) — focus composer when triggered.
+  useEffect(() => {
+    function focus() {
+      textareaRef.current?.focus();
+    }
+    window.addEventListener("zeroclaw://quick-invoke", focus);
+    return () =>
+      window.removeEventListener("zeroclaw://quick-invoke", focus);
+  }, []);
+
+  async function pasteClipboard() {
+    const t = await readClipboardText();
+    if (!t) return;
+    setDraft((d) => (d ? `${d}\n\n${t}` : t));
+  }
 
   function submit() {
     const trimmed = draft.trim();
@@ -121,6 +140,7 @@ export function ChatPanel({ agentAlias }: { agentAlias: string }) {
         )}
         <div className="flex items-end gap-2">
           <textarea
+            ref={textareaRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -130,9 +150,17 @@ export function ChatPanel({ agentAlias }: { agentAlias: string }) {
               }
             }}
             rows={2}
-            placeholder={`Message ${agentAlias}…`}
+            placeholder={`Message ${agentAlias}…  (⌘⇧Space anywhere to focus)`}
             className="flex-1 resize-none rounded border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
           />
+          <button
+            type="button"
+            onClick={() => void pasteClipboard()}
+            className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+            title="Paste clipboard into message"
+          >
+            <Clipboard size={12} />
+          </button>
           <button
             type="button"
             onClick={submit}

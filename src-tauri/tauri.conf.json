@@ -39,5 +39,12 @@
     "category": "DeveloperTool",
     "shortDescription": "ZeroClaw desktop workspace",
     "longDescription": "Connect to a local or remote ZeroClaw gateway from one workspace UI."
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["zeroclaw"]
+      }
+    }
   }
 }
