@@ -12,21 +12,29 @@ pub async fn ssh_open_tunnel<R: Runtime>(
     tunnels: State<'_, TunnelRegistry>,
     id: Uuid,
 ) -> Result<String, String> {
-    let conn = book.get(id).await.ok_or_else(|| "connection not found".to_string())?;
-    let ssh = conn.ssh.clone().ok_or_else(|| "connection is not SSH-backed".to_string())?;
-    let url = tunnels.ensure_tunnel(id, &ssh).await.map_err(|e| e.to_string())?;
+    let conn = book
+        .get(id)
+        .await
+        .ok_or_else(|| "connection not found".to_string())?;
+    let ssh = conn
+        .ssh
+        .clone()
+        .ok_or_else(|| "connection is not SSH-backed".to_string())?;
+    let url = tunnels
+        .ensure_tunnel(id, &ssh)
+        .await
+        .map_err(|e| e.to_string())?;
     // Persist the resolved URL so subsequent calls (and the health poller)
     // can reach the gateway via the local forward.
-    book.set_url(id, url.clone()).await.map_err(|e| e.to_string())?;
+    book.set_url(id, url.clone())
+        .await
+        .map_err(|e| e.to_string())?;
     book.save(&app).await.map_err(|e| e.to_string())?;
     Ok(url)
 }
 
 #[tauri::command]
-pub async fn ssh_close_tunnel(
-    tunnels: State<'_, TunnelRegistry>,
-    id: Uuid,
-) -> Result<(), String> {
+pub async fn ssh_close_tunnel(tunnels: State<'_, TunnelRegistry>, id: Uuid) -> Result<(), String> {
     tunnels.close(id).await;
     Ok(())
 }

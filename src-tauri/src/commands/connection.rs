@@ -6,7 +6,9 @@ use tauri::{AppHandle, Runtime, State};
 use uuid::Uuid;
 
 #[tauri::command]
-pub async fn list_connections(book: State<'_, SharedConnectionBook>) -> Result<Vec<Connection>, String> {
+pub async fn list_connections(
+    book: State<'_, SharedConnectionBook>,
+) -> Result<Vec<Connection>, String> {
     Ok(book.list().await)
 }
 

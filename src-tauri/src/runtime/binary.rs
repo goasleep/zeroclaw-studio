@@ -96,7 +96,11 @@ mod tests {
     #[test]
     fn candidate_paths_includes_homebrew() {
         let paths = candidate_paths();
-        assert!(paths.iter().any(|p| p.ends_with("opt/homebrew/bin/zeroclaw")));
+        assert!(
+            paths
+                .iter()
+                .any(|p| p.ends_with("opt/homebrew/bin/zeroclaw"))
+        );
     }
 
     #[tokio::test]
