@@ -76,7 +76,7 @@ workspace itself spawned. Externally-managed gateways are never touched.
 - **Phase 3** ✅ workspace shell + file system pane — three resizable panels, notify-based watch, ignore rules, multi-select files queued for chat
 - **Phase 4** ✅ chat parity — streaming WS, frame taxonomy, tool calls, approval banner, markdown render, file-attachment integration
 - **Phase 5** ✅ native quick-interaction capabilities — global Cmd+Shift+Space, clipboard paste, native notifications on approval/done, zeroclaw:// deep links
-- **Phase 6** – remaining `web/` feature parity
+- **Phase 6** ✅ web/ feature parity — memory, config, cron, tools, integrations, channels, logs, doctor, devices panels wired
 - **Phase 7** – distribution + upstream PRs
 
 See plan file at `~/.claude/plans/cryptic-discovering-metcalfe.md`.
