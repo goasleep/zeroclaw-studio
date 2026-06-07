@@ -68,6 +68,29 @@ struct Connection {
 **Spawn ownership is strict.** The supervisor only kills processes the
 workspace itself spawned. Externally-managed gateways are never touched.
 
+## Connection activation (auto-start)
+
+Whenever a connection becomes active — at app startup, when the user picks
+it in the picker, or right after it was just created — `connection/
+activator.rs` runs the same workflow on the backend:
+
+1. **Probe** `Connection.url` for an existing healthy gateway.
+2. If down AND the connection is local-loopback, **spawn** a managed
+   `zeroclaw gateway start -p <port>` via `runtime/supervisor.rs`. If the
+   stored binary path is invalid, re-run `runtime::binary::detect` to find
+   one on `$PATH` / well-known install dirs. If still no binary, emit
+   `binary_missing` so the UI offers the install path.
+3. **Await health** (`/health` poll, 15s timeout, 300ms interval).
+4. **Pair** via `gateway::pair::ensure_token` — reuses existing token if
+   still valid, otherwise mints a fresh one on localhost (or surfaces
+   `needs_manual_pairing` for remote gateways where the admin endpoint is
+   unreachable).
+
+Every step emits a `zeroclaw://activation` Tauri event the connection
+context subscribes to, so the picker shows live progress ("starting
+gateway…", "pairing…", etc.) without polling. The user never runs a CLI
+command for the local-managed case.
+
 ## Phase status
 
 - **Phase 0** ✅ scaffold, empty window opens via `pnpm tauri dev`

@@ -72,6 +72,22 @@ export interface HealthEvent {
   healthy: boolean;
 }
 
+/**
+ * Activation lifecycle events emitted on `zeroclaw://activation` while the
+ * backend brings a connection online (probe → spawn → wait healthy → pair).
+ * Tagged via serde's `type` field.
+ */
+export type ActivationStep =
+  | { type: "started"; connection_id: string }
+  | { type: "probing" }
+  | { type: "starting_gateway"; binary_path: string }
+  | { type: "awaiting_healthy" }
+  | { type: "pairing" }
+  | { type: "ready" }
+  | { type: "binary_missing" }
+  | { type: "needs_manual_pairing" }
+  | { type: "failed"; message: string };
+
 // ---- Connection commands ----
 
 export const listConnections = () =>
@@ -88,6 +104,8 @@ export const removeConnection = (id: string) =>
 
 export const setActiveConnection = (id: string | null) =>
   invoke<void>("set_active_connection", { id });
+
+export const reactivate = () => invoke<void>("reactivate");
 
 // ---- Gateway commands ----
 

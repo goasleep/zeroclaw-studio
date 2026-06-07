@@ -20,6 +20,21 @@ const RESTART_WINDOW: Duration = Duration::from_secs(60);
 const BASE_BACKOFF: Duration = Duration::from_secs(1);
 const MAX_BACKOFF: Duration = Duration::from_secs(30);
 
+/// Argv passed to the zeroclaw binary to bring up the gateway.
+///
+/// Centralised so the `start` and `ensure_running` spawn sites stay in
+/// lockstep — see the regression test below; an earlier version drifted
+/// to `gateway --port N`, which is rejected by `zeroclaw 0.8+` because
+/// `gateway` requires a subcommand.
+fn spawn_args(port: u16) -> [String; 4] {
+    [
+        "gateway".to_string(),
+        "start".to_string(),
+        "-p".to_string(),
+        port.to_string(),
+    ]
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum SupervisorStatus {
     Stopped,
@@ -63,7 +78,7 @@ impl Supervisor {
         }
 
         let child = Command::new(binary_path)
-            .args(["gateway", "--port", &port.to_string()])
+            .args(spawn_args(port))
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -136,7 +151,7 @@ impl Supervisor {
         tokio::time::sleep(backoff).await;
 
         match Command::new(binary_path)
-            .args(["gateway", "--port", &port.to_string()])
+            .args(spawn_args(port))
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -195,5 +210,18 @@ mod tests {
     async fn stop_when_stopped_is_ok() {
         let s = Supervisor::new();
         s.stop().await.unwrap();
+    }
+
+    #[test]
+    fn spawn_args_uses_gateway_start_subcommand() {
+        // Regression: `gateway --port N` was rejected by zeroclaw 0.8+
+        // because `gateway` requires a subcommand. The correct form is
+        // `gateway start -p N`. Pin both the subcommand and the short
+        // flag here.
+        let args = spawn_args(42617);
+        assert_eq!(args[0], "gateway");
+        assert_eq!(args[1], "start");
+        assert_eq!(args[2], "-p");
+        assert_eq!(args[3], "42617");
     }
 }
