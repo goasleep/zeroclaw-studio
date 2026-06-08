@@ -20,19 +20,46 @@ const RESTART_WINDOW: Duration = Duration::from_secs(60);
 const BASE_BACKOFF: Duration = Duration::from_secs(1);
 const MAX_BACKOFF: Duration = Duration::from_secs(30);
 
+/// Resolve the zeroclaw config directory the GUI-spawned gateway should use.
+///
+/// GUI apps don't reliably inherit the same shell env as a terminal. Passing
+/// `--config-dir` explicitly prevents the spawned gateway from booting with an
+/// empty/default config while the CLI correctly sees `~/.zeroclaw/config.toml`.
+fn config_dir() -> Option<String> {
+    if let Ok(v) = std::env::var("ZEROCLAW_CONFIG_DIR")
+        && !v.trim().is_empty()
+    {
+        return Some(v);
+    }
+    if let Ok(v) = std::env::var("ZEROCLAW_HOME")
+        && !v.trim().is_empty()
+    {
+        return Some(v);
+    }
+    std::env::var("HOME")
+        .ok()
+        .map(|home| format!("{home}/.zeroclaw"))
+}
+
 /// Argv passed to the zeroclaw binary to bring up the gateway.
 ///
 /// Centralised so the `start` and `ensure_running` spawn sites stay in
 /// lockstep — see the regression test below; an earlier version drifted
 /// to `gateway --port N`, which is rejected by `zeroclaw 0.8+` because
 /// `gateway` requires a subcommand.
-fn spawn_args(port: u16) -> [String; 4] {
-    [
+fn spawn_args(port: u16) -> Vec<String> {
+    let mut args = Vec::new();
+    if let Some(dir) = config_dir() {
+        args.push("--config-dir".to_string());
+        args.push(dir);
+    }
+    args.extend([
         "gateway".to_string(),
         "start".to_string(),
         "-p".to_string(),
         port.to_string(),
-    ]
+    ]);
+    args
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -219,9 +246,32 @@ mod tests {
         // `gateway start -p N`. Pin both the subcommand and the short
         // flag here.
         let args = spawn_args(42617);
-        assert_eq!(args[0], "gateway");
-        assert_eq!(args[1], "start");
-        assert_eq!(args[2], "-p");
-        assert_eq!(args[3], "42617");
+        let gateway_pos = args
+            .iter()
+            .position(|arg| arg == "gateway")
+            .expect("spawn args must include gateway subcommand");
+        assert_eq!(args[gateway_pos + 1], "start");
+        assert_eq!(args[gateway_pos + 2], "-p");
+        assert_eq!(args[gateway_pos + 3], "42617");
+    }
+
+    #[test]
+    fn spawn_args_passes_config_dir_before_command_when_available() {
+        let args = spawn_args(42617);
+        if let Some(dir) = config_dir() {
+            let config_pos = args
+                .iter()
+                .position(|arg| arg == "--config-dir")
+                .expect("spawn args should explicitly pass --config-dir");
+            let gateway_pos = args
+                .iter()
+                .position(|arg| arg == "gateway")
+                .expect("spawn args must include gateway");
+            assert!(
+                config_pos < gateway_pos,
+                "global flags must precede command"
+            );
+            assert_eq!(args[config_pos + 1], dir);
+        }
     }
 }
