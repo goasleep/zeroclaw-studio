@@ -93,6 +93,11 @@ pub fn run() {
                             eprintln!("[bootstrap] auto-onboard failed: {e}");
                         }
                     }
+                    if book_for_setup.prefer_usable_local_active().await
+                        && let Err(e) = book_for_setup.save(&app_handle).await
+                    {
+                        eprintln!("[bootstrap] failed to persist active migration: {e}");
+                    }
                     if let Some(conn) = book_for_setup.active().await {
                         connection::activator::activate(
                             &app_handle,
