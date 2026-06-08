@@ -88,8 +88,24 @@ activator.rs` runs the same workflow on the backend:
 
 Every step emits a `zeroclaw://activation` Tauri event the connection
 context subscribes to, so the picker shows live progress ("starting
-gateway…", "pairing…", etc.) without polling. The user never runs a CLI
-command for the local-managed case.
+gateway…", "pairing…", etc.) without polling.
+
+## First-run auto-onboard
+
+`connection/bootstrap.rs::try_auto_onboard` runs once at startup, **before**
+the activator. It only fires when the user's saved-connections list is
+empty (idempotent — never overwrites existing connections):
+
+- If a local `zeroclaw` binary is detectable, synthesise a `Local
+  zeroclaw` connection (`managed` if the default port is free, `attach`
+  if the port is already in use) with the detected binary path baked in,
+  persist, and mark active.
+- If no local binary, do nothing — the welcome screen guides the user
+  to add a remote or install one.
+
+Result: a fresh install on a machine that already has `zeroclaw`
+installed brings up a fully-paired gateway and the workspace UI in one
+step, with no CLI commands at any point.
 
 ## Phase status
 

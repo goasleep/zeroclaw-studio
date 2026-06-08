@@ -70,14 +70,28 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 let book_for_setup = book.clone();
                 let supervisor_for_setup = supervisor.clone();
-                // Load saved connections, then auto-activate the persisted
-                // active one (if any) — this is the "open the app, it
-                // just works" path: spawn gateway if needed, pair, emit
-                // events the UI subscribes to.
+                // Load saved connections, then auto-onboard (first-run only)
+                // and auto-activate the persisted active one — the
+                // "open the app, it just works" path:
+                //   1. load disk state
+                //   2. if no connections AND a local zeroclaw is detectable,
+                //      synthesise + persist a Local connection (idempotent)
+                //   3. if there's an active connection, run the activator
+                //      (probe → spawn local if needed → wait healthy → pair)
                 tauri::async_runtime::spawn(async move {
                     if let Err(e) = book_for_setup.load(&app_handle).await {
                         eprintln!("failed to load connections: {e}");
                         return;
+                    }
+                    match connection::bootstrap::try_auto_onboard(&app_handle, &book_for_setup)
+                        .await
+                    {
+                        Ok(outcome) => {
+                            eprintln!("[bootstrap] auto-onboard outcome: {outcome:?}");
+                        }
+                        Err(e) => {
+                            eprintln!("[bootstrap] auto-onboard failed: {e}");
+                        }
                     }
                     if let Some(conn) = book_for_setup.active().await {
                         connection::activator::activate(

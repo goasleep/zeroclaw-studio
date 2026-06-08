@@ -74,6 +74,15 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       "zeroclaw://activation",
       (event) => {
         setActivation(event.payload);
+        // `started` is the first event in any activation burst — if it
+        // arrives before the initial refresh saw the connection (which
+        // happens on first-run auto-onboard, where the backend mints a
+        // Connection during setup and the activator fires before React
+        // has re-polled), pull the list now so the UI flips from
+        // Welcome to Workspace immediately.
+        if (event.payload.type === "started") {
+          void refresh();
+        }
         // When activation reaches `ready`, the persisted Connection.url and
         // possibly token were updated by the backend — re-pull so the rest
         // of the UI sees the resolved state.

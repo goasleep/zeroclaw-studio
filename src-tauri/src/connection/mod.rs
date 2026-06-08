@@ -11,6 +11,7 @@
 //! - `Remote`: gateway lives elsewhere (URL, SSH-tunneled, Tailscale).
 
 pub mod activator;
+pub mod bootstrap;
 pub mod discover;
 pub mod ssh;
 pub mod store;
