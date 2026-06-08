@@ -1,13 +1,12 @@
-// Main workspace shell — three resizable panes.
+// Main workspace shell — stable three-column layout.
 //
-// Layout (left → right):
-//   - Sidebar: workspace root picker + file tree + feature nav
-//   - Center: tabbed view (Phase 4 will hang chat here)
-//   - Inspector: selected file context, attachments queued for chat,
-//     misc per-feature side panels.
+// Earlier builds used react-resizable-panels v4. Its default sizing could
+// collapse sidebars to single-character columns in Tauri WebView, producing
+// the "split / broken" look. The shell now starts from explicit CSS grid
+// widths (260px / fluid / 300px). We can add draggable resizing later on top
+// of this stable baseline.
 
 import { useEffect, useState } from "react";
-import { Group, Panel, Separator } from "react-resizable-panels";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Bot,
@@ -18,6 +17,7 @@ import {
   MessageSquare,
   Server,
   Terminal,
+  Trash2,
 } from "lucide-react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
@@ -32,7 +32,6 @@ import { DoctorPanel } from "@/features/doctor/DoctorPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { apiStatus } from "@/api/client";
-import { Trash2 } from "lucide-react";
 
 type Tab =
   | "chat"
@@ -61,19 +60,11 @@ export function WorkspaceShell() {
   const [tab, setTab] = useState<Tab>("chat");
 
   return (
-    <Group orientation="horizontal" className="h-full">
-      <Panel defaultSize={20} minSize={14} maxSize={40}>
-        <Sidebar tab={tab} onTab={setTab} />
-      </Panel>
-      <Separator className="w-px bg-neutral-800 hover:bg-orange-500/40" />
-      <Panel defaultSize={55} minSize={30}>
-        <Center tab={tab} />
-      </Panel>
-      <Separator className="w-px bg-neutral-800 hover:bg-orange-500/40" />
-      <Panel defaultSize={25} minSize={15} maxSize={45}>
-        <Inspector />
-      </Panel>
-    </Group>
+    <div className="grid h-full min-h-0 grid-cols-[260px_minmax(420px,1fr)_300px] overflow-hidden bg-neutral-950">
+      <Sidebar tab={tab} onTab={setTab} />
+      <Center tab={tab} />
+      <Inspector />
+    </div>
   );
 }
 
@@ -88,44 +79,46 @@ function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
   }
 
   return (
-    <aside className="flex h-full flex-col border-r border-neutral-800 bg-neutral-950">
-      <header className="flex items-center gap-2 border-b border-neutral-800 px-3 py-2 text-xs">
-        <FolderOpen size={12} className="text-orange-400" />
-        <span className="flex-1 truncate text-neutral-400" title={root ?? "no workspace"}>
-          {root ? root.split("/").slice(-1)[0] : "No workspace"}
+    <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
+      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-neutral-800 px-3 text-xs">
+        <FolderOpen size={14} className="shrink-0 text-orange-400" />
+        <span className="min-w-0 flex-1 truncate text-neutral-300" title={root ?? "no workspace"}>
+          {root ? root.split("/").slice(-1)[0] : "No folder open"}
         </span>
         <button
           type="button"
           onClick={() => void pickRoot()}
-          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300 hover:border-orange-500"
+          className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
         >
           {root ? "Change" : "Open"}
         </button>
       </header>
 
-      <nav className="border-b border-neutral-800 py-1">
+      <nav className="shrink-0 border-b border-neutral-800 py-1">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => onTab(t.id)}
-            className={`flex w-full items-center gap-2 px-3 py-1 text-xs ${
-              tab === t.id ? "bg-orange-500/10 text-orange-200" : "text-neutral-300 hover:bg-neutral-900"
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition ${
+              tab === t.id
+                ? "bg-orange-500/10 text-orange-200"
+                : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
             }`}
           >
-            <t.icon size={12} />
-            {t.label}
+            <t.icon size={13} className="shrink-0" />
+            <span className="truncate">{t.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {root ? (
           <FileTree />
         ) : (
-          <div className="px-3 py-4 text-xs text-neutral-500">
-            Open a folder to see its files here. Multi-select files to send
-            them as chat attachments.
+          <div className="m-3 rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs leading-relaxed text-neutral-500">
+            Open a folder to use local files as context. Selected files appear
+            in the right panel and are attached to your next chat turn.
           </div>
         )}
       </div>
@@ -150,35 +143,27 @@ function Center({ tab }: { tab: Tab }) {
 
   if (tab === "chat") {
     if (agents.length === 0) {
-      return (
-        <section className="flex h-full items-center justify-center bg-neutral-950">
-          <p className="px-8 text-center text-xs text-neutral-500">
-            No agents configured on the active gateway yet.<br />
-            Set one up via Config → Agents (Phase 6) or with{" "}
-            <code className="text-neutral-300">zeroclaw quickstart</code>.
-          </p>
-        </section>
-      );
+      return <NoAgentsState />;
     }
     return (
-      <section className="flex h-full flex-col bg-neutral-950">
-        <header className="flex items-center gap-1 border-b border-neutral-800 px-2 py-1 text-xs">
+      <section className="flex min-w-0 flex-col bg-neutral-950">
+        <header className="flex h-11 shrink-0 items-center gap-1 border-b border-neutral-800 px-3 text-xs">
           {agents.map((alias) => (
             <button
               key={alias}
               type="button"
               onClick={() => setActiveAgent(alias)}
-              className={`rounded px-2 py-1 ${
+              className={`rounded-md px-2 py-1 transition ${
                 activeAgent === alias
                   ? "bg-orange-500/15 text-orange-200"
-                  : "text-neutral-400 hover:bg-neutral-900"
+                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
               }`}
             >
               {alias}
             </button>
           ))}
         </header>
-        <div className="flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden">
           {activeAgent && <ChatPanel agentAlias={activeAgent} />}
         </div>
       </section>
@@ -186,11 +171,11 @@ function Center({ tab }: { tab: Tab }) {
   }
 
   return (
-    <section className="flex h-full flex-col bg-neutral-950">
-      <header className="border-b border-neutral-800 px-3 py-1.5 text-xs uppercase tracking-wide text-neutral-400">
+    <section className="flex min-w-0 flex-col bg-neutral-950">
+      <header className="flex h-11 shrink-0 items-center border-b border-neutral-800 px-4 text-xs uppercase tracking-wide text-neutral-400">
         {tab}
       </header>
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {tab === "memory" && <MemoryPanel />}
         {tab === "config" && <ConfigPanel />}
         {tab === "cron" && <CronPanel />}
@@ -204,24 +189,58 @@ function Center({ tab }: { tab: Tab }) {
   );
 }
 
+function NoAgentsState() {
+  return (
+    <section className="flex min-h-0 min-w-0 items-center justify-center bg-neutral-950 p-8">
+      <div className="max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-center shadow-2xl">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-orange-300">
+          <Bot size={24} />
+        </div>
+        <h2 className="mb-2 text-lg font-semibold text-neutral-100">
+          No agents configured yet
+        </h2>
+        <p className="mb-5 text-sm leading-relaxed text-neutral-400">
+          The local gateway is online, but it doesn't have an agent to chat
+          with. Configure one from the Config tab or run Quickstart from the
+          ZeroClaw CLI once; future setup can be moved fully into this app.
+        </p>
+        <div className="flex justify-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-medium text-neutral-950 hover:bg-orange-400"
+          >
+            Open Config
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-neutral-300 hover:border-orange-500 hover:text-orange-300"
+          >
+            Learn setup
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Inspector() {
   const { selectedFiles, clearSelection } = useWorkspace();
   const { active } = useConnections();
 
   return (
-    <aside className="flex h-full flex-col border-l border-neutral-800 bg-neutral-950 text-xs">
-      <header className="border-b border-neutral-800 px-3 py-2 uppercase tracking-wide text-neutral-400">
+    <aside className="flex min-w-0 flex-col border-l border-neutral-800 bg-neutral-950 text-xs">
+      <header className="flex h-11 shrink-0 items-center border-b border-neutral-800 px-3 uppercase tracking-wide text-neutral-400">
         Context
       </header>
-      <div className="flex-1 overflow-auto p-3">
-        <section className="mb-4">
-          <h3 className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wide text-neutral-500">
+      <div className="min-h-0 flex-1 overflow-auto p-3">
+        <section className="mb-5">
+          <h3 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
             Active connection
           </h3>
           {active ? (
-            <div className="font-mono text-neutral-300">
-              <div>{active.name}</div>
-              <div className="truncate text-[10px] text-neutral-500">{active.url}</div>
+            <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-2 font-mono text-neutral-300">
+              <div className="truncate text-xs font-medium text-neutral-100">{active.name}</div>
+              <div className="mt-1 truncate text-[10px] text-neutral-500">{active.url}</div>
             </div>
           ) : (
             <div className="text-neutral-500">none</div>
@@ -229,7 +248,7 @@ function Inspector() {
         </section>
 
         <section>
-          <h3 className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-wide text-neutral-500">
+          <h3 className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wide text-neutral-500">
             <span>Chat attachments ({selectedFiles.length})</span>
             {selectedFiles.length > 0 && (
               <button
@@ -243,8 +262,9 @@ function Inspector() {
             )}
           </h3>
           {selectedFiles.length === 0 ? (
-            <div className="text-neutral-500">
-              Select files in the tree to attach them to your next chat message.
+            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 leading-relaxed text-neutral-500">
+              Select files in the tree to attach them to your next chat
+              message.
             </div>
           ) : (
             <ul className="space-y-1">
@@ -264,16 +284,3 @@ function Inspector() {
     </aside>
   );
 }
-
-function PlaceholderPanel({ tab }: { tab: Tab }) {
-  return (
-    <div className="space-y-2 text-neutral-400">
-      <p>
-        <strong className="text-neutral-200">{tab}</strong> panel — not wired yet.
-      </p>
-    </div>
-  );
-}
-
-// Re-export to keep tsc happy until any future tab actually uses it.
-export { PlaceholderPanel };
