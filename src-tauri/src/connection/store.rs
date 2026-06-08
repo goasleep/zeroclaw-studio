@@ -5,7 +5,7 @@
 //! (acceptable for Phase 1 since the store is per-user, per-app). Phase 2+
 //! moves tokens into the OS keychain.
 
-use crate::connection::Connection;
+use crate::connection::{Connection, Lifecycle, Transport};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -118,6 +118,43 @@ impl ConnectionBook {
         Ok(())
     }
 
+    /// Migrate stale active connections produced by older workspace builds.
+    ///
+    /// Early builds allowed creating a local attach connection named "Local"
+    /// with no token and no binary path. If that stale connection remains
+    /// active while a better bootstrap-created "Local zeroclaw" connection
+    /// exists, the UI can show "no config"/"no agents" because protected API
+    /// calls are made without a bearer token. Prefer the best local managed
+    /// connection when the active one is clearly incomplete.
+    pub async fn prefer_usable_local_active(&self) -> bool {
+        let mut s = self.state.write().await;
+        let active = s
+            .active
+            .and_then(|id| s.connections.iter().find(|c| c.id == id));
+
+        let active_is_usable = active.is_some_and(|c| {
+            c.auth.token.is_some()
+                || c.binary_path.is_some()
+                || matches!(c.lifecycle, Lifecycle::Managed)
+        });
+        if active_is_usable {
+            return false;
+        }
+
+        let replacement = s.connections.iter().find(|c| {
+            matches!(c.transport, Transport::Local)
+                && (c.auth.token.is_some()
+                    || c.binary_path.is_some()
+                    || matches!(c.lifecycle, Lifecycle::Managed))
+        });
+
+        if let Some(c) = replacement {
+            s.active = Some(c.id);
+            return true;
+        }
+        false
+    }
+
     /// Update the stored token for a connection (after a successful pairing).
     pub async fn set_token(&self, id: Uuid, token: Option<String>) -> Result<()> {
         let mut s = self.state.write().await;
@@ -194,5 +231,39 @@ mod tests {
         );
         book.set_token(id, None).await.unwrap();
         assert!(book.get(id).await.unwrap().auth.token.is_none());
+    }
+
+    #[tokio::test]
+    async fn prefer_usable_local_active_migrates_from_stale_attach() {
+        let book = ConnectionBook::new();
+        let stale = Connection::new_local_attach("Local", 42617);
+        let stale_id = stale.id;
+        let mut good = Connection::new_local_managed(
+            "Local zeroclaw",
+            std::path::PathBuf::from("/Users/me/.cargo/bin/zeroclaw"),
+            42617,
+        );
+        good.auth.token = Some("zc_good".into());
+        let good_id = good.id;
+
+        book.upsert(stale).await;
+        book.upsert(good).await;
+        book.set_active(Some(stale_id)).await.unwrap();
+
+        assert!(book.prefer_usable_local_active().await);
+        assert_eq!(book.active().await.unwrap().id, good_id);
+    }
+
+    #[tokio::test]
+    async fn prefer_usable_local_active_keeps_already_usable_active() {
+        let book = ConnectionBook::new();
+        let mut c = Connection::new_local_attach("Local", 42617);
+        c.auth.token = Some("zc_ok".into());
+        let id = c.id;
+        book.upsert(c).await;
+        book.set_active(Some(id)).await.unwrap();
+
+        assert!(!book.prefer_usable_local_active().await);
+        assert_eq!(book.active().await.unwrap().id, id);
     }
 }
