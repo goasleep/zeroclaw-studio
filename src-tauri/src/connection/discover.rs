@@ -9,7 +9,7 @@ use serde::Serialize;
 /// Default gateway port (matches `apps/tauri` and the `zeroclaw service` default).
 pub const DEFAULT_PORT: u16 = 42617;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DiscoveredLocal {
     pub url: String,
     pub healthy: bool,

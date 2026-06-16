@@ -8,16 +8,19 @@ use tauri::State;
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn detect_local_binary() -> Result<Option<DetectedBinary>, String> {
     binary::detect().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn install_instructions() -> InstallInstructions {
     installer::instructions()
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn runtime_start(
     book: State<'_, SharedConnectionBook>,
     supervisor: State<'_, SharedSupervisor>,
@@ -41,11 +44,13 @@ pub async fn runtime_start(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn runtime_stop(supervisor: State<'_, SharedSupervisor>) -> Result<(), String> {
     supervisor.stop().await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn runtime_status(
     supervisor: State<'_, SharedSupervisor>,
 ) -> Result<SupervisorStatus, String> {

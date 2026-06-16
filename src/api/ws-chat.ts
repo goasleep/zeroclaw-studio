@@ -1,15 +1,12 @@
-// Reconnecting WebSocket chat client.
+// Chat WebSocket client — routed through the Rust backend via Tauri IPC.
 //
-// Gateway endpoint: GET /ws/chat?session_id=&name=&token=
-// Subprotocols: ["zeroclaw.v1", "bearer.<token>"]
-//
-// Server→client frames (tagged via `type` field):
-//   session_start, chunk, thinking, tool_call, tool_call_start,
-//   tool_result, approval_request, done, aborted, error
-//
-// Client→server frames:
-//   message, approval_response
+// The WebView cannot reliably open WebSockets to localhost (macOS WKWebView
+// blocks them with a bare error), so this client asks the Rust layer to
+// maintain the actual `tokio-tungstenite` connection and forwards frames
+// through Tauri events.
 
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getActiveConnection } from "@/api/tauri";
 
 export type ChatFrame =
@@ -38,7 +35,6 @@ export type ChatOutbound =
 
 export interface ChatClientOpts {
   agentAlias: string;
-  /** Optional resume-id. If absent the gateway issues a new session_id. */
   sessionId?: string;
   onFrame: (frame: ChatFrame) => void;
   onOpen?: () => void;
@@ -47,11 +43,25 @@ export interface ChatClientOpts {
   maxBackoff?: number;
 }
 
+const CHAT_FRAME_EVENT = "zeroclaw://chat-frame";
+const CHAT_CLOSE_EVENT = "zeroclaw://chat-close";
+
+interface ChatFrameEvent {
+  session_id: string;
+  frame: string;
+}
+
+interface ChatCloseEvent {
+  session_id: string;
+}
+
 export class ChatClient {
-  private ws: WebSocket | null = null;
+  private sessionId: string | null = null;
   private closed = false;
   private retryAttempt = 0;
   private connectPromise: Promise<void> | null = null;
+  private unlisten: (() => void) | null = null;
+  private closeListeners: Array<() => void> = [];
 
   constructor(private opts: ChatClientOpts) {}
 
@@ -62,16 +72,29 @@ export class ChatClient {
   }
 
   send(frame: ChatOutbound) {
-    if (this.ws?.readyState !== WebSocket.OPEN) {
+    if (!this.sessionId) {
       throw new Error("chat socket not open");
     }
-    this.ws.send(JSON.stringify(frame));
+    void invoke("chat_send", {
+      req: {
+        session_id: this.sessionId,
+        frame: JSON.stringify(frame),
+      },
+    });
   }
 
   close() {
     this.closed = true;
-    this.ws?.close();
-    this.ws = null;
+    this.unlisten?.();
+    this.unlisten = null;
+    this.closeListeners.forEach((u) => u());
+    this.closeListeners = [];
+    if (this.sessionId) {
+      void invoke("chat_disconnect", {
+        req: { session_id: this.sessionId },
+      });
+      this.sessionId = null;
+    }
   }
 
   private async connect(): Promise<void> {
@@ -79,55 +102,70 @@ export class ChatClient {
     if (!conn) throw new Error("no active connection");
     if (!conn.url) throw new Error("active connection has no URL");
 
-    // Build ws URL: http -> ws, https -> wss.
-    const httpUrl = new URL(conn.url);
-    const protocol = httpUrl.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = new URL(
-      `${protocol}//${httpUrl.host}${httpUrl.pathname.replace(/\/$/, "")}/ws/chat`,
+    const info = await invoke<{ session_id: string }>("chat_connect", {
+      req: {
+        url: conn.url,
+        agent_alias: this.opts.agentAlias,
+        session_id: this.opts.sessionId,
+        token: conn.auth.token ?? "",
+      },
+    });
+
+    this.sessionId = info.session_id;
+    this.retryAttempt = 0;
+    this.opts.onOpen?.();
+
+    this.unlisten = await listen<ChatFrameEvent>(
+      CHAT_FRAME_EVENT,
+      (event) => {
+        if (event.payload.session_id !== this.sessionId) return;
+        try {
+          const frame = JSON.parse(event.payload.frame) as ChatFrame;
+          this.opts.onFrame(frame);
+        } catch (err) {
+          this.opts.onFrame({
+            type: "error",
+            message: `bad frame: ${String(err)}`,
+          });
+        }
+      },
     );
-    if (this.opts.sessionId) wsUrl.searchParams.set("session_id", this.opts.sessionId);
-    if (this.opts.agentAlias) wsUrl.searchParams.set("name", this.opts.agentAlias);
-    if (conn.auth.token) wsUrl.searchParams.set("token", conn.auth.token);
 
-    const subprotocols: string[] = ["zeroclaw.v1"];
-    if (conn.auth.token) subprotocols.push(`bearer.${conn.auth.token}`);
-
-    this.ws = new WebSocket(wsUrl.toString(), subprotocols);
-
-    this.ws.onopen = () => {
-      this.retryAttempt = 0;
-      this.opts.onOpen?.();
-    };
-
-    this.ws.onmessage = (event) => {
-      try {
-        const frame = JSON.parse(event.data) as ChatFrame;
-        this.opts.onFrame(frame);
-      } catch (err) {
-        this.opts.onFrame({
-          type: "error",
-          message: `bad frame: ${String(err)}`,
-        });
+    // Watch for the Rust-side connection closing and reconnect unless the
+    // client was explicitly closed.
+    listen<ChatCloseEvent>(CHAT_CLOSE_EVENT, (event) => {
+      if (event.payload.session_id !== this.sessionId) return;
+      this.unlisten?.();
+      this.unlisten = null;
+      if (!this.closed) {
+        void this.reconnect();
+      } else {
+        this.opts.onClose?.();
       }
-    };
-
-    this.ws.onclose = () => {
-      this.opts.onClose?.();
-      if (!this.closed) void this.reconnect();
-    };
-
-    this.ws.onerror = () => {
-      // onclose will fire after onerror — let it handle reconnect.
-    };
+    }).then((unlistenClose) => {
+      // Keep the close listener alive while this client exists. It will be
+      // dropped naturally when the client is closed/reconnected.
+      this.closeListeners.push(unlistenClose);
+    });
   }
 
   private async reconnect(): Promise<void> {
     this.connectPromise = null;
+    this.sessionId = null;
+    this.unlisten?.();
+    this.unlisten = null;
+    this.closeListeners.forEach((u) => u());
+    this.closeListeners = [];
+
     const max = this.opts.maxBackoff ?? 30_000;
     const delay = Math.min(1000 * Math.pow(2, this.retryAttempt), max);
     this.retryAttempt += 1;
     await new Promise((r) => setTimeout(r, delay));
-    if (this.closed) return;
+
+    if (this.closed) {
+      this.opts.onClose?.();
+      return;
+    }
     return this.start();
   }
 }

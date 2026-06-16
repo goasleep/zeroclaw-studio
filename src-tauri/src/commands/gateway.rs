@@ -8,17 +8,19 @@ use tauri::{AppHandle, Runtime, State};
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn discover_local_gateway() -> Result<Option<DiscoveredLocal>, String> {
     Ok(discover::probe_local(DEFAULT_PORT).await)
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct PairResult {
     pub outcome: String,
     pub token: Option<String>,
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn ensure_token<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
@@ -42,6 +44,7 @@ pub async fn ensure_token<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn pair_with_code<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,

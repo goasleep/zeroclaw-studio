@@ -8,7 +8,7 @@
 
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct InstallInstructions {
     /// The one-liner the user copy-pastes into their terminal.
     pub command: String,

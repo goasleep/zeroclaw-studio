@@ -24,13 +24,24 @@ pub struct HealthEvent {
 
 /// Spawn the poller. Polls only the currently-active connection; switching
 /// the active connection in the book is picked up automatically next tick.
-pub fn spawn_health_poller<R: Runtime>(app: AppHandle<R>, book: SharedConnectionBook) {
+///
+/// `http_client` is the app-wide shared client so every 5s poll reuses the
+/// same connection pool instead of building a fresh TLS session each tick.
+pub fn spawn_health_poller<R: Runtime>(
+    app: AppHandle<R>,
+    book: SharedConnectionBook,
+    http_client: reqwest::Client,
+) {
     tauri::async_runtime::spawn(async move {
         loop {
             let active = book.active().await;
             let event = match active {
                 Some(conn) if !conn.url.is_empty() => {
-                    let client = GatewayClient::new(&conn.url, conn.auth.token.as_deref());
+                    let client = GatewayClient::new_with_client(
+                        &conn.url,
+                        conn.auth.token.as_deref(),
+                        http_client.clone(),
+                    );
                     HealthEvent {
                         connection_id: Some(conn.id),
                         url: Some(conn.url),

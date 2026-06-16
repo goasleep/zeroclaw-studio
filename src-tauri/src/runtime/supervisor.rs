@@ -62,7 +62,7 @@ fn spawn_args(port: u16) -> Vec<String> {
     args
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 pub enum SupervisorStatus {
     Stopped,
     Running,
@@ -104,13 +104,18 @@ impl Supervisor {
             anyhow::bail!("supervisor already has a running process");
         }
 
-        let child = Command::new(binary_path)
+        let mut child = Command::new(binary_path)
             .args(spawn_args(port))
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .spawn()
             .context("failed to spawn zeroclaw gateway")?;
+
+        // Drain stdout/stderr into the log. Piped streams with no reader will
+        // fill the OS buffer (~64 KB) and stall the gateway; draining also
+        // surfaces boot errors instead of a silent crash-loop.
+        drain_child_streams(&mut child, connection_id);
 
         *guard = Some(Managed {
             connection_id,
@@ -163,7 +168,7 @@ impl Supervisor {
             .retain(|t| now.duration_since(*t) < RESTART_WINDOW);
 
         if managed.restarts.len() >= MAX_RESTARTS as usize {
-            eprintln!(
+            log::warn!(
                 "[supervisor] too many restarts for {}",
                 managed.connection_id
             );
@@ -184,13 +189,14 @@ impl Supervisor {
             .stderr(std::process::Stdio::piped())
             .spawn()
         {
-            Ok(new_child) => {
+            Ok(mut new_child) => {
+                drain_child_streams(&mut new_child, managed.connection_id);
                 managed.child = new_child;
                 managed.restarts.push(std::time::Instant::now());
                 true
             }
             Err(e) => {
-                eprintln!("[supervisor] restart failed: {e}");
+                log::error!("[supervisor] restart failed: {e}");
                 false
             }
         }
@@ -203,10 +209,27 @@ impl Supervisor {
     }
 }
 
+/// Hand the child's stdout/stderr to the shared line-drain task pool.
+///
+/// Takes the pipes out of `child` so they have a reader; otherwise a chatty
+/// gateway would fill its pipe buffer and block. stdout → info, stderr → warn.
+fn drain_child_streams(child: &mut Child, connection_id: Uuid) {
+    crate::process_io::spawn_line_drain(
+        child.stdout.take(),
+        format!("gateway:{connection_id}:out"),
+        log::Level::Info,
+    );
+    crate::process_io::spawn_line_drain(
+        child.stderr.take(),
+        format!("gateway:{connection_id}:err"),
+        log::Level::Warn,
+    );
+}
+
 /// Helper: shutdown supervisor on app exit.
 pub async fn shutdown_on_exit(supervisor: SharedSupervisor) {
     let _ = supervisor.stop().await;
-    eprintln!("[supervisor] managed process shut down");
+    log::info!("[supervisor] managed process shut down");
 }
 
 #[cfg(test)]

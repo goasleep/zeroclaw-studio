@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Transport {
     /// Direct loopback (`http://127.0.0.1:PORT`).
@@ -33,7 +33,7 @@ pub enum Transport {
     Tailscale,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Lifecycle {
     /// We spawn `zeroclaw` ourselves and own its lifetime.
@@ -44,7 +44,7 @@ pub enum Lifecycle {
     Remote,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 pub struct SshConfig {
     pub host: String,
     pub user: String,
@@ -57,7 +57,7 @@ pub struct SshConfig {
     pub local_forward_port: Option<u16>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthMode {
     /// Use the gateway's pairing flow to mint a fresh token.
@@ -66,7 +66,7 @@ pub enum AuthMode {
     Token,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct AuthConfig {
     pub mode: AuthMode,
     /// Stored bearer token. Persisted alongside the connection (Phase 2 will
@@ -83,7 +83,7 @@ impl Default for AuthConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 pub struct Connection {
     pub id: Uuid,
     pub name: String,

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Loader2, Pause, Play, RefreshCw } from "lucide-react";
 import { apiLogs } from "@/api/client";
+import type { LogEvent } from "@/api/client";
 
 export function LogsPanel() {
-  const [lines, setLines] = useState<
-    Array<{ level: string; message: string; ts?: string }>
-  >([]);
+  const [events, setEvents] = useState<LogEvent[]>([]);
   const [paused, setPaused] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -13,7 +12,7 @@ export function LogsPanel() {
     setBusy(true);
     try {
       const r = await apiLogs();
-      setLines(r.lines);
+      setEvents(r.events ?? []);
     } catch {
       /* ignore */
     } finally {
@@ -31,7 +30,7 @@ export function LogsPanel() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
-        <span className="text-neutral-400">{lines.length} lines</span>
+        <span className="text-neutral-400">{events.length} lines</span>
         <div className="flex-1" />
         <button
           type="button"
@@ -55,23 +54,26 @@ export function LogsPanel() {
         </button>
       </header>
       <div className="flex-1 overflow-auto bg-neutral-950 px-3 py-2 font-mono text-[11px]">
-        {lines.length === 0 ? (
+        {events.length === 0 ? (
           <p className="text-neutral-500">No log lines.</p>
         ) : (
-          lines.map((l, i) => (
+          events.map((e, i) => (
             <div key={i} className="leading-relaxed">
+              <span className="text-neutral-600">
+                {e["@timestamp"].replace("T", " ").slice(0, 19)}
+              </span>{" "}
               <span
                 className={
-                  l.level === "ERROR"
+                  e.severity_text === "ERROR"
                     ? "text-red-400"
-                    : l.level === "WARN"
+                    : e.severity_text === "WARN"
                       ? "text-amber-300"
                       : "text-neutral-500"
                 }
               >
-                [{l.level}]
+                [{e.severity_text}]
               </span>{" "}
-              <span className="text-neutral-300">{l.message}</span>
+              <span className="text-neutral-300">{e.message}</span>
             </div>
           ))
         )}

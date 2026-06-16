@@ -16,6 +16,7 @@ pub struct WatcherHandle {
 pub type SharedWatcher = Arc<WatcherHandle>;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_open_root(
     state: State<'_, Arc<WorkspaceState>>,
     path: String,
@@ -25,6 +26,7 @@ pub async fn workspace_open_root(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_get_root(
     state: State<'_, Arc<WorkspaceState>>,
 ) -> Result<Option<String>, String> {
@@ -32,6 +34,7 @@ pub async fn workspace_get_root(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_list_dir(path: String) -> Result<Vec<DirEntry>, String> {
     fs::list_dir(std::path::Path::new(&path))
         .await
@@ -39,6 +42,7 @@ pub async fn workspace_list_dir(path: String) -> Result<Vec<DirEntry>, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_read_file(path: String) -> Result<String, String> {
     let bytes = fs::read_file(std::path::Path::new(&path))
         .await
@@ -47,6 +51,7 @@ pub async fn workspace_read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_write_file(path: String, content: String) -> Result<(), String> {
     fs::write_file(std::path::Path::new(&path), content.as_bytes())
         .await
@@ -54,6 +59,7 @@ pub async fn workspace_write_file(path: String, content: String) -> Result<(), S
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_watch_start<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, Arc<WorkspaceState>>,
@@ -80,6 +86,7 @@ pub async fn workspace_watch_start<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn workspace_watch_stop(watcher: State<'_, SharedWatcher>) -> Result<(), String> {
     let mut guard = watcher.inner.lock().await;
     guard.take();

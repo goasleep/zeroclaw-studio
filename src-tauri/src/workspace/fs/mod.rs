@@ -40,7 +40,7 @@ impl WorkspaceState {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DirEntry {
     pub name: String,
     pub path: String,

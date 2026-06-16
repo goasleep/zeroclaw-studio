@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DetectedBinary {
     pub path: PathBuf,
     pub version: Option<String>,

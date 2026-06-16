@@ -8,6 +8,7 @@ use tauri::{AppHandle, Runtime, State};
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn list_connections(
     book: State<'_, SharedConnectionBook>,
 ) -> Result<Vec<Connection>, String> {
@@ -15,6 +16,7 @@ pub async fn list_connections(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_active_connection(
     book: State<'_, SharedConnectionBook>,
 ) -> Result<Option<Connection>, String> {
@@ -22,6 +24,7 @@ pub async fn get_active_connection(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn upsert_connection<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
@@ -33,6 +36,7 @@ pub async fn upsert_connection<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn remove_connection<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
@@ -44,6 +48,7 @@ pub async fn remove_connection<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn set_active_connection<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
@@ -71,6 +76,7 @@ pub async fn set_active_connection<R: Runtime>(
 /// Explicit "re-run activation for the current active connection" command.
 /// Exposed so the UI can offer a retry button when activation fails.
 #[tauri::command]
+#[specta::specta]
 pub async fn reactivate<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,

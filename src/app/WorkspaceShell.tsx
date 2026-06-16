@@ -6,7 +6,7 @@
 // widths (260px / fluid / 300px). We can add draggable resizing later on top
 // of this stable baseline.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Bot,
@@ -23,6 +23,7 @@ import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
 import { FileTree } from "@/workspace/files/FileTree";
 import { ChatPanel } from "@/features/chat/ChatPanel";
+import { AgentSetupWizard } from "@/features/chat/AgentSetupWizard";
 import { MemoryPanel } from "@/features/memory/MemoryPanel";
 import { ConfigPanel } from "@/features/config/ConfigPanel";
 import { CronPanel } from "@/features/cron/CronPanel";
@@ -31,7 +32,7 @@ import { LogsPanel } from "@/features/logs/LogsPanel";
 import { DoctorPanel } from "@/features/doctor/DoctorPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
-import { apiStatus } from "@/api/client";
+import { apiQuickstartState } from "@/api/client";
 
 type Tab =
   | "chat"
@@ -132,21 +133,35 @@ function Center({ tab }: { tab: Tab }) {
 
   useEffect(() => {
     if (tab !== "chat") return;
-    void apiStatus()
+    void apiQuickstartState()
       .then((s) => {
-        const aliases = Object.keys((s.agents as Record<string, unknown>) ?? {});
+        const aliases = s.agents ?? [];
         setAgents(aliases);
         if (aliases.length > 0 && !activeAgent) setActiveAgent(aliases[0]);
       })
       .catch(() => setAgents([]));
   }, [tab, activeAgent]);
 
+  const refreshAgents = useCallback(() => {
+    void apiQuickstartState()
+      .then((s) => {
+        const aliases = s.agents ?? [];
+        setAgents(aliases);
+        if (aliases.length > 0) setActiveAgent(aliases[0]);
+      })
+      .catch(() => setAgents([]));
+  }, []);
+
   if (tab === "chat") {
     if (agents.length === 0) {
-      return <NoAgentsState />;
+      return (
+        <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
+          <AgentSetupWizard onAgentCreated={refreshAgents} />
+        </section>
+      );
     }
     return (
-      <section className="flex min-w-0 flex-col bg-neutral-950">
+      <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
         <header className="flex h-11 shrink-0 items-center gap-1 border-b border-neutral-800 px-3 text-xs">
           {agents.map((alias) => (
             <button
@@ -171,7 +186,7 @@ function Center({ tab }: { tab: Tab }) {
   }
 
   return (
-    <section className="flex min-w-0 flex-col bg-neutral-950">
+    <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
       <header className="flex h-11 shrink-0 items-center border-b border-neutral-800 px-4 text-xs uppercase tracking-wide text-neutral-400">
         {tab}
       </header>
@@ -184,40 +199,6 @@ function Center({ tab }: { tab: Tab }) {
         {tab === "doctor" && <DoctorPanel />}
         {tab === "devices" && <DevicesPanel />}
         {tab === "integrations" && <IntegrationsPanel />}
-      </div>
-    </section>
-  );
-}
-
-function NoAgentsState() {
-  return (
-    <section className="flex min-h-0 min-w-0 items-center justify-center bg-neutral-950 p-8">
-      <div className="max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-center shadow-2xl">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 text-orange-300">
-          <Bot size={24} />
-        </div>
-        <h2 className="mb-2 text-lg font-semibold text-neutral-100">
-          No agents configured yet
-        </h2>
-        <p className="mb-5 text-sm leading-relaxed text-neutral-400">
-          The local gateway is online, but it doesn't have an agent to chat
-          with. Configure one from the Config tab or run Quickstart from the
-          ZeroClaw CLI once; future setup can be moved fully into this app.
-        </p>
-        <div className="flex justify-center gap-2">
-          <button
-            type="button"
-            className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-medium text-neutral-950 hover:bg-orange-400"
-          >
-            Open Config
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-neutral-300 hover:border-orange-500 hover:text-orange-300"
-          >
-            Learn setup
-          </button>
-        </div>
       </div>
     </section>
   );

@@ -12,7 +12,6 @@ use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener};
 use std::process::Stdio;
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -99,17 +98,20 @@ impl TunnelRegistry {
 
         let mut child = cmd.spawn().context("spawn ssh")?;
 
-        // Wait briefly for the forward to come up. If ssh exits early we surface that.
-        if let Some(stderr) = child.stderr.take() {
-            // Drain stderr into the log so a misconfigured host produces a
-            // useful error message instead of silent failure.
-            tokio::spawn(async move {
-                let mut lines = BufReader::new(stderr).lines();
-                while let Ok(Some(line)) = lines.next_line().await {
-                    eprintln!("[ssh:{connection_id}] {line}");
-                }
-            });
-        }
+        // Drain both streams into the log. A misconfigured host produces a
+        // useful error message instead of a silent failure, and draining is
+        // required anyway — ssh writing to a full pipe buffer would block and
+        // stall the forward.
+        crate::process_io::spawn_line_drain(
+            child.stdout.take(),
+            format!("ssh:{connection_id}"),
+            log::Level::Info,
+        );
+        crate::process_io::spawn_line_drain(
+            child.stderr.take(),
+            format!("ssh:{connection_id}"),
+            log::Level::Warn,
+        );
 
         // Poll the local port for a few seconds until the forward is accepted.
         let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(10);

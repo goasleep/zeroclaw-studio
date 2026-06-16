@@ -7,6 +7,9 @@
 
 use anyhow::{Context, Result};
 
+/// Default per-request timeout for callers that build their own client.
+const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
 pub struct GatewayClient {
     pub(crate) base_url: String,
     pub(crate) token: Option<String>,
@@ -14,11 +17,21 @@ pub struct GatewayClient {
 }
 
 impl GatewayClient {
+    /// Build a client that owns a fresh `reqwest::Client` (with a 10s timeout).
+    /// Prefer [`GatewayClient::new_with_client`] when an app-wide shared
+    /// connection pool is available, so keep-alive and TLS state are reused.
     pub fn new(base_url: &str, token: Option<&str>) -> Self {
         let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
+            .timeout(DEFAULT_TIMEOUT)
             .build()
             .unwrap_or_default();
+        Self::new_with_client(base_url, token, client)
+    }
+
+    /// Wrap an existing shared `reqwest::Client` (cheap clone — the connection
+    /// pool is reference-counted internally). Use this on hot paths so every
+    /// request reuses the same keep-alive connections.
+    pub fn new_with_client(base_url: &str, token: Option<&str>, client: reqwest::Client) -> Self {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             token: token.map(String::from),

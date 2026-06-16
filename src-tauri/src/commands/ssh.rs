@@ -6,6 +6,7 @@ use tauri::{AppHandle, Runtime, State};
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn ssh_open_tunnel<R: Runtime>(
     app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
@@ -34,6 +35,7 @@ pub async fn ssh_open_tunnel<R: Runtime>(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn ssh_close_tunnel(tunnels: State<'_, TunnelRegistry>, id: Uuid) -> Result<(), String> {
     tunnels.close(id).await;
     Ok(())
