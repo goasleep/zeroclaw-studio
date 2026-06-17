@@ -9,6 +9,16 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getActiveConnection } from "@/api/tauri";
 
+export type ChatMode = "chat" | "acp";
+
+export type FileEntry = {
+  path?: string | null;
+  data_b64?: string | null;
+  filename: string;
+  mime_type: string;
+  source: "file" | "clipboard";
+};
+
 export type ChatFrame =
   | { type: "session_start"; session_id: string; name?: string; resumed: boolean; message_count: number }
   | { type: "connected"; [k: string]: unknown }
@@ -24,17 +34,19 @@ export type ChatFrame =
       arguments_summary: string;
       timeout_secs?: number;
     }
-  | { type: "done"; full_response: string }
+  | { type: "done"; full_response: string; cost_usd?: number }
   | { type: "aborted" }
   | { type: "error"; message: string };
 
 export type ChatOutbound =
-  | { type: "message"; content: string }
+  | { type: "message"; content: string; attachments?: FileEntry[] }
   | { type: "approval_response"; request_id: string; decision: "approve" | "deny" | "always" }
   | { type: "connect"; session_id?: string; device_name?: string; capabilities?: string[]; workspace_dir?: string };
 
 export interface ChatClientOpts {
   agentAlias: string;
+  mode?: ChatMode;
+  workspaceDir?: string | null;
   sessionId?: string;
   onFrame: (frame: ChatFrame) => void;
   onOpen?: () => void;
@@ -144,6 +156,8 @@ export class ChatClient {
         agent_alias: this.opts.agentAlias,
         session_id: sessionId,
         token: conn.auth.token ?? "",
+        mode: this.opts.mode ?? "chat",
+        workspace_dir: this.opts.workspaceDir ?? null,
       },
     }).catch((err) => {
       this.unlisten?.();

@@ -17,9 +17,11 @@ import type { Result } from "./bindings";
 import type {
   ChatCloseRequest,
   ChatConnectRequest,
+  ChatFileEntry,
   ChatSendRequest,
   Connection,
   GatewayHttpRequest,
+  PrepareChatAttachmentsRequest,
 } from "./bindings";
 
 /** Unpack a specta `Result` union into a throwing promise (Tauri's native IPC
@@ -38,6 +40,8 @@ export type {
   ChatCloseRequest,
   ChatConnectRequest,
   ChatError,
+  ChatFileEntry,
+  ChatMode,
   ChatSendRequest,
   ChatSessionInfo,
   Connection,
@@ -50,6 +54,7 @@ export type {
   InstallInstructions,
   Lifecycle,
   PairResult,
+  PrepareChatAttachmentsRequest,
   SshConfig,
   SupervisorStatus,
   Transport,
@@ -120,6 +125,9 @@ export const chatSend = (req: ChatSendRequest) => unwrap(commands.chatSend(req))
 
 export const chatDisconnect = (req: ChatCloseRequest) =>
   unwrap(commands.chatDisconnect(req));
+
+export const prepareChatAttachments = (req: PrepareChatAttachmentsRequest) =>
+  unwrap(commands.prepareChatAttachments(req)) as Promise<ChatFileEntry[]>;
 
 // ---- Runtime commands ----
 
