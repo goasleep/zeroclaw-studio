@@ -39,6 +39,14 @@ async chatDisconnect(req: ChatCloseRequest) : Promise<Result<null, ChatError>> {
     else return { status: "error", error: e  as any };
 }
 },
+async prepareChatAttachments(req: PrepareChatAttachmentsRequest) : Promise<Result<ChatFileEntry[], ChatError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("prepare_chat_attachments", { req }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async listConnections() : Promise<Result<Connection[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_connections") };
@@ -265,8 +273,10 @@ export type AuthMode =
  */
 "token"
 export type ChatCloseRequest = { session_id: string }
-export type ChatConnectRequest = { url: string; agent_alias: string; session_id: string | null; token: string }
+export type ChatConnectRequest = { url: string; agent_alias: string; session_id: string | null; token: string; mode: ChatMode | null; workspace_dir: string | null }
 export type ChatError = { message: string }
+export type ChatFileEntry = { path: string | null; data_b64: string | null; filename: string; mime_type: string; source: string }
+export type ChatMode = "chat" | "acp"
 export type ChatSendRequest = { session_id: string; frame: string }
 export type ChatSessionInfo = { session_id: string }
 export type Connection = { id: string; name: string; transport: Transport; 
@@ -312,6 +322,7 @@ export type Lifecycle =
  */
 "remote"
 export type PairResult = { outcome: string; token: string | null }
+export type PrepareChatAttachmentsRequest = { paths: string[]; connection_id: string }
 export type SshConfig = { host: string; user: string; port: number | null; 
 /**
  * Path to the SSH private key. `None` falls back to ssh-agent / default ids.

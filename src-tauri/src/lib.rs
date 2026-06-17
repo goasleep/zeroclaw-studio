@@ -177,6 +177,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::chat::chat_connect::<tauri::Wry>,
         commands::chat::chat_send,
         commands::chat::chat_disconnect,
+        commands::chat::prepare_chat_attachments,
         commands::connection::list_connections,
         commands::connection::get_active_connection,
         commands::connection::upsert_connection::<tauri::Wry>,
