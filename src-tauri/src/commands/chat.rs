@@ -231,7 +231,36 @@ fn build_ws_url(
     ws_url
         .query_pairs_mut()
         .append_pair("session_id", session_id)
+        .append_pair("agent", alias)
         .append_pair("name", alias)
         .append_pair("token", token);
     Ok(ws_url)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_ws_url;
+
+    #[test]
+    fn build_ws_url_includes_agent_alias_for_gateway_0_8() {
+        let url = build_ws_url("http://127.0.0.1:42617", "zeroclaw", "sid", "zc_token")
+            .expect("valid websocket url");
+
+        assert_eq!(url.scheme(), "ws");
+        assert_eq!(url.path(), "/ws/chat");
+
+        let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
+        assert_eq!(pairs.get("session_id").map(String::as_str), Some("sid"));
+        assert_eq!(pairs.get("agent").map(String::as_str), Some("zeroclaw"));
+        assert_eq!(pairs.get("name").map(String::as_str), Some("zeroclaw"));
+        assert_eq!(pairs.get("token").map(String::as_str), Some("zc_token"));
+    }
+
+    #[test]
+    fn build_ws_url_uses_wss_for_https_gateways() {
+        let url = build_ws_url("https://example.test:42617", "alice", "sid", "zc_token")
+            .expect("valid websocket url");
+
+        assert_eq!(url.scheme(), "wss");
+    }
 }
