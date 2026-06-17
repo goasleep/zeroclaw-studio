@@ -6,6 +6,7 @@ import {
   Bot,
   ChevronRight,
   Clock,
+  Code2,
   Cog,
   Database,
   FolderOpen,
@@ -34,7 +35,7 @@ import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { apiQuickstartState } from "@/api/client";
 
-type Page = "chat" | "settings";
+type Page = "chat" | "code" | "settings";
 type SettingsSection =
   | "app"
   | "gateway-config"
@@ -67,6 +68,9 @@ export function WorkspaceShell() {
   const [page, setPage] = useState<Page>("chat");
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("app");
+  const [configFocusSection, setConfigFocusSection] = useState<string | null>(
+    null,
+  );
   const [agents, setAgents] = useState<string[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
 
@@ -91,7 +95,7 @@ export function WorkspaceShell() {
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-neutral-950 text-neutral-100">
-      {page === "chat" ? (
+      {page === "chat" || page === "code" ? (
         <div className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden">
           <Sidebar
             page={page}
@@ -101,6 +105,7 @@ export function WorkspaceShell() {
             onActiveAgent={setActiveAgent}
           />
           <ChatMain
+            mode={page === "code" ? "acp" : "chat"}
             agents={agents}
             activeAgent={activeAgent}
             onActiveAgent={setActiveAgent}
@@ -112,6 +117,8 @@ export function WorkspaceShell() {
           section={settingsSection}
           onSection={setSettingsSection}
           onBackToChat={() => setPage("chat")}
+          configFocusSection={configFocusSection}
+          onConfigFocusSection={setConfigFocusSection}
         />
       )}
     </div>
@@ -177,6 +184,18 @@ function Sidebar({
           <MessageSquare size={14} />
           <span className="min-w-0 flex-1 truncate">Chat</span>
         </button>
+        <button
+          type="button"
+          onClick={() => onPage("code")}
+          className={`mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
+            page === "code"
+              ? "bg-orange-500/10 text-orange-200"
+              : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+          }`}
+        >
+          <Code2 size={14} />
+          <span className="min-w-0 flex-1 truncate">Code</span>
+        </button>
       </nav>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -196,10 +215,10 @@ function Sidebar({
                   type="button"
                   onClick={() => {
                     onActiveAgent(alias);
-                    onPage("chat");
+                    onPage(page === "code" ? "code" : "chat");
                   }}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
-                    activeAgent === alias && page === "chat"
+                    activeAgent === alias && (page === "chat" || page === "code")
                       ? "bg-neutral-800 text-neutral-100"
                       : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
                   }`}
@@ -259,16 +278,21 @@ function Sidebar({
 }
 
 function ChatMain({
+  mode,
   agents,
   activeAgent,
   onActiveAgent,
   onAgentCreated,
 }: {
+  mode: "chat" | "acp";
   agents: string[];
   activeAgent: string | null;
   onActiveAgent: (agent: string) => void;
   onAgentCreated: () => void;
 }) {
+  const { root } = useWorkspace();
+  const isCode = mode === "acp";
+
   if (agents.length === 0) {
     return (
       <section className="flex min-w-0 flex-col overflow-hidden bg-neutral-950">
@@ -283,7 +307,7 @@ function ChatMain({
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <MessageSquare size={14} className="shrink-0 text-orange-400" />
           <span className="truncate font-medium text-neutral-100">
-            {activeAgent ?? "Chat"}
+            {activeAgent ? `${isCode ? "Code" : "Chat"} / ${activeAgent}` : isCode ? "Code" : "Chat"}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -304,7 +328,13 @@ function ChatMain({
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
-        {activeAgent && <ChatPanel agentAlias={activeAgent} />}
+        {activeAgent && (
+          <ChatPanel
+            agentAlias={activeAgent}
+            mode={mode}
+            workspaceDir={isCode ? root : null}
+          />
+        )}
       </div>
     </section>
   );
@@ -314,10 +344,14 @@ function SettingsPage({
   section,
   onSection,
   onBackToChat,
+  configFocusSection,
+  onConfigFocusSection,
 }: {
   section: SettingsSection;
   onSection: (section: SettingsSection) => void;
   onBackToChat: () => void;
+  configFocusSection: string | null;
+  onConfigFocusSection: (section: string | null) => void;
 }) {
   const current = SETTINGS_SECTIONS.find((s) => s.id === section);
 
@@ -339,11 +373,20 @@ function SettingsPage({
         </header>
         <div className="min-h-0 flex-1 overflow-hidden">
           {section === "app" && <AppSettings />}
-          {section === "gateway-config" && <ConfigPanel />}
+          {section === "gateway-config" && (
+            <ConfigPanel focusSection={configFocusSection} />
+          )}
           {section === "memory" && <MemoryPanel />}
           {section === "cron" && <CronPanel />}
           {section === "tools" && <ToolsPanel />}
-          {section === "integrations" && <IntegrationsPanel />}
+          {section === "integrations" && (
+            <IntegrationsPanel
+              onConfigure={(targetSection) => {
+                onConfigFocusSection(targetSection);
+                onSection("gateway-config");
+              }}
+            />
+          )}
           {section === "logs" && <LogsPanel />}
           {section === "doctor" && <DoctorPanel />}
           {section === "devices" && <DevicesPanel />}
