@@ -1,23 +1,23 @@
-// Main workspace shell — stable three-column layout.
-//
-// Earlier builds used react-resizable-panels v4. Its default sizing could
-// collapse sidebars to single-character columns in Tauri WebView, producing
-// the "split / broken" look. The shell now starts from explicit CSS grid
-// widths (260px / fluid / 300px). We can add draggable resizing later on top
-// of this stable baseline.
+// Main workspace shell — Codex-style chat surface with a separate Settings page.
 
 import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Bot,
+  ChevronRight,
+  Clock,
   Cog,
   Database,
   FolderOpen,
-  ListChecks,
+  HardDrive,
+  Home,
   MessageSquare,
-  Server,
+  PlugZap,
+  Settings,
+  Stethoscope,
   Terminal,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
@@ -34,43 +34,104 @@ import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { apiQuickstartState } from "@/api/client";
 
-type Tab =
-  | "chat"
+type Page = "chat" | "settings";
+type SettingsSection =
+  | "app"
+  | "gateway-config"
   | "memory"
-  | "config"
   | "cron"
   | "tools"
+  | "integrations"
   | "logs"
   | "doctor"
-  | "devices"
-  | "integrations";
+  | "devices";
 
-const TABS: Array<{ id: Tab; label: string; icon: typeof Bot }> = [
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "memory", label: "Memory", icon: Database },
-  { id: "config", label: "Config", icon: Cog },
-  { id: "cron", label: "Cron", icon: ListChecks },
-  { id: "tools", label: "Tools", icon: Bot },
-  { id: "integrations", label: "Integrations", icon: Server },
-  { id: "logs", label: "Logs", icon: Terminal },
-  { id: "doctor", label: "Doctor", icon: Server },
-  { id: "devices", label: "Devices", icon: Server },
+const SETTINGS_SECTIONS: Array<{
+  id: SettingsSection;
+  label: string;
+  group: "App" | "Gateway" | "Operations";
+  icon: typeof Cog;
+}> = [
+  { id: "app", label: "App", group: "App", icon: Settings },
+  { id: "gateway-config", label: "Gateway Config", group: "Gateway", icon: Cog },
+  { id: "memory", label: "Memory", group: "Operations", icon: Database },
+  { id: "cron", label: "Cron", group: "Operations", icon: Clock },
+  { id: "tools", label: "Tools", group: "Operations", icon: Wrench },
+  { id: "integrations", label: "Integrations", group: "Operations", icon: PlugZap },
+  { id: "logs", label: "Logs", group: "Operations", icon: Terminal },
+  { id: "doctor", label: "Doctor", group: "Operations", icon: Stethoscope },
+  { id: "devices", label: "Devices", group: "Operations", icon: HardDrive },
 ];
 
 export function WorkspaceShell() {
-  const [tab, setTab] = useState<Tab>("chat");
+  const [page, setPage] = useState<Page>("chat");
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("app");
+  const [agents, setAgents] = useState<string[]>([]);
+  const [activeAgent, setActiveAgent] = useState<string | null>(null);
+
+  const loadAgents = useCallback(() => {
+    void apiQuickstartState()
+      .then((s) => {
+        const aliases = s.agents ?? [];
+        setAgents(aliases);
+        setActiveAgent((current) =>
+          current && aliases.includes(current) ? current : (aliases[0] ?? null),
+        );
+      })
+      .catch(() => {
+        setAgents([]);
+        setActiveAgent(null);
+      });
+  }, []);
+
+  useEffect(() => {
+    loadAgents();
+  }, [loadAgents]);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[260px_minmax(420px,1fr)_300px] overflow-hidden bg-neutral-950">
-      <Sidebar tab={tab} onTab={setTab} />
-      <Center tab={tab} />
-      <Inspector />
+    <div className="h-full min-h-0 overflow-hidden bg-neutral-950 text-neutral-100">
+      {page === "chat" ? (
+        <div className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden">
+          <Sidebar
+            page={page}
+            onPage={setPage}
+            agents={agents}
+            activeAgent={activeAgent}
+            onActiveAgent={setActiveAgent}
+          />
+          <ChatMain
+            agents={agents}
+            activeAgent={activeAgent}
+            onActiveAgent={setActiveAgent}
+            onAgentCreated={loadAgents}
+          />
+        </div>
+      ) : (
+        <SettingsPage
+          section={settingsSection}
+          onSection={setSettingsSection}
+          onBackToChat={() => setPage("chat")}
+        />
+      )}
     </div>
   );
 }
 
-function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
-  const { root, setRoot } = useWorkspace();
+function Sidebar({
+  page,
+  onPage,
+  agents,
+  activeAgent,
+  onActiveAgent,
+}: {
+  page: Page;
+  onPage: (p: Page) => void;
+  agents: string[];
+  activeAgent: string | null;
+  onActiveAgent: (agent: string) => void;
+}) {
+  const { root, setRoot, selectedFiles, clearSelection } = useWorkspace();
 
   async function pickRoot() {
     const chosen = await openDialog({ directory: true, multiple: false });
@@ -81,156 +142,80 @@ function Sidebar({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {
 
   return (
     <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-neutral-800 px-3 text-xs">
-        <FolderOpen size={14} className="shrink-0 text-orange-400" />
-        <span className="min-w-0 flex-1 truncate text-neutral-300" title={root ?? "no workspace"}>
-          {root ? root.split("/").slice(-1)[0] : "No folder open"}
-        </span>
-        <button
-          type="button"
-          onClick={() => void pickRoot()}
-          className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
-        >
-          {root ? "Change" : "Open"}
-        </button>
+      <header className="shrink-0 border-b border-neutral-800 p-3">
+        <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <FolderOpen size={14} className="shrink-0 text-orange-400" />
+          <span>Project</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <span
+            className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-100"
+            title={root ?? "no workspace"}
+          >
+            {root ? root.split("/").slice(-1)[0] : "No folder open"}
+          </span>
+          <button
+            type="button"
+            onClick={() => void pickRoot()}
+            className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
+          >
+            {root ? "Change" : "Open"}
+          </button>
+        </div>
       </header>
 
-      <nav className="shrink-0 border-b border-neutral-800 py-1">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onTab(t.id)}
-            className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs transition ${
-              tab === t.id
-                ? "bg-orange-500/10 text-orange-200"
-                : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
-            }`}
-          >
-            <t.icon size={13} className="shrink-0" />
-            <span className="truncate">{t.label}</span>
-          </button>
-        ))}
+      <nav className="shrink-0 border-b border-neutral-800 p-2">
+        <button
+          type="button"
+          onClick={() => onPage("chat")}
+          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
+            page === "chat"
+              ? "bg-orange-500/10 text-orange-200"
+              : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+          }`}
+        >
+          <MessageSquare size={14} />
+          <span className="min-w-0 flex-1 truncate">Chat</span>
+        </button>
       </nav>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {root ? (
-          <FileTree />
-        ) : (
-          <div className="m-3 rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs leading-relaxed text-neutral-500">
-            Open a folder to use local files as context. Selected files appear
-            in the right panel and are attached to your next chat turn.
-          </div>
-        )}
-      </div>
-    </aside>
-  );
-}
-
-function Center({ tab }: { tab: Tab }) {
-  const [agents, setAgents] = useState<string[]>([]);
-  const [activeAgent, setActiveAgent] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (tab !== "chat") return;
-    void apiQuickstartState()
-      .then((s) => {
-        const aliases = s.agents ?? [];
-        setAgents(aliases);
-        if (aliases.length > 0 && !activeAgent) setActiveAgent(aliases[0]);
-      })
-      .catch(() => setAgents([]));
-  }, [tab, activeAgent]);
-
-  const refreshAgents = useCallback(() => {
-    void apiQuickstartState()
-      .then((s) => {
-        const aliases = s.agents ?? [];
-        setAgents(aliases);
-        if (aliases.length > 0) setActiveAgent(aliases[0]);
-      })
-      .catch(() => setAgents([]));
-  }, []);
-
-  if (tab === "chat") {
-    if (agents.length === 0) {
-      return (
-        <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
-          <AgentSetupWizard onAgentCreated={refreshAgents} />
-        </section>
-      );
-    }
-    return (
-      <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
-        <header className="flex h-11 shrink-0 items-center gap-1 border-b border-neutral-800 px-3 text-xs">
-          {agents.map((alias) => (
-            <button
-              key={alias}
-              type="button"
-              onClick={() => setActiveAgent(alias)}
-              className={`rounded-md px-2 py-1 transition ${
-                activeAgent === alias
-                  ? "bg-orange-500/15 text-orange-200"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
-              }`}
-            >
-              {alias}
-            </button>
-          ))}
-        </header>
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {activeAgent && <ChatPanel agentAlias={activeAgent} />}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="flex min-w-0 flex-col h-full overflow-hidden bg-neutral-950">
-      <header className="flex h-11 shrink-0 items-center border-b border-neutral-800 px-4 text-xs uppercase tracking-wide text-neutral-400">
-        {tab}
-      </header>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        {tab === "memory" && <MemoryPanel />}
-        {tab === "config" && <ConfigPanel />}
-        {tab === "cron" && <CronPanel />}
-        {tab === "tools" && <ToolsPanel />}
-        {tab === "logs" && <LogsPanel />}
-        {tab === "doctor" && <DoctorPanel />}
-        {tab === "devices" && <DevicesPanel />}
-        {tab === "integrations" && <IntegrationsPanel />}
-      </div>
-    </section>
-  );
-}
-
-function Inspector() {
-  const { selectedFiles, clearSelection } = useWorkspace();
-  const { active } = useConnections();
-
-  return (
-    <aside className="flex min-w-0 flex-col border-l border-neutral-800 bg-neutral-950 text-xs">
-      <header className="flex h-11 shrink-0 items-center border-b border-neutral-800 px-3 uppercase tracking-wide text-neutral-400">
-        Context
-      </header>
-      <div className="min-h-0 flex-1 overflow-auto p-3">
-        <section className="mb-5">
-          <h3 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
-            Active connection
-          </h3>
-          {active ? (
-            <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-2 font-mono text-neutral-300">
-              <div className="truncate text-xs font-medium text-neutral-100">{active.name}</div>
-              <div className="mt-1 truncate text-[10px] text-neutral-500">{active.url}</div>
+        <section className="border-b border-neutral-800 p-3">
+          <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
+            Chats
+          </h2>
+          {agents.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs leading-relaxed text-neutral-500">
+              No agents yet. Complete setup in the main panel to start chatting.
             </div>
           ) : (
-            <div className="text-neutral-500">none</div>
+            <div className="space-y-1">
+              {agents.map((alias) => (
+                <button
+                  key={alias}
+                  type="button"
+                  onClick={() => {
+                    onActiveAgent(alias);
+                    onPage("chat");
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
+                    activeAgent === alias && page === "chat"
+                      ? "bg-neutral-800 text-neutral-100"
+                      : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                  }`}
+                >
+                  <Bot size={13} className="shrink-0 text-orange-400" />
+                  <span className="min-w-0 flex-1 truncate">{alias}</span>
+                  {activeAgent === alias && <ChevronRight size={12} />}
+                </button>
+              ))}
+            </div>
           )}
         </section>
 
-        <section>
-          <h3 className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wide text-neutral-500">
-            <span>Chat attachments ({selectedFiles.length})</span>
+        <section className="p-3">
+          <h2 className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wide text-neutral-500">
+            <span>Chat Context ({selectedFiles.length})</span>
             {selectedFiles.length > 0 && (
               <button
                 type="button"
@@ -241,27 +226,264 @@ function Inspector() {
                 clear
               </button>
             )}
-          </h3>
-          {selectedFiles.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 leading-relaxed text-neutral-500">
-              Select files in the tree to attach them to your next chat
-              message.
+          </h2>
+          {root ? (
+            <div className="overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+              <FileTree />
             </div>
           ) : (
-            <ul className="space-y-1">
-              {selectedFiles.map((p) => (
-                <li
-                  key={p}
-                  className="truncate rounded bg-neutral-900/60 px-2 py-1 font-mono text-[10px] text-neutral-300"
-                  title={p}
-                >
-                  {p.split("/").slice(-1)[0]}
-                </li>
-              ))}
-            </ul>
+            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs leading-relaxed text-neutral-500">
+              Open a folder to use local files as context. Selected files are
+              attached to your next chat turn.
+            </div>
           )}
         </section>
       </div>
+
+      <footer className="shrink-0 border-t border-neutral-800 p-2">
+        <button
+          type="button"
+          onClick={() => onPage("settings")}
+          className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
+            page === "settings"
+              ? "bg-orange-500/10 text-orange-200"
+              : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+          }`}
+        >
+          <Settings size={14} />
+          <span className="min-w-0 flex-1 truncate">Settings</span>
+        </button>
+      </footer>
     </aside>
+  );
+}
+
+function ChatMain({
+  agents,
+  activeAgent,
+  onActiveAgent,
+  onAgentCreated,
+}: {
+  agents: string[];
+  activeAgent: string | null;
+  onActiveAgent: (agent: string) => void;
+  onAgentCreated: () => void;
+}) {
+  if (agents.length === 0) {
+    return (
+      <section className="flex min-w-0 flex-col overflow-hidden bg-neutral-950">
+        <AgentSetupWizard onAgentCreated={onAgentCreated} />
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex min-w-0 flex-col overflow-hidden bg-neutral-950">
+      <header className="flex h-12 shrink-0 items-center gap-2 border-b border-neutral-800 px-4 text-xs">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <MessageSquare size={14} className="shrink-0 text-orange-400" />
+          <span className="truncate font-medium text-neutral-100">
+            {activeAgent ?? "Chat"}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {agents.map((alias) => (
+            <button
+              key={alias}
+              type="button"
+              onClick={() => onActiveAgent(alias)}
+              className={`rounded-md px-2 py-1 transition ${
+                activeAgent === alias
+                  ? "bg-orange-500/15 text-orange-200"
+                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+              }`}
+            >
+              {alias}
+            </button>
+          ))}
+        </div>
+      </header>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {activeAgent && <ChatPanel agentAlias={activeAgent} />}
+      </div>
+    </section>
+  );
+}
+
+function SettingsPage({
+  section,
+  onSection,
+  onBackToChat,
+}: {
+  section: SettingsSection;
+  onSection: (section: SettingsSection) => void;
+  onBackToChat: () => void;
+}) {
+  const current = SETTINGS_SECTIONS.find((s) => s.id === section);
+
+  return (
+    <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-neutral-950">
+      <SettingsNav
+        section={section}
+        onSection={onSection}
+        onBackToChat={onBackToChat}
+      />
+      <main className="flex min-w-0 flex-col overflow-hidden border-l border-neutral-800">
+        <header className="flex h-16 shrink-0 flex-col justify-center border-b border-neutral-800 px-8">
+          <h1 className="truncate text-lg font-semibold text-neutral-100">
+            {current?.label ?? "Settings"}
+          </h1>
+          <p className="truncate text-xs text-neutral-500">
+            {current?.group ?? "Settings"}
+          </p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {section === "app" && <AppSettings />}
+          {section === "gateway-config" && <ConfigPanel />}
+          {section === "memory" && <MemoryPanel />}
+          {section === "cron" && <CronPanel />}
+          {section === "tools" && <ToolsPanel />}
+          {section === "integrations" && <IntegrationsPanel />}
+          {section === "logs" && <LogsPanel />}
+          {section === "doctor" && <DoctorPanel />}
+          {section === "devices" && <DevicesPanel />}
+        </div>
+      </main>
+    </section>
+  );
+}
+
+function SettingsNav({
+  section,
+  onSection,
+  onBackToChat,
+}: {
+  section: SettingsSection;
+  onSection: (section: SettingsSection) => void;
+  onBackToChat: () => void;
+}) {
+  const groups: Array<"App" | "Gateway" | "Operations"> = [
+    "App",
+    "Gateway",
+    "Operations",
+  ];
+
+  return (
+    <aside className="flex min-h-0 flex-col bg-neutral-950">
+      <header className="shrink-0 border-b border-neutral-800 p-3">
+        <button
+          type="button"
+          onClick={onBackToChat}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-neutral-100"
+        >
+          <Home size={14} />
+          <span className="min-w-0 flex-1 truncate">Back to app</span>
+        </button>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        {groups.map((group) => (
+          <section key={group} className="mb-5">
+            <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
+              {group}
+            </h2>
+            <div className="space-y-1">
+              {SETTINGS_SECTIONS.filter((s) => s.group === group).map(
+                ({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => onSection(id)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition ${
+                      section === id
+                        ? "bg-orange-500/10 text-orange-200"
+                        : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                    }`}
+                  >
+                    <Icon size={14} className="shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
+                  </button>
+                ),
+              )}
+            </div>
+          </section>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function AppSettings() {
+  const { active, connections, health, activation } = useConnections();
+  const { root, selectedFiles } = useWorkspace();
+  const online = active && health?.connection_id === active.id && health.healthy;
+
+  return (
+    <div className="h-full overflow-auto p-5 text-sm">
+      <div className="mx-auto max-w-3xl space-y-4">
+        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">
+            Connection
+          </h2>
+          {active ? (
+            <dl className="grid gap-3 text-xs sm:grid-cols-2">
+              <InfoItem label="Name" value={active.name} />
+              <InfoItem label="Status" value={online ? "Online" : "Offline"} />
+              <InfoItem label="Transport" value={active.transport} />
+              <InfoItem label="Lifecycle" value={active.lifecycle} />
+              <InfoItem label="URL" value={active.url || "pending tunnel"} wide />
+            </dl>
+          ) : (
+            <p className="text-xs text-neutral-500">No active connection.</p>
+          )}
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">
+            Workspace
+          </h2>
+          <dl className="grid gap-3 text-xs sm:grid-cols-2">
+            <InfoItem label="Folder" value={root ?? "No folder open"} wide />
+            <InfoItem label="Chat attachments" value={String(selectedFiles.length)} />
+            <InfoItem label="Saved connections" value={String(connections.length)} />
+            <InfoItem
+              label="Activation"
+              value={activation ? activation.type : "idle"}
+            />
+          </dl>
+        </section>
+
+        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+          <h2 className="mb-2 text-sm font-medium text-neutral-100">
+            App Settings
+          </h2>
+          <p className="text-xs leading-relaxed text-neutral-500">
+            This page reflects current app state and gateway operations. Local
+            UI preferences are not persisted yet.
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function InfoItem({
+  label,
+  value,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  return (
+    <div className={wide ? "sm:col-span-2" : undefined}>
+      <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
+        {label}
+      </dt>
+      <dd className="truncate rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-neutral-300">
+        {value}
+      </dd>
+    </div>
   );
 }
