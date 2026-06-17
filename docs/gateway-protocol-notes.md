@@ -167,7 +167,7 @@ Bearer-protected. Event JSON: `{ "type": <kind>, ... }`. Observed kinds:
 `agent_end`, `cron_result`, `error`. History endpoint returns a ring buffer
 snapshot.
 
-### WS: `GET /ws/chat?session_id=...&name=...&token=...`
+### WS: `GET /ws/chat?session_id=...&agent=...&name=...&token=...`
 
 Bidirectional agent chat. Subprotocols `["zeroclaw.v1", "bearer.<token>"]`.
 
