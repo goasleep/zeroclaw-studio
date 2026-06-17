@@ -102,18 +102,8 @@ export class ChatClient {
     if (!conn) throw new Error("no active connection");
     if (!conn.url) throw new Error("active connection has no URL");
 
-    const info = await invoke<{ session_id: string }>("chat_connect", {
-      req: {
-        url: conn.url,
-        agent_alias: this.opts.agentAlias,
-        session_id: this.opts.sessionId,
-        token: conn.auth.token ?? "",
-      },
-    });
-
-    this.sessionId = info.session_id;
-    this.retryAttempt = 0;
-    this.opts.onOpen?.();
+    const sessionId = this.opts.sessionId ?? crypto.randomUUID();
+    this.sessionId = sessionId;
 
     this.unlisten = await listen<ChatFrameEvent>(
       CHAT_FRAME_EVENT,
@@ -133,20 +123,40 @@ export class ChatClient {
 
     // Watch for the Rust-side connection closing and reconnect unless the
     // client was explicitly closed.
-    listen<ChatCloseEvent>(CHAT_CLOSE_EVENT, (event) => {
-      if (event.payload.session_id !== this.sessionId) return;
+    const unlistenClose = await listen<ChatCloseEvent>(
+      CHAT_CLOSE_EVENT,
+      (event) => {
+        if (event.payload.session_id !== this.sessionId) return;
+        this.unlisten?.();
+        this.unlisten = null;
+        if (!this.closed) {
+          void this.reconnect();
+        } else {
+          this.opts.onClose?.();
+        }
+      },
+    );
+    this.closeListeners.push(unlistenClose);
+
+    const info = await invoke<{ session_id: string }>("chat_connect", {
+      req: {
+        url: conn.url,
+        agent_alias: this.opts.agentAlias,
+        session_id: sessionId,
+        token: conn.auth.token ?? "",
+      },
+    }).catch((err) => {
       this.unlisten?.();
       this.unlisten = null;
-      if (!this.closed) {
-        void this.reconnect();
-      } else {
-        this.opts.onClose?.();
-      }
-    }).then((unlistenClose) => {
-      // Keep the close listener alive while this client exists. It will be
-      // dropped naturally when the client is closed/reconnected.
-      this.closeListeners.push(unlistenClose);
+      this.closeListeners.forEach((u) => u());
+      this.closeListeners = [];
+      this.sessionId = null;
+      throw err;
     });
+
+    this.sessionId = info.session_id;
+    this.retryAttempt = 0;
+    this.opts.onOpen?.();
   }
 
   private async reconnect(): Promise<void> {

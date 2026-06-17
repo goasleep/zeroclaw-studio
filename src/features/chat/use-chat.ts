@@ -10,7 +10,11 @@ import {
   useState,
 } from "react";
 import { ChatClient, type ChatFrame } from "@/api/ws-chat";
-import { apiFetch } from "@/api/client";
+import {
+  apiFetch,
+  apiSessionMessages,
+  type SessionMessage,
+} from "@/api/client";
 
 const SESSION_KEY = (alias: string) => `zeroclaw_session_id.${alias}`;
 
@@ -37,6 +41,8 @@ export interface ChatMessage {
 
 type Action =
   | { type: "reset" }
+  | { type: "select-session"; sessionId: string | null }
+  | { type: "hydrate"; sessionId: string; messages: ChatMessage[] }
   | { type: "push-user"; content: string }
   | { type: "frame"; frame: ChatFrame };
 
@@ -49,10 +55,28 @@ function uid() {
   return crypto.randomUUID();
 }
 
+function fromSessionMessage(message: SessionMessage): ChatMessage | null {
+  if (message.role !== "user" && message.role !== "assistant") return null;
+  return {
+    id: uid(),
+    role: message.role,
+    content: message.content,
+    toolCalls: [],
+    status: "done",
+  };
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "reset":
       return { messages: [], sessionId: state.sessionId };
+    case "select-session":
+      return { messages: [], sessionId: action.sessionId };
+    case "hydrate":
+      if (state.sessionId !== action.sessionId || state.messages.length > 0) {
+        return state;
+      }
+      return { ...state, messages: action.messages };
     case "push-user":
       return {
         ...state,
@@ -150,16 +174,37 @@ export function useChat(agentAlias: string) {
   });
   const [connected, setConnected] = useState(false);
   const clientRef = useRef<ChatClient | null>(null);
+  const hydratedSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!agentAlias) return;
+    const storedSessionId = localStorage.getItem(SESSION_KEY(agentAlias));
+    hydratedSessionRef.current = null;
+    dispatch({ type: "select-session", sessionId: storedSessionId });
+
+    async function hydrateSession(sessionId: string, messageCount?: number) {
+      if (hydratedSessionRef.current === sessionId) return;
+      hydratedSessionRef.current = sessionId;
+      if (messageCount !== undefined && messageCount <= 0) return;
+      try {
+        const transcript = await apiSessionMessages(sessionId);
+        const messages = transcript.messages
+          .map(fromSessionMessage)
+          .filter((m): m is ChatMessage => m !== null);
+        dispatch({ type: "hydrate", sessionId, messages });
+      } catch {
+        hydratedSessionRef.current = null;
+      }
+    }
+
     const client = new ChatClient({
       agentAlias,
-      sessionId: state.sessionId ?? undefined,
+      sessionId: storedSessionId ?? undefined,
       onFrame: (frame) => {
         dispatch({ type: "frame", frame });
         if (frame.type === "session_start") {
           localStorage.setItem(SESSION_KEY(agentAlias), frame.session_id);
+          void hydrateSession(frame.session_id, frame.message_count);
         }
         // Bridge to native notification handler in App.tsx.
         if (frame.type === "approval_request") {

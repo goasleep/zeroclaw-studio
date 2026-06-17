@@ -140,6 +140,18 @@ export const apiHealth = () =>
   apiFetch<{ status: string; require_pairing?: boolean }>("/api/health");
 export const apiSessions = () =>
   apiFetch<{ sessions: Array<{ id: string; name?: string }> }>("/api/sessions");
+export interface SessionMessage {
+  role: string;
+  content: string;
+  created_at?: string | null;
+}
+
+export const apiSessionMessages = (sessionId: string) =>
+  apiFetch<{
+    session_id: string;
+    messages: SessionMessage[];
+    session_persistence: boolean;
+  }>(`/api/sessions/${encodeURIComponent(sessionId)}/messages`);
 export const apiMemory = () =>
   apiFetch<{ entries: Array<{ key: string; value: unknown }> }>("/api/memory");
 export const apiTools = () =>
