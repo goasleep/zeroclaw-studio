@@ -41,14 +41,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void migrateLegacyLocalState().then(workspaceGetState).then((state) => {
-      if (cancelled) return;
-      setRootState(state.current_root);
-      setRecentRoots(state.recent_roots);
-      if (state.current_root) {
-        void workspaceWatchStart(state.current_root);
-      }
-    });
+    void migrateLegacyLocalState()
+      .then(workspaceGetState)
+      .then((state) => {
+        if (cancelled) return;
+        setRootState(state.current_root);
+        setRecentRoots(state.recent_roots);
+        if (state.current_root) {
+          void workspaceWatchStart(state.current_root);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -100,16 +102,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       clearSelection,
       changeNonce,
     }),
-    [
-      root,
-      recentRoots,
-      setRoot,
-      selectedFiles,
-      addFiles,
-      toggleFile,
-      clearSelection,
-      changeNonce,
-    ],
+    [root, recentRoots, setRoot, selectedFiles, addFiles, toggleFile, clearSelection, changeNonce],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -117,7 +110,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
 export function useWorkspace() {
   const ctx = useContext(Ctx);
-  if (!ctx)
-    throw new Error("useWorkspace must be used inside <WorkspaceProvider>");
+  if (!ctx) throw new Error("useWorkspace must be used inside <WorkspaceProvider>");
   return ctx;
 }

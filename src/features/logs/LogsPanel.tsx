@@ -45,11 +45,7 @@ export function LogsPanel() {
           onClick={() => void poll()}
           className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
         >
-          {busy ? (
-            <Loader2 size={10} className="animate-spin" />
-          ) : (
-            <RefreshCw size={10} />
-          )}
+          {busy ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
           Refresh
         </button>
       </header>

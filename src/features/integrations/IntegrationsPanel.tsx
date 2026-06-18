@@ -9,12 +9,7 @@ import {
   Search,
   TriangleAlert,
 } from "lucide-react";
-import {
-  apiChannels,
-  apiIntegrations,
-  type ChannelInfo,
-  type IntegrationInfo,
-} from "@/api/client";
+import { apiChannels, apiIntegrations, type ChannelInfo, type IntegrationInfo } from "@/api/client";
 
 type LoadState =
   | { kind: "loading" }
@@ -23,11 +18,7 @@ type LoadState =
 
 const CATEGORY_ORDER = ["Chat", "AiModel", "ToolsAutomation", "Platform"];
 
-export function IntegrationsPanel({
-  onConfigure,
-}: {
-  onConfigure?: (section: string) => void;
-}) {
+export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: string) => void }) {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [filter, setFilter] = useState("");
   const [category, setCategory] = useState("All");
@@ -37,18 +28,14 @@ export function IntegrationsPanel({
   async function refresh() {
     setState({ kind: "loading" });
     try {
-      const [integrations, channels] = await Promise.all([
-        apiIntegrations(),
-        apiChannels(),
-      ]);
+      const [integrations, channels] = await Promise.all([apiIntegrations(), apiChannels()]);
       setState({
         kind: "ready",
         integrations: integrations.integrations,
         channels: channels.channels,
       });
       setSelected((current) =>
-        current &&
-        integrations.integrations.some((item) => item.name === current)
+        current && integrations.integrations.some((item) => item.name === current)
           ? current
           : (integrations.integrations[0]?.name ?? null),
       );
@@ -82,14 +69,15 @@ export function IntegrationsPanel({
       const matchesFilter =
         !q ||
         [item.name, item.description, item.category, item.status, aliases].some((v) =>
-          String(v ?? "").toLowerCase().includes(q),
+          String(v ?? "")
+            .toLowerCase()
+            .includes(q),
         );
       return matchesCategory && matchesStatus && matchesFilter;
     });
   }, [category, channels, filter, integrations, status]);
   const grouped = useMemo(() => groupIntegrations(filtered), [filtered]);
-  const selectedItem =
-    integrations.find((item) => item.name === selected) ?? filtered[0] ?? null;
+  const selectedItem = integrations.find((item) => item.name === selected) ?? filtered[0] ?? null;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[360px_minmax(0,1fr)] overflow-hidden">
@@ -184,9 +172,7 @@ export function IntegrationsPanel({
                     >
                       <CategoryIcon category={item.category} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-medium">
-                          {item.name}
-                        </span>
+                        <span className="block truncate text-xs font-medium">{item.name}</span>
                         <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
                           {item.description || aliasesSummary(aliases) || statusLabel(item.status)}
                         </span>
@@ -207,11 +193,7 @@ export function IntegrationsPanel({
       </aside>
 
       <main className="min-w-0 overflow-hidden">
-        <IntegrationDetail
-          item={selectedItem}
-          channels={channels}
-          onConfigure={onConfigure}
-        />
+        <IntegrationDetail item={selectedItem} channels={channels} onConfigure={onConfigure} />
       </main>
     </div>
   );
@@ -231,12 +213,10 @@ function IntegrationDetail({
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
           <PlugZap size={28} className="mx-auto mb-3 text-neutral-600" />
-          <h2 className="text-sm font-medium text-neutral-200">
-            Select an integration
-          </h2>
+          <h2 className="text-sm font-medium text-neutral-200">Select an integration</h2>
           <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
-            Choose an integration to inspect status, configured aliases, and the
-            related config section.
+            Choose an integration to inspect status, configured aliases, and the related config
+            section.
           </p>
         </div>
       </div>
@@ -255,18 +235,14 @@ function IntegrationDetail({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-base font-semibold text-neutral-100">
-                {item.name}
-              </h2>
+              <h2 className="truncate text-base font-semibold text-neutral-100">{item.name}</h2>
               <StatusBadge status={item.status} />
               <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
                 {categoryLabel(item.category)}
               </span>
             </div>
             {item.description && (
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                {item.description}
-              </p>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{item.description}</p>
             )}
           </div>
           {onConfigure && (
@@ -334,9 +310,7 @@ function ChannelRow({ channel }: { channel: ChannelInfo }) {
     <div className="grid gap-3 px-4 py-3 text-xs sm:grid-cols-[minmax(0,1fr)_160px]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-neutral-200">
-            {channel.alias ?? channel.name}
-          </span>
+          <span className="font-mono text-neutral-200">{channel.alias ?? channel.name}</span>
           {channel.enabled !== undefined && (
             <StatusBadge status={channel.enabled ? "Active" : "Available"} />
           )}
@@ -344,9 +318,7 @@ function ChannelRow({ channel }: { channel: ChannelInfo }) {
         <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-neutral-500">
           {channel.type && <span>type {channel.type}</span>}
           {channel.owning_agent && <span>agent {channel.owning_agent}</span>}
-          {channel.message_count !== undefined && (
-            <span>{channel.message_count} messages</span>
-          )}
+          {channel.message_count !== undefined && <span>{channel.message_count} messages</span>}
         </div>
       </div>
       <div className="space-y-1 text-right text-[10px] text-neutral-500 sm:text-left">
@@ -361,9 +333,7 @@ function ChannelRow({ channel }: { channel: ChannelInfo }) {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
-        {label}
-      </dt>
+      <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">{label}</dt>
       <dd className="truncate rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-neutral-300">
         {value}
       </dd>
@@ -371,13 +341,7 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CategoryIcon({
-  category,
-  size = 13,
-}: {
-  category?: string;
-  size?: number;
-}) {
+function CategoryIcon({ category, size = 13 }: { category?: string; size?: number }) {
   if (category === "Chat") return <Bot size={size} className="shrink-0 text-cyan-300" />;
   if (category === "AiModel") {
     return <CheckCircle2 size={size} className="shrink-0 text-emerald-400" />;
@@ -391,9 +355,7 @@ function StatusBadge({ status }: { status?: string }) {
   return (
     <span
       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
-        active
-          ? "bg-emerald-500/10 text-emerald-300"
-          : "bg-white/[0.05] text-neutral-500"
+        active ? "bg-emerald-500/10 text-emerald-300" : "bg-white/[0.05] text-neutral-500"
       }`}
     >
       {label}

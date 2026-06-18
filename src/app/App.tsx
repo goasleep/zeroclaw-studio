@@ -28,8 +28,7 @@ function Shell() {
       console.info("deep-link", url.host, url.pathname);
     }
     window.addEventListener("zeroclaw://deep-link", onDeepLink);
-    return () =>
-      window.removeEventListener("zeroclaw://deep-link", onDeepLink);
+    return () => window.removeEventListener("zeroclaw://deep-link", onDeepLink);
   }, []);
 
   useEffect(() => {
@@ -38,8 +37,7 @@ function Shell() {
       if (action === "retry-active-connection") void retry();
     }
     window.addEventListener("zeroclaw://tray-action", onTrayAction);
-    return () =>
-      window.removeEventListener("zeroclaw://tray-action", onTrayAction);
+    return () => window.removeEventListener("zeroclaw://tray-action", onTrayAction);
   }, [retry]);
 
   if (loading) {
@@ -66,12 +64,7 @@ function Shell() {
         )}
       </main>
 
-      {addPath && (
-        <AddConnectionDialog
-          initialPath={addPath}
-          onClose={() => setAddPath(null)}
-        />
-      )}
+      {addPath && <AddConnectionDialog initialPath={addPath} onClose={() => setAddPath(null)} />}
     </div>
   );
 }

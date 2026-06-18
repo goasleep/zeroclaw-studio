@@ -4,9 +4,7 @@ import { apiDoctor } from "@/api/client";
 
 export function DoctorPanel() {
   const [busy, setBusy] = useState(false);
-  const [results, setResults] = useState<
-    Array<{ severity: string; message: string }> | null
-  >(null);
+  const [results, setResults] = useState<Array<{ severity: string; message: string }> | null>(null);
 
   async function run() {
     setBusy(true);
@@ -31,11 +29,7 @@ export function DoctorPanel() {
           disabled={busy}
           className="flex items-center gap-1 rounded bg-sky-400 px-2 py-1 text-[10px] font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
         >
-          {busy ? (
-            <Loader2 size={10} className="animate-spin" />
-          ) : (
-            <Play size={10} />
-          )}
+          {busy ? <Loader2 size={10} className="animate-spin" /> : <Play size={10} />}
           Run doctor
         </button>
       </header>

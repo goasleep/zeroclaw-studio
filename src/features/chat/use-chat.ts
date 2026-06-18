@@ -1,20 +1,8 @@
 // Per-agent chat client. Wraps the WS reconnecting client, tracks the
 // message log, exposes session management, attachments, abort, and approvals.
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
-import {
-  ChatClient,
-  type ChatFrame,
-  type ChatMode,
-  type FileEntry,
-} from "@/api/ws-chat";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { ChatClient, type ChatFrame, type ChatMode, type FileEntry } from "@/api/ws-chat";
 import {
   apiSessionAbort,
   apiSessionDelete,
@@ -164,9 +152,7 @@ function reducer(state: State, action: Action): State {
           ];
           break;
         case "tool_result": {
-          const idx = updated.toolCalls
-            .map((t) => t.name)
-            .lastIndexOf(frame.name);
+          const idx = updated.toolCalls.map((t) => t.name).lastIndexOf(frame.name);
           if (idx >= 0) {
             updated.toolCalls = updated.toolCalls.map((t, i) =>
               i === idx ? { ...t, result: frame.output } : t,
@@ -253,13 +239,7 @@ export function useChat({
 
   useEffect(() => {
     if (!state.sessionId || state.messages.length === 0) return;
-    void writeTranscriptCache(
-      workspaceRoot,
-      agentAlias,
-      mode,
-      state.sessionId,
-      state.messages,
-    );
+    void writeTranscriptCache(workspaceRoot, agentAlias, mode, state.sessionId, state.messages);
   }, [agentAlias, mode, workspaceRoot, state.sessionId, state.messages]);
 
   useEffect(() => {
@@ -273,12 +253,7 @@ export function useChat({
     async function hydrateSession(sessionId: string, messageCount?: number) {
       if (hydratedSessionRef.current === sessionId) return;
       hydratedSessionRef.current = sessionId;
-      const cachedMessages = await readTranscriptCache(
-        workspaceRoot,
-        agentAlias,
-        mode,
-        sessionId,
-      );
+      const cachedMessages = await readTranscriptCache(workspaceRoot, agentAlias, mode, sessionId);
       if (cancelled) return;
       if (messageCount !== undefined && messageCount <= 0) {
         if (cachedMessages.length > 0) {
@@ -302,11 +277,9 @@ export function useChat({
     }
 
     async function startClient() {
-      const storedSessionId = await loadSelectedSession(
-        workspaceRoot,
-        agentAlias,
-        mode,
-      ).catch(() => null);
+      const storedSessionId = await loadSelectedSession(workspaceRoot, agentAlias, mode).catch(
+        () => null,
+      );
       if (cancelled) return;
       dispatch({ type: "select-session", sessionId: storedSessionId });
       if (storedSessionId && workspaceRoot) {
@@ -321,12 +294,7 @@ export function useChat({
         onFrame: (frame) => {
           dispatch({ type: "frame", frame });
           if (frame.type === "session_start") {
-            void saveSelectedSession(
-              workspaceRoot,
-              agentAlias,
-              mode,
-              frame.session_id,
-            );
+            void saveSelectedSession(workspaceRoot, agentAlias, mode, frame.session_id);
             void assignSessionWorkspace(frame.session_id, workspaceRoot);
             void hydrateSession(frame.session_id, frame.message_count);
             void refreshSessions();
@@ -365,14 +333,7 @@ export function useChat({
         clientRef.current = null;
       }
     };
-  }, [
-    agentAlias,
-    mode,
-    workspaceRoot,
-    workspaceDir,
-    connectionSeed,
-    refreshSessions,
-  ]);
+  }, [agentAlias, mode, workspaceRoot, workspaceDir, connectionSeed, refreshSessions]);
 
   const selectSession = useCallback(
     (sessionId: string | null) => {
@@ -411,23 +372,20 @@ export function useChat({
     [agentAlias, mode, workspaceRoot, refreshSessions, selectSession, state.sessionId],
   );
 
-  const send = useCallback(
-    (content: string, attachments?: FileEntry[]) => {
-      if (!clientRef.current) return;
-      const attachmentSummary = attachments?.map((a) => ({
-        filename: a.filename,
-        mime_type: a.mime_type,
-        size: a.size,
-      }));
-      dispatch({ type: "push-user", content, attachments: attachmentSummary });
-      clientRef.current.send({
-        type: "message",
-        content,
-        attachments: attachments?.length ? attachments : undefined,
-      });
-    },
-    [],
-  );
+  const send = useCallback((content: string, attachments?: FileEntry[]) => {
+    if (!clientRef.current) return;
+    const attachmentSummary = attachments?.map((a) => ({
+      filename: a.filename,
+      mime_type: a.mime_type,
+      size: a.size,
+    }));
+    dispatch({ type: "push-user", content, attachments: attachmentSummary });
+    clientRef.current.send({
+      type: "message",
+      content,
+      attachments: attachments?.length ? attachments : undefined,
+    });
+  }, []);
 
   const respondToApproval = useCallback(
     (request_id: string, decision: "approve" | "deny" | "always") => {
@@ -515,10 +473,7 @@ export function shortSessionName(id: string) {
   return `session ${id.slice(0, 8)}`;
 }
 
-function mergeTranscripts(
-  gatewayMessages: ChatMessage[],
-  cachedMessages: ChatMessage[],
-) {
+function mergeTranscripts(gatewayMessages: ChatMessage[], cachedMessages: ChatMessage[]) {
   if (cachedMessages.length === 0) return gatewayMessages;
   if (gatewayMessages.length === 0) return cachedMessages;
 

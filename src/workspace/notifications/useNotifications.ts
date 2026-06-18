@@ -38,10 +38,7 @@ export function useNotifications() {
     function onApproval(e: Event) {
       const detail = (e as CustomEvent<{ tool: string }>).detail;
       if (document.visibilityState === "visible") return;
-      void notify(
-        "ZeroClaw approval needed",
-        `${detail.tool} is waiting for approval.`,
-      );
+      void notify("ZeroClaw approval needed", `${detail.tool} is waiting for approval.`);
     }
     function onDone(e: Event) {
       if (document.visibilityState === "visible") return;

@@ -19,9 +19,7 @@ export default defineConfig({
     port: 5183,
     strictPort: true,
     host: host || false,
-    hmr: host
-      ? { protocol: "ws", host, port: 5184 }
-      : undefined,
+    hmr: host ? { protocol: "ws", host, port: 5184 } : undefined,
     watch: {
       // Tauri output dirs that should never trigger HMR
       ignored: ["**/src-tauri/**"],

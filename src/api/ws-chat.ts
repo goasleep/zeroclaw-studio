@@ -6,12 +6,7 @@
 // through Tauri events.
 
 import { listen } from "@tauri-apps/api/event";
-import {
-  chatConnect,
-  chatDisconnect,
-  chatSend,
-  getActiveConnection,
-} from "@/api/tauri";
+import { chatConnect, chatDisconnect, chatSend, getActiveConnection } from "@/api/tauri";
 
 export type ChatMode = "chat" | "acp";
 
@@ -25,7 +20,13 @@ export type FileEntry = {
 };
 
 export type ChatFrame =
-  | { type: "session_start"; session_id: string; name?: string; resumed: boolean; message_count: number }
+  | {
+      type: "session_start";
+      session_id: string;
+      name?: string;
+      resumed: boolean;
+      message_count: number;
+    }
   | { type: "connected"; [k: string]: unknown }
   | { type: "chunk"; content: string }
   | { type: "thinking"; content: string }
@@ -46,7 +47,13 @@ export type ChatFrame =
 export type ChatOutbound =
   | { type: "message"; content: string; attachments?: FileEntry[] }
   | { type: "approval_response"; request_id: string; decision: "approve" | "deny" | "always" }
-  | { type: "connect"; session_id?: string; device_name?: string; capabilities?: string[]; workspace_dir?: string };
+  | {
+      type: "connect";
+      session_id?: string;
+      device_name?: string;
+      capabilities?: string[];
+      workspace_dir?: string;
+    };
 
 export interface ChatClientOpts {
   agentAlias: string;
@@ -118,37 +125,31 @@ export class ChatClient {
     const sessionId = this.opts.sessionId ?? crypto.randomUUID();
     this.sessionId = sessionId;
 
-    this.unlisten = await listen<ChatFrameEvent>(
-      CHAT_FRAME_EVENT,
-      (event) => {
-        if (event.payload.session_id !== this.sessionId) return;
-        try {
-          const frame = JSON.parse(event.payload.frame) as ChatFrame;
-          this.opts.onFrame(frame);
-        } catch (err) {
-          this.opts.onFrame({
-            type: "error",
-            message: `bad frame: ${String(err)}`,
-          });
-        }
-      },
-    );
+    this.unlisten = await listen<ChatFrameEvent>(CHAT_FRAME_EVENT, (event) => {
+      if (event.payload.session_id !== this.sessionId) return;
+      try {
+        const frame = JSON.parse(event.payload.frame) as ChatFrame;
+        this.opts.onFrame(frame);
+      } catch (err) {
+        this.opts.onFrame({
+          type: "error",
+          message: `bad frame: ${String(err)}`,
+        });
+      }
+    });
 
     // Watch for the Rust-side connection closing and reconnect unless the
     // client was explicitly closed.
-    const unlistenClose = await listen<ChatCloseEvent>(
-      CHAT_CLOSE_EVENT,
-      (event) => {
-        if (event.payload.session_id !== this.sessionId) return;
-        this.unlisten?.();
-        this.unlisten = null;
-        if (!this.closed) {
-          void this.reconnect();
-        } else {
-          this.opts.onClose?.();
-        }
-      },
-    );
+    const unlistenClose = await listen<ChatCloseEvent>(CHAT_CLOSE_EVENT, (event) => {
+      if (event.payload.session_id !== this.sessionId) return;
+      this.unlisten?.();
+      this.unlisten = null;
+      if (!this.closed) {
+        void this.reconnect();
+      } else {
+        this.opts.onClose?.();
+      }
+    });
     this.closeListeners.push(unlistenClose);
 
     const info = await chatConnect({

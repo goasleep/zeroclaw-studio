@@ -41,10 +41,7 @@ export async function saveSelectedSession(
   await chatLocalSetSelectedSession(workspaceRoot, mode, agentAlias, sessionId);
 }
 
-export async function assignSessionWorkspace(
-  sessionId: string,
-  workspaceRoot: string | null,
-) {
+export async function assignSessionWorkspace(sessionId: string, workspaceRoot: string | null) {
   await migrateLegacyLocalState();
   if (!workspaceRoot) return;
   await chatLocalAssignSessionWorkspace(sessionId, workspaceRoot);
@@ -53,9 +50,7 @@ export async function assignSessionWorkspace(
 export async function loadSessionWorkspaceMap() {
   await migrateLegacyLocalState();
   const bindings = await chatLocalListSessionWorkspaces();
-  return new Map(
-    bindings.map((binding) => [binding.session_id, binding.workspace_root]),
-  );
+  return new Map(bindings.map((binding) => [binding.session_id, binding.workspace_root]));
 }
 
 export async function readTranscriptCache(
@@ -65,12 +60,7 @@ export async function readTranscriptCache(
   sessionId: string,
 ): Promise<ChatMessage[]> {
   await migrateLegacyLocalState();
-  const raw = await chatLocalGetTranscript(
-    workspaceRoot,
-    mode,
-    agentAlias,
-    sessionId,
-  );
+  const raw = await chatLocalGetTranscript(workspaceRoot, mode, agentAlias, sessionId);
   if (!raw) return [];
   return parseTranscript(raw);
 }
@@ -123,12 +113,7 @@ async function importLegacyChatState() {
       const scope = parseLegacyScopedKey(key, LEGACY_SESSION_PREFIX);
       const sessionId = localStorage.getItem(key);
       if (scope && sessionId) {
-        await chatLocalSetSelectedSession(
-          null,
-          scope.mode,
-          scope.agentAlias,
-          sessionId,
-        );
+        await chatLocalSetSelectedSession(null, scope.mode, scope.agentAlias, sessionId);
         migrated.push(key);
       }
       continue;
@@ -138,13 +123,7 @@ async function importLegacyChatState() {
       const scope = parseLegacyTranscriptKey(key);
       const raw = localStorage.getItem(key);
       if (scope && raw && parseTranscript(raw).length > 0) {
-        await chatLocalSetTranscript(
-          null,
-          scope.mode,
-          scope.agentAlias,
-          scope.sessionId,
-          raw,
-        );
+        await chatLocalSetTranscript(null, scope.mode, scope.agentAlias, scope.sessionId, raw);
         migrated.push(key);
       }
     }

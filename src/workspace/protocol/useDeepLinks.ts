@@ -12,9 +12,7 @@ export function useDeepLinks() {
           const u = new URL(raw);
           if (u.protocol !== "zeroclaw:") continue;
           // host = command (e.g. "agent"), pathname segments = args.
-          window.dispatchEvent(
-            new CustomEvent("zeroclaw://deep-link", { detail: u }),
-          );
+          window.dispatchEvent(new CustomEvent("zeroclaw://deep-link", { detail: u }));
         } catch {
           /* ignore malformed urls */
         }

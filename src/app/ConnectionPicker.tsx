@@ -63,8 +63,7 @@ function activationLabel(step: ActivationStep | null): string | null {
 }
 
 export function ConnectionPicker({ onAdd }: Props) {
-  const { connections, active, activate, health, activation, retry } =
-    useConnections();
+  const { connections, active, activate, health, activation, retry } = useConnections();
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [probes, setProbes] = useState<Record<string, ConnectionProbeResult>>({});
@@ -75,8 +74,7 @@ export function ConnectionPicker({ onAdd }: Props) {
   }>({ loading: false, rows: [], errors: [] });
 
   const healthy = health?.healthy ?? false;
-  const showingActive =
-    active && health?.connection_id === active.id ? healthy : false;
+  const showingActive = active && health?.connection_id === active.id ? healthy : false;
 
   const stepLabel = activationLabel(activation);
   const inFlight =
@@ -134,9 +132,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           .then((r) => rows.push({ label: "Gateway health", value: r.status }))
           .catch((e) => errors.push(`health: ${formatError(e)}`)),
         apiStatus()
-          .then((r) =>
-            rows.push({ label: "Gateway version", value: r.version ?? "unknown" }),
-          )
+          .then((r) => rows.push({ label: "Gateway version", value: r.version ?? "unknown" }))
           .catch((e) => errors.push(`status: ${formatError(e)}`)),
         runtimeStatus()
           .then((r) => rows.push({ label: "Managed runtime", value: String(r) }))
@@ -152,7 +148,9 @@ export function ConnectionPicker({ onAdd }: Props) {
         apiLogs()
           .then((r) => {
             const recentError = r.events.find((ev) =>
-              String(ev.severity_text ?? "").toLowerCase().includes("error"),
+              String(ev.severity_text ?? "")
+                .toLowerCase()
+                .includes("error"),
             );
             rows.push({
               label: "Recent log error",
@@ -199,9 +197,7 @@ export function ConnectionPicker({ onAdd }: Props) {
             showingActive ? "bg-emerald-400" : "bg-white/[0.18]"
           }`}
         />
-        <span className="min-w-0 flex-1 truncate">
-          {active ? active.name : "No connection"}
-        </span>
+        <span className="min-w-0 flex-1 truncate">{active ? active.name : "No connection"}</span>
         {active && (
           <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-neutral-400">
             {transportLabel(active)}
@@ -216,9 +212,7 @@ export function ConnectionPicker({ onAdd }: Props) {
             Runtimes
           </div>
           {connections.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-neutral-500">
-              No saved connections yet.
-            </div>
+            <div className="px-3 py-3 text-xs text-neutral-500">No saved connections yet.</div>
           ) : (
             <div className="max-h-72 overflow-y-auto py-1">
               {connections.map((c) => (
@@ -272,11 +266,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           }`}
           title={activation?.type === "failed" ? activation.message : stepLabel}
         >
-          {inFlight ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : (
-            <TriangleAlert size={12} />
-          )}
+          {inFlight ? <Loader2 size={12} className="animate-spin" /> : <TriangleAlert size={12} />}
           {stepLabel}
         </span>
       )}
@@ -314,17 +304,11 @@ export function ConnectionPicker({ onAdd }: Props) {
             ) : (
               <div className="space-y-2">
                 {activeDetails.rows.map((row) => (
-                  <div
-                    key={row.label}
-                    className="grid grid-cols-[120px_minmax(0,1fr)] gap-2"
-                  >
+                  <div key={row.label} className="grid grid-cols-[120px_minmax(0,1fr)] gap-2">
                     <span className="text-[10px] uppercase tracking-wide text-neutral-500">
                       {row.label}
                     </span>
-                    <span
-                      className="truncate font-mono text-neutral-300"
-                      title={row.value}
-                    >
+                    <span className="truncate font-mono text-neutral-300" title={row.value}>
                       {row.value}
                     </span>
                   </div>

@@ -18,7 +18,9 @@ function FileNode({ entry, depth }: NodeProps) {
 
   useEffect(() => {
     if (entry.isDir && open) {
-      void workspaceListDir(entry.path).then(setChildren).catch(() => setChildren([]));
+      void workspaceListDir(entry.path)
+        .then(setChildren)
+        .catch(() => setChildren([]));
     }
   }, [entry, open, changeNonce]);
 
@@ -80,7 +82,9 @@ export function FileTree() {
       setTop(null);
       return;
     }
-    void workspaceListDir(root).then(setTop).catch(() => setTop([]));
+    void workspaceListDir(root)
+      .then(setTop)
+      .catch(() => setTop([]));
   }, [root, changeNonce]);
 
   if (!root) return null;

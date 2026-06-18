@@ -39,27 +39,26 @@ export function SettingsPage({
 
   return (
     <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-[#020818]/90">
-      <SettingsNav
-        section={section}
-        onSection={onSection}
-        onBackToChat={onBackToChat}
-      />
+      <SettingsNav section={section} onSection={onSection} onBackToChat={onBackToChat} />
       <main className="flex min-w-0 flex-col overflow-hidden border-l border-white/10">
         <header className="flex h-16 shrink-0 flex-col justify-center border-b border-white/10 px-8">
           <h1 className="truncate text-lg font-semibold text-neutral-100">
             {current?.label ?? "Settings"}
           </h1>
-          <p className="truncate text-xs text-neutral-500">
-            {current?.group ?? "Settings"}
-          </p>
+          <p className="truncate text-xs text-neutral-500">{current?.group ?? "Settings"}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-hidden">
           {section === "app" && <AppSettings />}
           {section === "setup-center" && <SetupCenterPanel />}
-          {section === "gateway-config" && (
-            <ConfigPanel focusSection={configFocusSection} />
+          {section === "gateway-config" && <ConfigPanel focusSection={configFocusSection} />}
+          {section === "memory" && (
+            <MemoryPanel
+              onOpenConfig={() => {
+                onConfigFocusSection("memory");
+                onSection("gateway-config");
+              }}
+            />
           )}
-          {section === "memory" && <MemoryPanel />}
           {section === "cron" && <CronPanel />}
           {section === "tools" && <ToolsPanel />}
           {section === "integrations" && (
@@ -88,11 +87,7 @@ function SettingsNav({
   onSection: (section: SettingsSection) => void;
   onBackToChat: () => void;
 }) {
-  const groups: Array<"App" | "Gateway" | "Operations"> = [
-    "App",
-    "Gateway",
-    "Operations",
-  ];
+  const groups: Array<"App" | "Gateway" | "Operations"> = ["App", "Gateway", "Operations"];
 
   return (
     <aside className="flex min-h-0 flex-col bg-[#020818]/90">
@@ -110,9 +105,7 @@ function SettingsNav({
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {groups.map((group) => (
           <section key={group} className="mb-5">
-            <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
-              {group}
-            </h2>
+            <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">{group}</h2>
             <div className="space-y-1">
               {SETTINGS_SECTIONS.filter((s) => s.group === group).map(
                 ({ id, label, icon: Icon }) => (
@@ -142,8 +135,7 @@ function SettingsNav({
 function AppSettings() {
   const { active, connections, health, activation } = useConnections();
   const { root, selectedFiles } = useWorkspace();
-  const [preferences, setPreferences] =
-    useState<AppPreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = useState<AppPreferences>(DEFAULT_PREFERENCES);
   const online = active && health?.connection_id === active.id && health.healthy;
 
   useEffect(() => {
@@ -164,9 +156,7 @@ function AppSettings() {
     <div className="h-full overflow-auto p-5 text-sm">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-3 text-sm font-medium text-neutral-100">
-            Connection
-          </h2>
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">Connection</h2>
           {active ? (
             <dl className="grid gap-3 text-xs sm:grid-cols-2">
               <InfoItem label="Name" value={active.name} />
@@ -181,24 +171,17 @@ function AppSettings() {
         </section>
 
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-3 text-sm font-medium text-neutral-100">
-            Workspace
-          </h2>
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">Workspace</h2>
           <dl className="grid gap-3 text-xs sm:grid-cols-2">
             <InfoItem label="Folder" value={root ?? "No folder open"} wide />
             <InfoItem label="Chat attachments" value={String(selectedFiles.length)} />
             <InfoItem label="Saved runtimes" value={String(connections.length)} />
-            <InfoItem
-              label="Activation"
-              value={activation ? activation.type : "idle"}
-            />
+            <InfoItem label="Activation" value={activation ? activation.type : "idle"} />
           </dl>
         </section>
 
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-2 text-sm font-medium text-neutral-100">
-            Local Preferences
-          </h2>
+          <h2 className="mb-2 text-sm font-medium text-neutral-100">Local Preferences</h2>
           <div className="space-y-3 text-xs">
             <label className="block">
               <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
@@ -226,9 +209,7 @@ function AppSettings() {
               <input
                 type="checkbox"
                 checked={preferences.notifications}
-                onChange={(e) =>
-                  void updatePreference("notifications", e.target.checked)
-                }
+                onChange={(e) => void updatePreference("notifications", e.target.checked)}
               />
             </label>
             <label className="flex items-center justify-between gap-3 rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5">
@@ -263,9 +244,7 @@ function InfoItem({
 }) {
   return (
     <div className={wide ? "sm:col-span-2" : undefined}>
-      <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
-        {label}
-      </dt>
+      <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">{label}</dt>
       <dd className="truncate rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-neutral-300">
         {value}
       </dd>

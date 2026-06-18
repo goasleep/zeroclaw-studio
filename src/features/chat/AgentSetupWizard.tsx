@@ -1,15 +1,7 @@
 // Agent Setup Wizard — full quickstart builder for the workspace surface.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  AlertCircle,
-  Bot,
-  CheckCircle2,
-  ChevronDown,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, Bot, CheckCircle2, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   apiQuickstartApply,
   apiQuickstartFields,
@@ -76,9 +68,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
         const firstChannel = s.channel_types[0]?.kind ?? "";
         setProviderType(firstProvider);
         setRiskValue(s.risk_presets[0]?.key ?? s.risk_profiles[0] ?? "locked_down");
-        setRuntimeValue(
-          s.runtime_presets[0]?.key ?? s.runtime_profiles[0] ?? "balanced",
-        );
+        setRuntimeValue(s.runtime_presets[0]?.key ?? s.runtime_profiles[0] ?? "balanced");
         setMemoryValue((s.memory_kinds[0] as MemoryChoice | undefined) ?? "sqlite");
         setPersonalityFile(s.personality_files[0] ?? "");
         if (firstChannel) {
@@ -261,9 +251,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
         <div className="max-w-sm rounded-lg border border-white/10 bg-white/[0.05]/50 p-6 text-center">
           <CheckCircle2 size={24} className="mx-auto mb-3 text-green-400" />
-          <h3 className="mb-1 text-sm font-semibold text-neutral-100">
-            Agent created
-          </h3>
+          <h3 className="mb-1 text-sm font-semibold text-neutral-100">Agent created</h3>
           <p className="mb-3 text-xs text-neutral-400">
             Waiting for the gateway to restart and load the new agent.
           </p>
@@ -281,9 +269,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
         <div className="max-w-sm rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center">
           <AlertCircle size={20} className="mx-auto mb-2 text-red-400" />
-          <h3 className="mb-1 text-sm font-semibold text-red-200">
-            Setup unavailable
-          </h3>
+          <h3 className="mb-1 text-sm font-semibold text-red-200">Setup unavailable</h3>
           <p className="text-xs text-red-300/70">{error}</p>
         </div>
       </div>
@@ -298,12 +284,10 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             <Bot size={18} />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-neutral-100">
-              Quickstart Builder
-            </h2>
+            <h2 className="text-base font-semibold text-neutral-100">Quickstart Builder</h2>
             <p className="text-xs text-neutral-500">
-              Create an agent, provider, runtime, memory, channels, and peer
-              groups in one apply step.
+              Create an agent, provider, runtime, memory, channels, and peer groups in one apply
+              step.
             </p>
           </div>
         </header>
@@ -329,18 +313,10 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
               <Input value={providerAlias} onChange={setProviderAlias} />
             </Field>
             <Field label="Model">
-              <Input
-                value={model}
-                onChange={setModel}
-                placeholder="e.g. gpt-5.1-code"
-              />
+              <Input value={model} onChange={setModel} placeholder="e.g. gpt-5.1-code" />
             </Field>
             {fieldDescs.map((f) => (
-              <Field
-                key={f.key}
-                label={`${f.label}${f.required ? " *" : ""}`}
-                help={f.help}
-              >
+              <Field key={f.key} label={`${f.label}${f.required ? " *" : ""}`} help={f.help}>
                 {f.enum_variants ? (
                   <Select
                     value={fieldValues[f.key] ?? f.default ?? ""}
@@ -452,9 +428,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"
-                    onClick={() =>
-                      setChannels((current) => current.filter((_, i) => i !== idx))
-                    }
+                    onClick={() => setChannels((current) => current.filter((_, i) => i !== idx))}
                     className="text-neutral-500 hover:text-red-300"
                   >
                     <Trash2 size={12} />
@@ -465,9 +439,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={channel.channel_type}
                     onChange={(value) =>
                       setChannels((current) =>
-                        current.map((c, i) =>
-                          i === idx ? { ...c, channel_type: value } : c,
-                        ),
+                        current.map((c, i) => (i === idx ? { ...c, channel_type: value } : c)),
                       )
                     }
                   >
@@ -534,9 +506,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"
-                    onClick={() =>
-                      setPeerGroups((current) => current.filter((_, i) => i !== idx))
-                    }
+                    onClick={() => setPeerGroups((current) => current.filter((_, i) => i !== idx))}
                     className="text-neutral-500 hover:text-red-300"
                   >
                     <Trash2 size={12} />
@@ -557,9 +527,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={peer.channel}
                     onChange={(value) =>
                       setPeerGroups((current) =>
-                        current.map((p, i) =>
-                          i === idx ? { ...p, channel: value } : p,
-                        ),
+                        current.map((p, i) => (i === idx ? { ...p, channel: value } : p)),
                       )
                     }
                   />
@@ -569,9 +537,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={peer.external_peers}
                     onChange={(value) =>
                       setPeerGroups((current) =>
-                        current.map((p, i) =>
-                          i === idx ? { ...p, external_peers: value } : p,
-                        ),
+                        current.map((p, i) => (i === idx ? { ...p, external_peers: value } : p)),
                       )
                     }
                   />
@@ -581,9 +547,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={peer.ignore}
                     onChange={(value) =>
                       setPeerGroups((current) =>
-                        current.map((p, i) =>
-                          i === idx ? { ...p, ignore: value } : p,
-                        ),
+                        current.map((p, i) => (i === idx ? { ...p, ignore: value } : p)),
                       )
                     }
                   />
@@ -620,9 +584,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                   <button
                     type="button"
                     onClick={() =>
-                      setPersonalityFiles((current) =>
-                        current.filter((_, i) => i !== idx),
-                      )
+                      setPersonalityFiles((current) => current.filter((_, i) => i !== idx))
                     }
                     className="text-neutral-500 hover:text-red-300"
                   >
@@ -634,9 +596,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={file.filename}
                     onChange={(value) =>
                       setPersonalityFiles((current) =>
-                        current.map((p, i) =>
-                          i === idx ? { ...p, filename: value } : p,
-                        ),
+                        current.map((p, i) => (i === idx ? { ...p, filename: value } : p)),
                       )
                     }
                   />
@@ -646,9 +606,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     value={file.content}
                     onChange={(e) =>
                       setPersonalityFiles((current) =>
-                        current.map((p, i) =>
-                          i === idx ? { ...p, content: e.target.value } : p,
-                        ),
+                        current.map((p, i) => (i === idx ? { ...p, content: e.target.value } : p)),
                       )
                     }
                     rows={5}
@@ -713,9 +671,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] font-medium text-neutral-400">
-        {label}
-      </span>
+      <span className="mb-1 block text-[11px] font-medium text-neutral-400">{label}</span>
       {children}
       {help && <span className="mt-1 block text-[10px] text-neutral-600">{help}</span>}
     </label>
@@ -797,9 +753,7 @@ function ChoiceRow({
             const nextMode = next as "fresh" | "existing";
             onMode(nextMode);
             const nextOptions =
-              nextMode === "existing"
-                ? existing.map((v) => ({ key: v, label: v }))
-                : fresh;
+              nextMode === "existing" ? existing.map((v) => ({ key: v, label: v })) : fresh;
             if (nextOptions[0]) onValue(nextOptions[0].key);
           }}
         >
@@ -830,9 +784,7 @@ function splitList(value: string) {
 }
 
 function formatErrors(errors: Array<{ step: string; field: string; message: string }>) {
-  return errors
-    .map((e) => `${e.step}${e.field ? `.${e.field}` : ""}: ${e.message}`)
-    .join("; ");
+  return errors.map((e) => `${e.step}${e.field ? `.${e.field}` : ""}: ${e.message}`).join("; ");
 }
 
 function errorMessage(e: unknown) {

@@ -141,9 +141,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          {state.kind === "loading" && (
-            <LoadingInline label="Loading config sections..." />
-          )}
+          {state.kind === "loading" && <LoadingInline label="Loading config sections..." />}
           {state.kind === "error" && <ErrorBox message={state.message} />}
           {state.kind === "ready" &&
             filteredGroups.map(({ group, items }) => (
@@ -165,9 +163,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
                     >
                       <SectionStateDot section={section} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs font-medium">
-                          {section.label}
-                        </span>
+                        <span className="block truncate text-xs font-medium">{section.label}</span>
                         <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
                           {section.key}
                         </span>
@@ -267,13 +263,7 @@ function SectionExplorer({
     );
   }
 
-  return (
-    <PickerSection
-      section={section}
-      onTarget={onTarget}
-      onSaved={onSaved}
-    />
-  );
+  return <PickerSection section={section} onTarget={onTarget} onSaved={onSaved} />;
 }
 
 function PickerSection({
@@ -343,9 +333,7 @@ function PickerSection({
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
       <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
         <header className="shrink-0 border-b border-white/10 p-3">
-          <h2 className="truncate text-sm font-semibold text-neutral-100">
-            {section.label}
-          </h2>
+          <h2 className="truncate text-sm font-semibold text-neutral-100">{section.label}</h2>
           {section.help && (
             <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-neutral-500">
               {section.help}
@@ -380,9 +368,7 @@ function PickerSection({
                 }`}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-medium">
-                    {item.label}
-                  </span>
+                  <span className="block truncate text-xs font-medium">{item.label}</span>
                   <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
                     {item.key}
                   </span>
@@ -418,11 +404,7 @@ function PickerSection({
             />
           )
         ) : oneTier ? (
-          <OneTierEmptyPanel
-            section={section}
-            onTarget={onTarget}
-            onSaved={onSaved}
-          />
+          <OneTierEmptyPanel section={section} onTarget={onTarget} onSaved={onSaved} />
         ) : (
           <EmptyState
             icon={<Plus size={28} />}
@@ -560,9 +542,7 @@ function TypedAliasPanel({
             </div>
             <div className="divide-y divide-white/10">
               {aliases.length === 0 ? (
-                <p className="px-4 py-3 text-xs text-neutral-500">
-                  No aliases configured yet.
-                </p>
+                <p className="px-4 py-3 text-xs text-neutral-500">No aliases configured yet.</p>
               ) : (
                 aliases.map((name) => (
                   <button
@@ -767,9 +747,7 @@ function ConfigFieldForm({
                   Back
                 </button>
               )}
-              <h2 className="truncate text-sm font-semibold text-neutral-100">
-                {target.title}
-              </h2>
+              <h2 className="truncate text-sm font-semibold text-neutral-100">{target.title}</h2>
               <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
                 {target.prefix}
               </span>
@@ -828,11 +806,7 @@ function ConfigFieldForm({
         )}
       </header>
       {activeTab === "setup" && setupTargets.length > 0 ? (
-        <SetupDoctorTab
-          prefix={target.prefix}
-          title={target.title}
-          onConfigSaved={onSaved}
-        />
+        <SetupDoctorTab prefix={target.prefix} title={target.title} onConfigSaved={onSaved} />
       ) : (
         <div className="min-h-0 flex-1 overflow-auto p-5">
           {loading && <LoadingInline label="Loading fields..." />}
@@ -847,10 +821,7 @@ function ConfigFieldForm({
           {!loading && entries.length > 0 && (
             <div className="mx-auto max-w-4xl space-y-5">
               {tabs.map(({ label, fields }) => (
-                <section
-                  key={label}
-                  className="rounded-lg border border-white/10 bg-white/[0.035]"
-                >
+                <section key={label} className="rounded-lg border border-white/10 bg-white/[0.035]">
                   <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
                     {label}
                   </h3>
@@ -901,9 +872,7 @@ function FieldRow({
           {entry.is_secret && <Badge label="secret" />}
           {entry.is_env_overridden && <Badge label="env" />}
         </div>
-        <div className="mt-1 truncate font-mono text-[10px] text-neutral-500">
-          {entry.path}
-        </div>
+        <div className="mt-1 truncate font-mono text-[10px] text-neutral-500">{entry.path}</div>
         <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-neutral-500">
           <span>{entry.kind}</span>
           {entry.type_hint && <span>{entry.type_hint}</span>}
@@ -1040,9 +1009,7 @@ function AdvancedConfigEditor() {
         .catch(() => setReloadStatus(null));
       void apiConfigDrift()
         .then((drift) =>
-          setDriftStatus(
-            drift.drifted ? `${drift.drifted.length} drifted paths` : "available",
-          ),
+          setDriftStatus(drift.drifted ? `${drift.drifted.length} drifted paths` : "available"),
         )
         .catch(() => setDriftStatus(null));
       void apiConfigTemplates()
@@ -1067,9 +1034,7 @@ function AdvancedConfigEditor() {
     setError(null);
     try {
       const result = await apiConfigProp(entry.path);
-      const next = entry.is_secret
-        ? ""
-        : formatRawValue(result.value ?? entry.value ?? "");
+      const next = entry.is_secret ? "" : formatRawValue(result.value ?? entry.value ?? "");
       setSeed(next);
       setDraft(next);
     } catch (e) {
@@ -1155,7 +1120,9 @@ function AdvancedConfigEditor() {
     return q
       ? entries.filter((entry) =>
           [entry.path, entry.category, entry.kind, entry.type_hint].some((v) =>
-            String(v ?? "").toLowerCase().includes(q),
+            String(v ?? "")
+              .toLowerCase()
+              .includes(q),
           ),
         )
       : entries;
@@ -1192,9 +1159,7 @@ function AdvancedConfigEditor() {
               }`}
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-mono text-xs">
-                  {leafLabel(entry.path)}
-                </span>
+                <span className="block truncate font-mono text-xs">{leafLabel(entry.path)}</span>
                 <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
                   {entry.path}
                 </span>
@@ -1213,9 +1178,7 @@ function AdvancedConfigEditor() {
                 body="Advanced mode edits one property at a time through /api/config/prop."
               />
               <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-                <h3 className="mb-3 text-sm font-medium text-neutral-100">
-                  Map key tools
-                </h3>
+                <h3 className="mb-3 text-sm font-medium text-neutral-100">Map key tools</h3>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px_160px_auto_auto]">
                   <input
                     value={mapPath}
@@ -1279,9 +1242,7 @@ function AdvancedConfigEditor() {
           <div className="flex h-full flex-col">
             <header className="flex shrink-0 items-start gap-3 border-b border-white/10 px-5 py-4">
               <div className="min-w-0 flex-1">
-                <h2 className="truncate font-mono text-sm text-neutral-100">
-                  {selected.path}
-                </h2>
+                <h2 className="truncate font-mono text-sm text-neutral-100">{selected.path}</h2>
                 <p className="mt-1 text-xs text-neutral-500">
                   {selected.kind} {selected.type_hint}
                 </p>
@@ -1370,15 +1331,7 @@ function AliasCreator({
   );
 }
 
-function SectionHeader({
-  title,
-  code,
-  body,
-}: {
-  title: string;
-  code: string;
-  body?: string;
-}) {
+function SectionHeader({ title, code, body }: { title: string; code: string; body?: string }) {
   return (
     <header>
       <div className="flex flex-wrap items-center gap-2">
@@ -1392,23 +1345,13 @@ function SectionHeader({
   );
 }
 
-function EmptyState({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
+function EmptyState({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
     <div className="flex h-full items-center justify-center p-8 text-center">
       <div>
         <div className="mx-auto mb-3 flex justify-center text-neutral-600">{icon}</div>
         <h2 className="text-sm font-medium text-neutral-200">{title}</h2>
-        <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
-          {body}
-        </p>
+        <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">{body}</p>
       </div>
     </div>
   );

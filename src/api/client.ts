@@ -61,10 +61,7 @@ async function active(): Promise<ActiveSnapshot> {
   return snap;
 }
 
-export async function apiFetch<T = unknown>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const { url, token } = await active();
   const headers: Array<[string, string]> = [];
 
@@ -91,8 +88,7 @@ export async function apiFetch<T = unknown>(
   }
 
   const method = options.method ?? "GET";
-  const body =
-    options.body && typeof options.body === "string" ? options.body : null;
+  const body = options.body && typeof options.body === "string" ? options.body : null;
 
   const res = await gatewayRequest({
     method,
@@ -155,8 +151,7 @@ export interface SessionListItem {
   [k: string]: unknown;
 }
 
-export const apiSessions = () =>
-  apiFetch<{ sessions: SessionListItem[] }>("/api/sessions");
+export const apiSessions = () => apiFetch<{ sessions: SessionListItem[] }>("/api/sessions");
 export interface SessionMessage {
   role: string;
   content: string;
@@ -185,9 +180,7 @@ export const apiSessionAbort = (sessionId: string) =>
 export const apiMemory = () =>
   apiFetch<{ entries: Array<{ key: string; value: unknown }> }>("/api/memory");
 export const apiTools = () =>
-  apiFetch<{ tools: Array<{ name: string; [k: string]: unknown }> }>(
-    "/api/tools",
-  );
+  apiFetch<{ tools: Array<{ name: string; [k: string]: unknown }> }>("/api/tools");
 export interface ChannelInfo {
   name: string;
   type?: string;
@@ -203,12 +196,9 @@ export interface ChannelInfo {
   [k: string]: unknown;
 }
 
-export const apiChannels = () =>
-  apiFetch<{ channels: ChannelInfo[] }>("/api/channels");
+export const apiChannels = () => apiFetch<{ channels: ChannelInfo[] }>("/api/channels");
 export const apiCron = () =>
-  apiFetch<{ jobs: Array<{ id: string; name?: string; [k: string]: unknown }> }>(
-    "/api/cron",
-  );
+  apiFetch<{ jobs: Array<{ id: string; name?: string; [k: string]: unknown }> }>("/api/cron");
 
 export interface IntegrationInfo {
   name: string;
@@ -228,13 +218,9 @@ export interface LogEvent {
 }
 
 export const apiLogs = (params?: URLSearchParams) =>
-  apiFetch<{ events: LogEvent[]; at_end?: boolean }>(
-    `/api/logs${params ? `?${params}` : ""}`,
-  );
+  apiFetch<{ events: LogEvent[]; at_end?: boolean }>(`/api/logs${params ? `?${params}` : ""}`);
 export const apiDoctor = () =>
-  apiFetch<{ results: Array<{ severity: string; message: string }> }>(
-    "/api/doctor",
-  );
+  apiFetch<{ results: Array<{ severity: string; message: string }> }>("/api/doctor");
 export const apiDevices = () =>
   apiFetch<{ devices: Array<{ id: string; name?: string }> }>("/api/devices");
 
@@ -319,11 +305,7 @@ export const apiConfigPicker = (section: string) =>
     `/api/config/sections/${encodeURIComponent(section)}`,
   );
 
-export const apiConfigSelectItem = (
-  section: string,
-  key: string,
-  alias?: string,
-) =>
+export const apiConfigSelectItem = (section: string, key: string, alias?: string) =>
   apiFetch<SelectItemResponse>(
     `/api/config/sections/${encodeURIComponent(section)}/items/${encodeURIComponent(key)}`,
     {
@@ -338,13 +320,10 @@ export const apiConfigList = (prefix?: string) =>
   );
 
 export const apiConfigPatch = (ops: PatchOp[]) =>
-  apiFetch<{ saved: boolean; results: unknown[]; warnings?: unknown[] }>(
-    "/api/config",
-    {
-      method: "PATCH",
-      body: JSON.stringify(ops),
-    },
-  );
+  apiFetch<{ saved: boolean; results: unknown[]; warnings?: unknown[] }>("/api/config", {
+    method: "PATCH",
+    body: JSON.stringify(ops),
+  });
 
 export interface ConfigTemplate {
   key?: string;
@@ -372,19 +351,15 @@ export const apiConfigProp = (path: string, reveal = false) =>
   );
 
 export const apiConfigPutProp = (path: string, value: unknown) =>
-  apiFetch<{ saved?: boolean }>(
-    `/api/config/prop?path=${encodeURIComponent(path)}`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ path, value }),
-    },
-  );
+  apiFetch<{ saved?: boolean }>(`/api/config/prop?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ path, value }),
+  });
 
 export const apiConfigDeleteProp = (path: string) =>
-  apiFetch<{ saved?: boolean }>(
-    `/api/config/prop?path=${encodeURIComponent(path)}`,
-    { method: "DELETE" },
-  );
+  apiFetch<{ saved?: boolean }>(`/api/config/prop?path=${encodeURIComponent(path)}`, {
+    method: "DELETE",
+  });
 
 export const apiConfigTemplates = (section?: string) =>
   apiFetch<{ templates: ConfigTemplate[] }>(
@@ -392,22 +367,13 @@ export const apiConfigTemplates = (section?: string) =>
   );
 
 export const apiConfigMapKeys = (path: string) =>
-  apiFetch<{ keys: ConfigMapKey[] }>(
-    `/api/config/map-key?path=${encodeURIComponent(path)}`,
-  );
+  apiFetch<{ keys: ConfigMapKey[] }>(`/api/config/map-key?path=${encodeURIComponent(path)}`);
 
-export const apiConfigCreateMapKey = (
-  path: string,
-  key: string,
-  template?: string,
-) =>
-  apiFetch<{ path?: string; created?: boolean; fields_prefix?: string }>(
-    "/api/config/map-key",
-    {
-      method: "POST",
-      body: JSON.stringify({ path, key, template }),
-    },
-  );
+export const apiConfigCreateMapKey = (path: string, key: string, template?: string) =>
+  apiFetch<{ path?: string; created?: boolean; fields_prefix?: string }>("/api/config/map-key", {
+    method: "POST",
+    body: JSON.stringify({ path, key, template }),
+  });
 
 export const apiConfigDeleteMapKey = (path: string, key: string) =>
   apiFetch<{ deleted?: boolean }>("/api/config/map-key", {
@@ -416,9 +382,7 @@ export const apiConfigDeleteMapKey = (path: string, key: string) =>
   });
 
 export const apiConfigCatalog = (path?: string) =>
-  apiFetch<unknown>(
-    `/api/config/catalog${path ? `?path=${encodeURIComponent(path)}` : ""}`,
-  );
+  apiFetch<unknown>(`/api/config/catalog${path ? `?path=${encodeURIComponent(path)}` : ""}`);
 
 export const apiConfigDrift = () =>
   apiFetch<{ drifted?: unknown[]; [k: string]: unknown }>("/api/config/drift");
@@ -436,8 +400,7 @@ export interface SkillBundle {
   [k: string]: unknown;
 }
 
-export const apiSkillBundles = () =>
-  apiFetch<{ bundles: SkillBundle[] }>("/api/skills/bundles");
+export const apiSkillBundles = () => apiFetch<{ bundles: SkillBundle[] }>("/api/skills/bundles");
 
 export const apiSkillBundle = (bundleId: string) =>
   apiFetch<SkillBundle>(`/api/skills/bundles/${encodeURIComponent(bundleId)}`);
@@ -513,9 +476,7 @@ export interface BuilderSubmission {
   agent: AgentIdentity;
 }
 
-export type SelectorChoice<T> =
-  | { mode: "existing"; value: string }
-  | { mode: "fresh"; value: T };
+export type SelectorChoice<T> = { mode: "existing"; value: string } | { mode: "fresh"; value: T };
 
 export interface ModelProviderChoice {
   provider_type: string;
@@ -524,13 +485,7 @@ export interface ModelProviderChoice {
   fields: Record<string, string>;
 }
 
-export type MemoryChoice =
-  | "none"
-  | "sqlite"
-  | "postgres"
-  | "qdrant"
-  | "markdown"
-  | "lucid";
+export type MemoryChoice = "none" | "sqlite" | "postgres" | "qdrant" | "markdown" | "lucid";
 
 export interface ChannelQuickStart {
   channel_type: string;

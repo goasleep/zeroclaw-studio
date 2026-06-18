@@ -2,10 +2,7 @@
 // omitted (privacy + battery); the user pulls clipboard text into chat
 // via a dedicated button.
 
-import {
-  readText,
-  writeText,
-} from "@tauri-apps/plugin-clipboard-manager";
+import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 export async function readClipboardText(): Promise<string> {
   try {

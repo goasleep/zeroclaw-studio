@@ -30,15 +30,11 @@ async function preferenceStore() {
 export async function loadPreferences(): Promise<AppPreferences> {
   const store = await preferenceStore();
   return {
-    shortcut:
-      (await store.get<string>("app.preferences.shortcut")) ??
-      DEFAULT_PREFERENCES.shortcut,
+    shortcut: (await store.get<string>("app.preferences.shortcut")) ?? DEFAULT_PREFERENCES.shortcut,
     notifications:
       (await store.get<boolean>("app.preferences.notifications")) ??
       DEFAULT_PREFERENCES.notifications,
-    tray:
-      (await store.get<boolean>("app.preferences.tray")) ??
-      DEFAULT_PREFERENCES.tray,
+    tray: (await store.get<boolean>("app.preferences.tray")) ?? DEFAULT_PREFERENCES.tray,
   };
 }
 

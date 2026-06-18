@@ -1,12 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Boxes,
-  Container,
-  Globe2,
-  PackageCheck,
-  ShieldCheck,
-  TerminalSquare,
-} from "lucide-react";
+import { Boxes, Container, Globe2, PackageCheck, ShieldCheck, TerminalSquare } from "lucide-react";
 import { SetupDoctorTab } from "@/features/config/SetupDoctorTab";
 import type { SetupCapabilityId } from "@/api/tauri";
 
@@ -101,8 +94,7 @@ export function SetupCenterPanel() {
             <h2 className="text-sm font-semibold text-neutral-100">Setup Center</h2>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-neutral-500">
-            Install, configure, and verify local capabilities without opening raw
-            config first.
+            Install, configure, and verify local capabilities without opening raw config first.
           </p>
         </header>
 

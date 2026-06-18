@@ -55,10 +55,7 @@ export function WorkspaceSidebar({
 
   return (
     <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-white/10 bg-[#020818]/90">
-      <WorkspaceHeader
-        connectionName={active?.name ?? null}
-        online={Boolean(online)}
-      />
+      <WorkspaceHeader connectionName={active?.name ?? null} online={Boolean(online)} />
       <ProjectList
         root={root}
         recentRoots={recentRoots}
@@ -76,9 +73,7 @@ export function WorkspaceSidebar({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ThreadNav
-          threads={threads.filter(
-            (thread) => !workspaceMap.has(thread.session_id),
-          )}
+          threads={threads.filter((thread) => !workspaceMap.has(thread.session_id))}
           activeThreadId={activeThreadId}
           loading={threadsLoading}
           error={threadError}
@@ -120,9 +115,7 @@ function WorkspaceHeader({
     <header className="shrink-0 border-b border-white/10 p-3">
       <div className="flex items-center gap-2 text-xs text-neutral-500">
         <Server size={11} className="text-neutral-600" />
-        <span className="min-w-0 flex-1 truncate">
-          {connectionName ?? "No runtime"}
-        </span>
+        <span className="min-w-0 flex-1 truncate">{connectionName ?? "No runtime"}</span>
         <span
           className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/[0.12]"}`}
         />
@@ -202,16 +195,9 @@ function ProjectList({
                     }`}
                     title={path}
                   >
-                    <FolderOpen
-                      size={13}
-                      className="shrink-0 text-cyan-300"
-                    />
-                    <span className="min-w-0 flex-1 truncate">
-                      {basename(path)}
-                    </span>
-                    {path === root && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    )}
+                    <FolderOpen size={13} className="shrink-0 text-cyan-300" />
+                    <span className="min-w-0 flex-1 truncate">{basename(path)}</span>
+                    {path === root && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
                   </button>
                   <button
                     type="button"
@@ -353,9 +339,7 @@ function ThreadButton({
           compact ? "px-1.5 py-1" : "px-2 py-1.5"
         }`}
       >
-        {!compact && (
-          <MessageSquare size={13} className="shrink-0 text-cyan-300" />
-        )}
+        {!compact && <MessageSquare size={13} className="shrink-0 text-cyan-300" />}
         <span className="min-w-0 flex-1">
           <span className="block truncate">{thread.name}</span>
           {!compact && (

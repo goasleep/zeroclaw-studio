@@ -43,14 +43,9 @@ export function ToolsPanel() {
   const tools = state.kind === "ok" ? state.tools : [];
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    return q
-      ? tools.filter((tool) =>
-          JSON.stringify(tool).toLowerCase().includes(q),
-        )
-      : tools;
+    return q ? tools.filter((tool) => JSON.stringify(tool).toLowerCase().includes(q)) : tools;
   }, [filter, tools]);
-  const selectedTool =
-    tools.find((tool) => tool.name === selected) ?? filtered[0] ?? null;
+  const selectedTool = tools.find((tool) => tool.name === selected) ?? filtered[0] ?? null;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
@@ -114,9 +109,7 @@ export function ToolsPanel() {
               >
                 <Wrench size={13} className="shrink-0 text-cyan-300" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-xs">
-                    {tool.name}
-                  </span>
+                  <span className="block truncate font-mono text-xs">{tool.name}</span>
                   <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
                     {toolDescription(tool)}
                   </span>
@@ -141,9 +134,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
           <Wrench size={28} className="mx-auto mb-3 text-neutral-600" />
-          <h2 className="text-sm font-medium text-neutral-200">
-            Select a tool
-          </h2>
+          <h2 className="text-sm font-medium text-neutral-200">Select a tool</h2>
           <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
             Choose a tool to inspect its metadata, schema, and available fields.
           </p>
@@ -170,9 +161,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
             <h2 className="truncate font-mono text-base font-semibold text-neutral-100">
               {tool.name}
             </h2>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-              {description}
-            </p>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500">{description}</p>
           </div>
         </div>
       </header>
@@ -242,11 +231,8 @@ function ToolField({ name, value }: { name: string; value: unknown }) {
 }
 
 function toolDescription(tool: ToolInfo) {
-  const description =
-    tool.description ?? tool.summary ?? tool.help ?? tool.title ?? tool.kind;
-  return typeof description === "string" && description.trim()
-    ? description
-    : "Gateway tool";
+  const description = tool.description ?? tool.summary ?? tool.help ?? tool.title ?? tool.kind;
+  return typeof description === "string" && description.trim() ? description : "Gateway tool";
 }
 
 function isPrimitive(value: unknown) {

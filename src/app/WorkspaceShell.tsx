@@ -9,26 +9,18 @@ import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
 import { SettingsPage } from "./workspace-shell/SettingsPage";
 import { isSettingsSection } from "./workspace-shell/settings-sections";
 import { useThreads } from "./workspace-shell/use-threads";
-import type {
-  SettingsSection,
-  WorkspacePage,
-} from "./workspace-shell/types";
+import type { SettingsSection, WorkspacePage } from "./workspace-shell/types";
 import type { NormalizedSession } from "@/features/chat/use-chat";
 
 export function WorkspaceShell() {
   const { root, addFiles, setRoot } = useWorkspace();
   const [page, setPage] = useState<WorkspacePage>("chat");
-  const [settingsSection, setSettingsSection] =
-    useState<SettingsSection>("app");
-  const [configFocusSection, setConfigFocusSection] = useState<string | null>(
-    null,
-  );
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("app");
+  const [configFocusSection, setConfigFocusSection] = useState<string | null>(null);
   const [agents, setAgents] = useState<string[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-  const [chatScopeRoot, setChatScopeRoot] = useState<string | null | undefined>(
-    undefined,
-  );
+  const [chatScopeRoot, setChatScopeRoot] = useState<string | null | undefined>(undefined);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const threads = useThreads();
   const activeChatWorkspaceRoot = chatScopeRoot === undefined ? root : chatScopeRoot;
@@ -112,9 +104,7 @@ export function WorkspaceShell() {
     if (!pendingSessionId || page !== "chat") return;
     const sessionId = pendingSessionId;
     window.requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent("zeroclaw://select-session", { detail: sessionId }),
-      );
+      window.dispatchEvent(new CustomEvent("zeroclaw://select-session", { detail: sessionId }));
       focusComposer();
     });
     setPendingSessionId(null);

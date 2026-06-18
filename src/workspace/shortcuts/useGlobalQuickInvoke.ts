@@ -48,20 +48,14 @@ export function useGlobalQuickInvoke() {
       }
     }
 
-    window.addEventListener(
-      "zeroclaw://preferences-changed",
-      onPreferencesChanged,
-    );
+    window.addEventListener("zeroclaw://preferences-changed", onPreferencesChanged);
     void loadPreferences()
       .then((prefs) => registerShortcut(prefs.shortcut))
       .catch(() => registerShortcut(DEFAULT_PREFERENCES.shortcut));
 
     return () => {
       disposed = true;
-      window.removeEventListener(
-        "zeroclaw://preferences-changed",
-        onPreferencesChanged,
-      );
+      window.removeEventListener("zeroclaw://preferences-changed", onPreferencesChanged);
       if (registeredShortcut) {
         void unregister(registeredShortcut).catch(() => undefined);
       }

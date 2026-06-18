@@ -17,9 +17,7 @@ interface DataPanelProps<T> {
 
 export function DataPanel<T>({ load, render, empty, what = "data" }: DataPanelProps<T>) {
   const [state, setState] = useState<
-    | { kind: "loading" }
-    | { kind: "ok"; data: T }
-    | { kind: "err"; message: string }
+    { kind: "loading" } | { kind: "ok"; data: T } | { kind: "err"; message: string }
   >({ kind: "loading" });
 
   const fetch = useCallback(async () => {

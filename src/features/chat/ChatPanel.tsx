@@ -68,7 +68,23 @@ function mimeFromPath(path: string) {
   if (ext === "json") return "application/json";
   if (ext === "csv") return "text/csv";
   if (["md", "markdown"].includes(ext)) return "text/markdown";
-  if (["txt", "log", "rs", "ts", "tsx", "js", "jsx", "py", "toml", "yaml", "yml", "html", "css"].includes(ext)) {
+  if (
+    [
+      "txt",
+      "log",
+      "rs",
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "py",
+      "toml",
+      "yaml",
+      "yml",
+      "html",
+      "css",
+    ].includes(ext)
+  ) {
     return "text/plain";
   }
   return "application/octet-stream";
@@ -95,13 +111,14 @@ export function ChatPanel({
   workspaceDir?: string | null;
 }) {
   const { active } = useConnections();
-  const { recentRoots, selectedFiles, addFiles, clearSelection, setRoot } =
-    useWorkspace();
+  const { recentRoots, selectedFiles, addFiles, clearSelection, setRoot } = useWorkspace();
   const [cwd, setCwd] = useState(workspaceDir ?? "");
   const [appliedCwd, setAppliedCwd] = useState(workspaceDir ?? "");
-  const [remoteEntries, setRemoteEntries] = useState<
-    Array<{ path: string; name: string; isDir: boolean }> | null
-  >(null);
+  const [remoteEntries, setRemoteEntries] = useState<Array<{
+    path: string;
+    name: string;
+    isDir: boolean;
+  }> | null>(null);
   const [remoteBrowseAvailable, setRemoteBrowseAvailable] = useState(true);
   const chat = useChat({
     agentAlias,
@@ -153,8 +170,7 @@ export function ChatPanel({
       if (sessionId) chat.selectSession(sessionId);
     }
     window.addEventListener("zeroclaw://select-session", selectSession);
-    return () =>
-      window.removeEventListener("zeroclaw://select-session", selectSession);
+    return () => window.removeEventListener("zeroclaw://select-session", selectSession);
   }, [chat.selectSession]);
 
   useEffect(() => {
@@ -227,9 +243,7 @@ export function ChatPanel({
       setPreview({
         path,
         content:
-          content.length > 80_000
-            ? `${content.slice(0, 80_000)}\n\n[preview truncated]`
-            : content,
+          content.length > 80_000 ? `${content.slice(0, 80_000)}\n\n[preview truncated]` : content,
         loading: false,
       });
     } catch (e) {
@@ -304,9 +318,7 @@ export function ChatPanel({
 
   const isCode = mode === "acp";
   const remoteCode = isCode && active && active.transport !== "local";
-  const currentSession = chat.sessions.find(
-    (session) => session.session_id === chat.sessionId,
-  );
+  const currentSession = chat.sessions.find((session) => session.session_id === chat.sessionId);
   const hasMessages = chat.messages.length > 0;
   const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : "No project";
   const renderComposer = (variant: "center" | "footer") => (
@@ -329,13 +341,7 @@ export function ChatPanel({
             {composerError}
           </div>
         )}
-        <div
-          className={
-            variant === "center"
-              ? "flex min-h-36 flex-col"
-              : "flex items-end gap-2"
-          }
-        >
+        <div className={variant === "center" ? "flex min-h-36 flex-col" : "flex items-end gap-2"}>
           <textarea
             ref={textareaRef}
             value={draft}
@@ -347,7 +353,11 @@ export function ChatPanel({
               }
             }}
             rows={variant === "center" ? 4 : 2}
-            placeholder={variant === "center" ? "Do anything" : `${isCode ? "Ask Code" : "Message"} ${agentAlias}...`}
+            placeholder={
+              variant === "center"
+                ? "Do anything"
+                : `${isCode ? "Ask Code" : "Message"} ${agentAlias}...`
+            }
             className={
               variant === "center"
                 ? "min-h-20 flex-1 resize-none bg-transparent px-2 py-1 text-base text-neutral-100 outline-none placeholder:text-neutral-600"
@@ -416,9 +426,7 @@ export function ChatPanel({
                         title={path}
                       >
                         <FolderOpen size={12} className="text-cyan-300" />
-                        <span className="min-w-0 flex-1 truncate">
-                          {filenameFromPath(path)}
-                        </span>
+                        <span className="min-w-0 flex-1 truncate">{filenameFromPath(path)}</span>
                       </button>
                     ))}
                     <button
@@ -560,11 +568,7 @@ export function ChatPanel({
             </div>
           )}
           {chat.messages.map((m) => (
-            <MessageRow
-              key={m.id}
-              message={m}
-              onApprove={chat.respondToApproval}
-            />
+            <MessageRow key={m.id} message={m} onApprove={chat.respondToApproval} />
           ))}
         </div>
 
@@ -574,9 +578,7 @@ export function ChatPanel({
           </footer>
         )}
       </div>
-      {preview && (
-        <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />
-      )}
+      {preview && <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />}
     </div>
   );
 }
@@ -647,9 +649,7 @@ function GitContextSummary({ status }: { status: WorkspaceGitStatus | null }) {
   return (
     <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-white/10 bg-[#020818]/70 px-2 py-1.5 text-[10px] text-neutral-500">
       <GitBranch size={11} className="text-cyan-300" />
-      <span className="font-mono text-neutral-300">
-        {status.branch ?? "detached"}
-      </span>
+      <span className="font-mono text-neutral-300">{status.branch ?? "detached"}</span>
       <span>{status.changed_count} changed</span>
       {status.diff_stat && (
         <span className="min-w-0 flex-1 truncate font-mono" title={status.diff_stat}>
@@ -672,9 +672,7 @@ function FilePreviewDialog({
       <div className="flex max-h-[82vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 shadow-2xl">
         <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2 text-xs">
           <FileText size={13} className="text-cyan-300" />
-          <span className="min-w-0 flex-1 truncate font-mono text-neutral-200">
-            {preview.path}
-          </span>
+          <span className="min-w-0 flex-1 truncate font-mono text-neutral-200">{preview.path}</span>
           <button
             type="button"
             onClick={() => void navigator.clipboard?.writeText(preview.path)}
@@ -698,9 +696,7 @@ function FilePreviewDialog({
               Loading preview...
             </div>
           ) : preview.error ? (
-            <pre className="whitespace-pre-wrap text-xs text-red-300">
-              {preview.error}
-            </pre>
+            <pre className="whitespace-pre-wrap text-xs text-red-300">{preview.error}</pre>
           ) : (
             <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-300">
               {preview.content}
@@ -724,9 +720,7 @@ function MessageRow({
     <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
       <div
         className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${
-          isUser
-            ? "bg-cyan-400/10 text-neutral-100"
-            : "bg-white/[0.06] text-neutral-200"
+          isUser ? "bg-cyan-400/10 text-neutral-100" : "bg-white/[0.06] text-neutral-200"
         }`}
       >
         {message.attachments && message.attachments.length > 0 && (
@@ -738,9 +732,7 @@ function MessageRow({
               >
                 {attachment.filename}
                 {attachment.size !== undefined && (
-                  <span className="ml-1 text-neutral-600">
-                    {formatBytes(attachment.size)}
-                  </span>
+                  <span className="ml-1 text-neutral-600">{formatBytes(attachment.size)}</span>
                 )}
               </span>
             ))}
@@ -760,7 +752,10 @@ function MessageRow({
         )}
 
         {message.toolCalls.map((t, i) => (
-          <div key={i} className="mb-2 rounded border border-white/10 bg-[#020818]/60 p-2 text-[11px]">
+          <div
+            key={i}
+            className="mb-2 rounded border border-white/10 bg-[#020818]/60 p-2 text-[11px]"
+          >
             <div className="flex items-center gap-1.5 text-cyan-300">
               <Wrench size={10} />
               <span className="font-mono">{t.name}</span>
@@ -775,9 +770,7 @@ function MessageRow({
             )}
             {t.result !== undefined && (
               <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-400">
-                {typeof t.result === "string"
-                  ? t.result
-                  : JSON.stringify(t.result, null, 2)}
+                {typeof t.result === "string" ? t.result : JSON.stringify(t.result, null, 2)}
               </pre>
             )}
           </div>
@@ -791,43 +784,42 @@ function MessageRow({
                 Approval required
               </p>
               <p className="mt-1 text-neutral-300">
-                Tool <code className="text-amber-300">{message.approval.tool}</code>{" "}
-                wants to change local state. Review the preview before choosing a
-                response.
+                Tool <code className="text-amber-300">{message.approval.tool}</code> wants to change
+                local state. Review the preview before choosing a response.
               </p>
             </div>
             <div className="p-3">
-            {message.approval.preview ? (
-              <DiffPreviewBlock preview={message.approval.preview} />
-            ) : (
-              <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400">
-                {message.approval.arguments_summary}
-              </pre>
-            )}
-            <div className="sticky bottom-0 flex gap-2 bg-amber-950/20 pt-2">
-              <button
-                type="button"
-                onClick={() => onApprove(message.approval!.request_id, "approve")}
-                className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/30"
-              >
-                <Check size={10} /> approve
-              </button>
-              <button
-                type="button"
-                onClick={() => onApprove(message.approval!.request_id, "always")}
-                className="rounded bg-emerald-500/10 px-2 py-1 text-emerald-300 hover:bg-emerald-500/20"
-                title="Always approve this request pattern for the current gateway policy"
-              >
-                always approve
-              </button>
-              <button
-                type="button"
-                onClick={() => onApprove(message.approval!.request_id, "deny")}
-                className="flex items-center gap-1 rounded bg-red-500/15 px-2 py-1 text-red-300 hover:bg-red-500/25"
-              >
-                <Trash2 size={10} /> deny
-              </button>
-            </div>
+              {message.approval.preview ? (
+                <DiffPreviewBlock preview={message.approval.preview} />
+              ) : (
+                <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400">
+                  {message.approval.arguments_summary}
+                </pre>
+              )}
+              <div className="sticky bottom-0 flex gap-2 bg-amber-950/20 pt-2">
+                <button
+                  type="button"
+                  onClick={() => onApprove(message.approval!.request_id, "approve")}
+                  className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/30"
+                >
+                  <Check size={10} /> approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onApprove(message.approval!.request_id, "always")}
+                  className="rounded bg-emerald-500/10 px-2 py-1 text-emerald-300 hover:bg-emerald-500/20"
+                  title="Always approve this request pattern for the current gateway policy"
+                >
+                  always approve
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onApprove(message.approval!.request_id, "deny")}
+                  className="flex items-center gap-1 rounded bg-red-500/15 px-2 py-1 text-red-300 hover:bg-red-500/25"
+                >
+                  <Trash2 size={10} /> deny
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -841,9 +833,7 @@ function MessageRow({
         )}
 
         {message.cost_usd !== undefined && (
-          <p className="mt-2 text-[10px] text-neutral-500">
-            cost ${message.cost_usd.toFixed(4)}
-          </p>
+          <p className="mt-2 text-[10px] text-neutral-500">cost ${message.cost_usd.toFixed(4)}</p>
         )}
         {message.status === "error" && (
           <p className="mt-2 text-xs text-red-300">{message.error || "error"}</p>

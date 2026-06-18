@@ -48,10 +48,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const [activation, setActivation] = useState<ActivationStep | null>(null);
 
   const refresh = useCallback(async () => {
-    const [list, act] = await Promise.all([
-      listConnections(),
-      getActiveConnection(),
-    ]);
+    const [list, act] = await Promise.all([listConnections(), getActiveConnection()]);
     setConnections(list);
     setActive(act);
     cacheActiveConnection(act);
@@ -72,27 +69,24 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen<ActivationStep>(
-      "zeroclaw://activation",
-      (event) => {
-        setActivation(event.payload);
-        // `started` is the first event in any activation burst — if it
-        // arrives before the initial refresh saw the connection (which
-        // happens on first-run auto-onboard, where the backend mints a
-        // Connection during setup and the activator fires before React
-        // has re-polled), pull the list now so the UI flips from
-        // Welcome to Workspace immediately.
-        if (event.payload.type === "started") {
-          void refresh();
-        }
-        // When activation reaches `ready`, the persisted Connection.url and
-        // possibly token were updated by the backend — re-pull so the rest
-        // of the UI sees the resolved state.
-        if (event.payload.type === "ready") {
-          void refresh();
-        }
-      },
-    );
+    const unlisten = listen<ActivationStep>("zeroclaw://activation", (event) => {
+      setActivation(event.payload);
+      // `started` is the first event in any activation burst — if it
+      // arrives before the initial refresh saw the connection (which
+      // happens on first-run auto-onboard, where the backend mints a
+      // Connection during setup and the activator fires before React
+      // has re-polled), pull the list now so the UI flips from
+      // Welcome to Workspace immediately.
+      if (event.payload.type === "started") {
+        void refresh();
+      }
+      // When activation reaches `ready`, the persisted Connection.url and
+      // possibly token were updated by the backend — re-pull so the rest
+      // of the UI sees the resolved state.
+      if (event.payload.type === "ready") {
+        void refresh();
+      }
+    });
     return () => {
       void unlisten.then((u) => u());
     };
@@ -143,18 +137,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       activate,
       retry,
     }),
-    [
-      connections,
-      active,
-      loading,
-      health,
-      activation,
-      refresh,
-      add,
-      remove,
-      activate,
-      retry,
-    ],
+    [connections, active, loading, health, activation, refresh, add, remove, activate, retry],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -162,7 +145,6 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
 
 export function useConnections() {
   const ctx = useContext(Ctx);
-  if (!ctx)
-    throw new Error("useConnections must be used inside <ConnectionProvider>");
+  if (!ctx) throw new Error("useConnections must be used inside <ConnectionProvider>");
   return ctx;
 }

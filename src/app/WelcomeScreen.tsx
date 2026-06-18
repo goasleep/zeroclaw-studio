@@ -42,12 +42,10 @@ export function WelcomeScreen({ onChoose }: Props) {
         <div className="zc-glow-border rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-300">
           <Cable size={28} />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Welcome to ZeroClaw Workspace
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Welcome to ZeroClaw Workspace</h1>
         <p className="max-w-lg text-sm text-slate-400">
-          Pick how you want to reach a ZeroClaw gateway. You can have any number
-          of connections — local, remote, or both. Local install is optional.
+          Pick how you want to reach a ZeroClaw gateway. You can have any number of connections —
+          local, remote, or both. Local install is optional.
         </p>
       </div>
 

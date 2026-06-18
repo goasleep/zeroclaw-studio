@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiSessionDelete, apiSessionRename, apiSessions } from "@/api/client";
-import {
-  normalizeSession,
-  sessionSort,
-  type NormalizedSession,
-} from "@/features/chat/use-chat";
+import { normalizeSession, sessionSort, type NormalizedSession } from "@/features/chat/use-chat";
 import { loadSessionWorkspaceMap } from "@/features/chat/chat-local-state";
 
 export function useThreads() {
   const [threads, setThreads] = useState<NormalizedSession[]>([]);
-  const [workspaceMap, setWorkspaceMap] = useState<Map<string, string>>(
-    () => new Map(),
-  );
+  const [workspaceMap, setWorkspaceMap] = useState<Map<string, string>>(() => new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,10 +13,7 @@ export function useThreads() {
     setLoading(true);
     setError(null);
     try {
-      const [data, workspaceMap] = await Promise.all([
-        apiSessions(),
-        loadSessionWorkspaceMap(),
-      ]);
+      const [data, workspaceMap] = await Promise.all([apiSessions(), loadSessionWorkspaceMap()]);
       setWorkspaceMap(workspaceMap);
       setThreads(
         data.sessions

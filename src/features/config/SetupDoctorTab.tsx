@@ -20,11 +20,7 @@ import {
   type SetupOverallStatus,
   type SetupStatus,
 } from "@/api/tauri";
-import {
-  CAPABILITY_LABELS,
-  setupTargetsForPrefix,
-  type SetupTarget,
-} from "./setup-targets";
+import { CAPABILITY_LABELS, setupTargetsForPrefix, type SetupTarget } from "./setup-targets";
 
 interface SetupDoctorTabProps {
   prefix: string;
@@ -131,10 +127,7 @@ export function SetupDoctorTab({
       <div className="min-h-0 flex-1 overflow-auto p-5">
         <div className="mx-auto max-w-4xl">
           {isTauriRuntime() ? (
-            <DesktopSetupPanel
-              target={active}
-              onConfigSaved={onConfigSaved}
-            />
+            <DesktopSetupPanel target={active} onConfigSaved={onConfigSaved} />
           ) : (
             <ManualSetupPanel capabilityId={active.context.capability_id} />
           )}
@@ -158,18 +151,21 @@ function DesktopSetupPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (clearMessage = true) => {
-    setLoading(true);
-    setError(null);
-    if (clearMessage) setMessage(null);
-    try {
-      setStatus(await setupGetStatus(target.context));
-    } catch (e) {
-      setError(formatError(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [target.context]);
+  const load = useCallback(
+    async (clearMessage = true) => {
+      setLoading(true);
+      setError(null);
+      if (clearMessage) setMessage(null);
+      try {
+        setStatus(await setupGetStatus(target.context));
+      } catch (e) {
+        setError(formatError(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [target.context],
+  );
 
   useEffect(() => {
     void load();
@@ -238,9 +234,7 @@ function DesktopSetupPanel({
               <h3 className="text-sm font-medium text-neutral-100">{status.title}</h3>
               <OverallBadge value={status.overall} />
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-              {status.summary}
-            </p>
+            <p className="mt-1 text-xs leading-relaxed text-neutral-500">{status.summary}</p>
           </div>
           <button
             type="button"
@@ -293,9 +287,7 @@ function DesktopSetupPanel({
               <div key={action.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-neutral-200">
-                      {action.label}
-                    </div>
+                    <div className="text-xs font-medium text-neutral-200">{action.label}</div>
                     <p className="mt-1 text-xs leading-relaxed text-neutral-500">
                       {action.description}
                     </p>
@@ -331,9 +323,7 @@ function DesktopSetupPanel({
               <div key={rec.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-neutral-200">
-                      {rec.label}
-                    </div>
+                    <div className="text-xs font-medium text-neutral-200">{rec.label}</div>
                     <p className="mt-1 text-xs leading-relaxed text-neutral-500">
                       {rec.description}
                     </p>
@@ -393,9 +383,8 @@ function ManualSetupPanel({ capabilityId }: { capabilityId: SetupCapabilityId })
             {CAPABILITY_LABELS[capabilityId]} setup
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-            Local checks and one-click actions are available in the desktop app.
-            In a browser session, use these manual commands and return to this
-            tab in ZeroClaw Workspace.
+            Local checks and one-click actions are available in the desktop app. In a browser
+            session, use these manual commands and return to this tab in ZeroClaw Workspace.
           </p>
           <div className="mt-3 space-y-2">
             {manualCommands(capabilityId).map((command) => (
@@ -439,20 +428,14 @@ async function readConfigString(path: string) {
   }
 }
 
-function preferredTarget(
-  targets: SetupTarget[],
-  capabilityId: SetupCapabilityId | undefined,
-) {
+function preferredTarget(targets: SetupTarget[], capabilityId: SetupCapabilityId | undefined) {
   return capabilityId
     ? targets.find((target) => target.context.capability_id === capabilityId)
     : undefined;
 }
 
 function isTauriRuntime() {
-  return (
-    typeof window !== "undefined" &&
-    "__TAURI_INTERNALS__" in window
-  );
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
 function manualCommands(capabilityId: SetupCapabilityId): string[][] {
@@ -465,7 +448,10 @@ function manualCommands(capabilityId: SetupCapabilityId): string[][] {
         ["agent-browser", "install"],
       ];
     case "python_skills":
-      return [["python3", "--version"], ["python", "--version"]];
+      return [
+        ["python3", "--version"],
+        ["python", "--version"],
+      ];
     case "docker_runtime":
       return [
         ["docker", "--version"],
@@ -480,7 +466,11 @@ function manualCommands(capabilityId: SetupCapabilityId): string[][] {
         ["sandbox-exec", "-h"],
       ];
     case "mcp_stdio":
-      return [["node", "--version"], ["npx", "--version"], ["python3", "--version"]];
+      return [
+        ["node", "--version"],
+        ["npx", "--version"],
+        ["python3", "--version"],
+      ];
   }
 }
 

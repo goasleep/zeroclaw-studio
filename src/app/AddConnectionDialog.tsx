@@ -212,9 +212,8 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
             </label>
           </div>
           <p className="text-xs text-neutral-500">
-            Uses your local <code>ssh</code>, ssh-agent, and{" "}
-            <code>~/.ssh/config</code>. The workspace opens an{" "}
-            <code>ssh -L</code> port forward.
+            Uses your local <code>ssh</code>, ssh-agent, and <code>~/.ssh/config</code>. The
+            workspace opens an <code>ssh -L</code> port forward.
           </p>
         </>
       )}
@@ -271,9 +270,9 @@ function LocalAttachForm({ onCreate }: { onCreate: (c: Connection) => Promise<vo
       )}
       {discovered === null && (
         <div className="rounded bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-          No gateway running on port {DEFAULT_PORT} right now. That's fine —
-          if a local <code>zeroclaw</code> binary is installed, the workspace
-          will start it automatically when you save this connection.
+          No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local{" "}
+          <code>zeroclaw</code> binary is installed, the workspace will start it automatically when
+          you save this connection.
         </div>
       )}
       {discovered && (
@@ -414,8 +413,8 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
       </label>
       {err && <div className="rounded bg-red-500/10 px-3 py-2 text-xs text-red-300">{err}</div>}
       <p className="text-xs text-neutral-500">
-        Workspace will spawn <code>zeroclaw gateway --port {port}</code> when
-        this connection is active, and shut it down when the workspace exits.
+        Workspace will spawn <code>zeroclaw gateway --port {port}</code> when this connection is
+        active, and shut it down when the workspace exits.
       </p>
       <button
         type="button"

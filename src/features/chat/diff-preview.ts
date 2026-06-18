@@ -14,10 +14,7 @@ export type DiffPreview =
       truncated?: boolean;
     };
 
-export function buildApprovalPreview(
-  tool: string,
-  args: unknown,
-): DiffPreview | null {
+export function buildApprovalPreview(tool: string, args: unknown): DiffPreview | null {
   if (!isRecord(args)) return null;
   const normalized = tool.toLowerCase().replace(/[-:]/g, "_");
   if (!normalized.includes("file_edit") && !normalized.includes("file_write")) {
@@ -26,12 +23,7 @@ export function buildApprovalPreview(
 
   const path = stringValue(args, ["path", "file", "file_path", "target_path"]);
   if (normalized.includes("file_write")) {
-    const content = stringValue(args, [
-      "content",
-      "text",
-      "new_content",
-      "contents",
-    ]);
+    const content = stringValue(args, ["content", "text", "new_content", "contents"]);
     if (content == null) return null;
     return {
       kind: "write",
@@ -41,21 +33,8 @@ export function buildApprovalPreview(
     };
   }
 
-  const before = stringValue(args, [
-    "old_content",
-    "before",
-    "old",
-    "original",
-    "find",
-    "search",
-  ]);
-  const after = stringValue(args, [
-    "new_content",
-    "after",
-    "new",
-    "replacement",
-    "replace",
-  ]);
+  const before = stringValue(args, ["old_content", "before", "old", "original", "find", "search"]);
+  const after = stringValue(args, ["new_content", "after", "new", "replacement", "replace"]);
   if (before == null || after == null) return null;
   return {
     kind: "diff",
@@ -87,9 +66,7 @@ function simpleDiff(
   return lines;
 }
 
-function limitedLines(
-  lines: Array<{ type: "context" | "add" | "remove"; text: string }>,
-) {
+function limitedLines(lines: Array<{ type: "context" | "add" | "remove"; text: string }>) {
   return {
     lines: lines.slice(0, 400),
     truncated: lines.length > 400,
@@ -102,10 +79,7 @@ function longestCommonSubsequence(a: string[], b: string[]) {
   );
   for (let i = a.length - 1; i >= 0; i--) {
     for (let j = b.length - 1; j >= 0; j--) {
-      dp[i][j] =
-        a[i] === b[j]
-          ? dp[i + 1][j + 1] + 1
-          : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
   const rows: Array<[number, number]> = [];

@@ -101,14 +101,11 @@ export const listConnections = () => unwrap(commands.listConnections());
 
 export const getActiveConnection = () => unwrap(commands.getActiveConnection());
 
-export const upsertConnection = (conn: Connection) =>
-  unwrap(commands.upsertConnection(conn));
+export const upsertConnection = (conn: Connection) => unwrap(commands.upsertConnection(conn));
 
-export const removeConnection = (id: string) =>
-  unwrap(commands.removeConnection(id));
+export const removeConnection = (id: string) => unwrap(commands.removeConnection(id));
 
-export const setActiveConnection = (id: string | null) =>
-  unwrap(commands.setActiveConnection(id));
+export const setActiveConnection = (id: string | null) => unwrap(commands.setActiveConnection(id));
 
 export const reactivate = () => unwrap(commands.reactivate());
 
@@ -116,23 +113,19 @@ export const connectionProbe = (id: string) => unwrap(commands.connectionProbe(i
 
 // ---- Gateway commands ----
 
-export const discoverLocalGateway = () =>
-  unwrap(commands.discoverLocalGateway());
+export const discoverLocalGateway = () => unwrap(commands.discoverLocalGateway());
 
 export const ensureToken = (id: string) => unwrap(commands.ensureToken(id));
 
-export const pairWithCode = (id: string, code: string) =>
-  unwrap(commands.pairWithCode(id, code));
+export const pairWithCode = (id: string, code: string) => unwrap(commands.pairWithCode(id, code));
 
 // ---- Chat commands ----
 
-export const chatConnect = (req: ChatConnectRequest) =>
-  unwrap(commands.chatConnect(req));
+export const chatConnect = (req: ChatConnectRequest) => unwrap(commands.chatConnect(req));
 
 export const chatSend = (req: ChatSendRequest) => unwrap(commands.chatSend(req));
 
-export const chatDisconnect = (req: ChatCloseRequest) =>
-  unwrap(commands.chatDisconnect(req));
+export const chatDisconnect = (req: ChatCloseRequest) => unwrap(commands.chatDisconnect(req));
 
 export const prepareChatAttachments = (req: PrepareChatAttachmentsRequest) =>
   unwrap(commands.prepareChatAttachments(req)) as Promise<ChatFileEntry[]>;
@@ -167,43 +160,34 @@ export type {
   SetupStatus,
 } from "./bindings";
 
-export const setupGetStatus = (context: SetupContext) =>
-  unwrap(commands.setupGetStatus(context));
+export const setupGetStatus = (context: SetupContext) => unwrap(commands.setupGetStatus(context));
 
-export const setupRunAction = (req: SetupActionRequest) =>
-  unwrap(commands.setupRunAction(req));
+export const setupRunAction = (req: SetupActionRequest) => unwrap(commands.setupRunAction(req));
 
 // ---- SSH commands ----
 
 export const sshOpenTunnel = (id: string) => unwrap(commands.sshOpenTunnel(id));
 
-export const sshCloseTunnel = (id: string) =>
-  unwrap(commands.sshCloseTunnel(id));
+export const sshCloseTunnel = (id: string) => unwrap(commands.sshCloseTunnel(id));
 
 // ---- Gateway HTTP client commands ----
 
-export const gatewayRequest = (req: GatewayHttpRequest) =>
-  unwrap(commands.gatewayRequest(req));
+export const gatewayRequest = (req: GatewayHttpRequest) => unwrap(commands.gatewayRequest(req));
 
 // ---- Workspace FS commands ----
 
-export const workspaceOpenRoot = (path: string) =>
-  unwrap(commands.workspaceOpenRoot(path));
+export const workspaceOpenRoot = (path: string) => unwrap(commands.workspaceOpenRoot(path));
 
 export const workspaceGetState = () => unwrap(commands.workspaceGetState());
 
-export const workspaceImportLegacyState = (
-  currentRoot: string | null,
-  recentRoots: string[],
-) => unwrap(commands.workspaceImportLegacyState(currentRoot, recentRoots));
+export const workspaceImportLegacyState = (currentRoot: string | null, recentRoots: string[]) =>
+  unwrap(commands.workspaceImportLegacyState(currentRoot, recentRoots));
 
 export const workspaceGetRoot = () => unwrap(commands.workspaceGetRoot());
 
-export const workspaceListDir = (path: string) =>
-  unwrap(commands.workspaceListDir(path));
+export const workspaceListDir = (path: string) => unwrap(commands.workspaceListDir(path));
 
-export const workspaceReadFile = (path: string) =>
-  unwrap(commands.workspaceReadFile(path));
+export const workspaceReadFile = (path: string) => unwrap(commands.workspaceReadFile(path));
 
 export const workspaceWriteFile = (path: string, content: string) =>
   unwrap(commands.workspaceWriteFile(path, content));
@@ -213,8 +197,7 @@ export const workspaceWatchStart = (path: string | null = null) =>
 
 export const workspaceWatchStop = () => unwrap(commands.workspaceWatchStop());
 
-export const workspaceGitStatus = (root: string) =>
-  unwrap(commands.workspaceGitStatus(root));
+export const workspaceGitStatus = (root: string) => unwrap(commands.workspaceGitStatus(root));
 
 // ---- Desktop-local chat state ----
 
@@ -222,46 +205,27 @@ export const chatLocalGetSelectedSession = (
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
-) =>
-  unwrap(commands.chatLocalGetSelectedSession(workspaceRoot, mode, agentAlias));
+) => unwrap(commands.chatLocalGetSelectedSession(workspaceRoot, mode, agentAlias));
 
 export const chatLocalSetSelectedSession = (
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string | null,
-) =>
-  unwrap(
-    commands.chatLocalSetSelectedSession(
-      workspaceRoot,
-      mode,
-      agentAlias,
-      sessionId,
-    ),
-  );
+) => unwrap(commands.chatLocalSetSelectedSession(workspaceRoot, mode, agentAlias, sessionId));
 
 export const chatLocalListSessionWorkspaces = () =>
   unwrap(commands.chatLocalListSessionWorkspaces());
 
-export const chatLocalAssignSessionWorkspace = (
-  sessionId: string,
-  workspaceRoot: string,
-) => unwrap(commands.chatLocalAssignSessionWorkspace(sessionId, workspaceRoot));
+export const chatLocalAssignSessionWorkspace = (sessionId: string, workspaceRoot: string) =>
+  unwrap(commands.chatLocalAssignSessionWorkspace(sessionId, workspaceRoot));
 
 export const chatLocalGetTranscript = (
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
-) =>
-  unwrap(
-    commands.chatLocalGetTranscript(
-      workspaceRoot,
-      mode,
-      agentAlias,
-      sessionId,
-    ),
-  );
+) => unwrap(commands.chatLocalGetTranscript(workspaceRoot, mode, agentAlias, sessionId));
 
 export const chatLocalSetTranscript = (
   workspaceRoot: string | null,
@@ -271,13 +235,7 @@ export const chatLocalSetTranscript = (
   transcriptJson: string,
 ) =>
   unwrap(
-    commands.chatLocalSetTranscript(
-      workspaceRoot,
-      mode,
-      agentAlias,
-      sessionId,
-      transcriptJson,
-    ),
+    commands.chatLocalSetTranscript(workspaceRoot, mode, agentAlias, sessionId, transcriptJson),
   );
 
 export const chatLocalClearTranscript = (
@@ -285,12 +243,4 @@ export const chatLocalClearTranscript = (
   mode: string,
   agentAlias: string,
   sessionId: string,
-) =>
-  unwrap(
-    commands.chatLocalClearTranscript(
-      workspaceRoot,
-      mode,
-      agentAlias,
-      sessionId,
-    ),
-  );
+) => unwrap(commands.chatLocalClearTranscript(workspaceRoot, mode, agentAlias, sessionId));
