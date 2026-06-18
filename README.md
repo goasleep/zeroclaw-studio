@@ -1,16 +1,30 @@
 # 🦀 zeroclaw-workspace
 
-> Desktop workspace client for [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw).
-> Connect to a local or remote `zeroclaw` gateway, manage your agent from a
-> first-class native workspace — file tree, global shortcuts, clipboard,
-> notifications, and a full UI for chat, config, memory, cron, tools, and more.
+> A distributed AI productivity workspace powered by
+> [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw).
+> Turn any local or remote `zeroclaw` node into part of one native workspace
+> for files, chat, tools, memory, scheduled tasks, clipboard, notifications,
+> and long-running agent work.
 
 **Status:** early development. See [`docs/architecture.md`](docs/architecture.md).
 
 ## What this is
 
-A Tauri 2 desktop app, independent from the main `zeroclaw` repo. It speaks
-to a `zeroclaw` gateway over HTTP/WebSocket. The gateway can be:
+`zeroclaw-workspace` is a Tauri 2 desktop app for getting real work done
+across local files, remote machines, tools, memory, and automations. The
+desktop app is the productivity layer; `zeroclaw` is the lightweight runtime
+underneath it.
+
+Instead of treating AI as a single chat box, the workspace lets you choose
+where work should run:
+
+- run quick local tasks on your laptop,
+- keep long-running automations on a homelab Pi or NAS,
+- use a cloud VM for always-on or heavier jobs,
+- reach private resources through SSH, Tailscale, VPN, or an internal host.
+
+The app is independent from the main `zeroclaw` repo. It speaks to a
+`zeroclaw` gateway over HTTP/WebSocket, and each gateway can be:
 
 - **Local & managed** — workspace spawns and supervises a `zeroclaw` process.
 - **Local & attached** — workspace connects to a gateway you already started
@@ -18,6 +32,10 @@ to a `zeroclaw` gateway over HTTP/WebSocket. The gateway can be:
 - **Remote** — point at any reachable URL (SSH tunnel, Tailscale, VPN, public TLS).
   You don't need `zeroclaw` installed locally at all — manage a homelab Pi
   or a cloud VM from your laptop.
+
+ZeroClaw's low deployment cost is the point: AI capabilities can live wherever
+your work already lives, while the desktop app gives you one place to connect,
+operate, observe, and intervene.
 
 The workspace UI itself runs everywhere — installing it never installs or
 modifies anything in `~/.zeroclaw/` on machines it doesn't manage.
