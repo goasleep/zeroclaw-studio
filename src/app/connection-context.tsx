@@ -20,6 +20,7 @@ import {
   setActiveConnection,
   upsertConnection,
 } from "@/api/tauri";
+import { cacheActiveConnection } from "@/api/client";
 import { listen } from "@tauri-apps/api/event";
 
 interface ConnectionContextValue {
@@ -53,6 +54,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     ]);
     setConnections(list);
     setActive(act);
+    cacheActiveConnection(act);
     setLoading(false);
   }, []);
 

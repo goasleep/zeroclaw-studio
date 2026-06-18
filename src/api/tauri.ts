@@ -42,6 +42,7 @@ export type {
   ChatError,
   ChatFileEntry,
   ChatMode,
+  ConnectionProbeResult,
   ChatSendRequest,
   ChatSessionInfo,
   Connection,
@@ -58,6 +59,7 @@ export type {
   SshConfig,
   SupervisorStatus,
   Transport,
+  WorkspaceGitStatus,
 } from "./bindings";
 
 // ---- Event payloads emitted by the backend (not specta-typed) ----
@@ -105,6 +107,8 @@ export const setActiveConnection = (id: string | null) =>
   unwrap(commands.setActiveConnection(id));
 
 export const reactivate = () => unwrap(commands.reactivate());
+
+export const connectionProbe = (id: string) => unwrap(commands.connectionProbe(id));
 
 // ---- Gateway commands ----
 
@@ -173,3 +177,6 @@ export const workspaceWatchStart = (path: string | null = null) =>
   unwrap(commands.workspaceWatchStart(path));
 
 export const workspaceWatchStop = () => unwrap(commands.workspaceWatchStop());
+
+export const workspaceGitStatus = (root: string) =>
+  unwrap(commands.workspaceGitStatus(root));

@@ -1,13 +1,17 @@
 // Chat/Code panel — session list + messages + composer.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Brain,
   Check,
   CircleStop,
   Clipboard,
+  Copy,
+  Eye,
+  FileText,
   FilePlus2,
+  GitBranch,
   GitCompare,
   Loader2,
   MessageSquarePlus,
@@ -29,9 +33,54 @@ import { useChat, type ChatMessage, type NormalizedSession } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
 import { apiAgentWorkspaceList } from "@/api/client";
-import { prepareChatAttachments } from "@/api/tauri";
+import {
+  prepareChatAttachments,
+  workspaceGitStatus,
+  workspaceReadFile,
+  type WorkspaceGitStatus,
+} from "@/api/tauri";
 import { readClipboardText } from "@/workspace/clipboard/clipboard";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
+
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+interface ContextAttachmentDraft {
+  path: string;
+  filename: string;
+  mime: string;
+  source: "file";
+  status: "pending" | "too_large" | "ready";
+  error?: string;
+  embedBytes: boolean;
+}
+
+function filenameFromPath(path: string) {
+  return path.split(/[\\/]/).filter(Boolean).pop() || path;
+}
+
+function mimeFromPath(path: string) {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  if (["png"].includes(ext)) return "image/png";
+  if (["jpg", "jpeg"].includes(ext)) return "image/jpeg";
+  if (["gif"].includes(ext)) return "image/gif";
+  if (["webp"].includes(ext)) return "image/webp";
+  if (["svg"].includes(ext)) return "image/svg+xml";
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "json") return "application/json";
+  if (ext === "csv") return "text/csv";
+  if (["md", "markdown"].includes(ext)) return "text/markdown";
+  if (["txt", "log", "rs", "ts", "tsx", "js", "jsx", "py", "toml", "yaml", "yml", "html", "css"].includes(ext)) {
+    return "text/plain";
+  }
+  return "application/octet-stream";
+}
+
+function formatBytes(size?: number) {
+  if (size === undefined) return "size checked on send";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function ChatPanel({
   agentAlias,
@@ -43,7 +92,7 @@ export function ChatPanel({
   workspaceDir?: string | null;
 }) {
   const { active } = useConnections();
-  const { selectedFiles, clearSelection, toggleFile } = useWorkspace();
+  const { root, selectedFiles, addFiles, clearSelection } = useWorkspace();
   const [cwd, setCwd] = useState(workspaceDir ?? "");
   const [appliedCwd, setAppliedCwd] = useState(workspaceDir ?? "");
   const [remoteEntries, setRemoteEntries] = useState<
@@ -58,7 +107,26 @@ export function ChatPanel({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{
+    path: string;
+    content: string;
+    error?: string;
+    loading: boolean;
+  } | null>(null);
+  const [gitStatus, setGitStatus] = useState<WorkspaceGitStatus | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const attachmentDrafts = useMemo<ContextAttachmentDraft[]>(
+    () =>
+      selectedFiles.map((path) => ({
+        path,
+        filename: filenameFromPath(path),
+        mime: mimeFromPath(path),
+        source: "file",
+        status: "pending",
+        embedBytes: Boolean(active && active.transport !== "local"),
+      })),
+    [active, selectedFiles],
+  );
 
   useEffect(() => {
     setCwd(workspaceDir ?? "");
@@ -73,6 +141,34 @@ export function ChatPanel({
     return () => window.removeEventListener("zeroclaw://quick-invoke", focus);
   }, []);
 
+  useEffect(() => {
+    function selectSession(e: Event) {
+      const sessionId = (e as CustomEvent<string>).detail;
+      if (sessionId) chat.selectSession(sessionId);
+    }
+    window.addEventListener("zeroclaw://select-session", selectSession);
+    return () =>
+      window.removeEventListener("zeroclaw://select-session", selectSession);
+  }, [chat.selectSession]);
+
+  useEffect(() => {
+    if (!root) {
+      setGitStatus(null);
+      return;
+    }
+    let cancelled = false;
+    void workspaceGitStatus(root)
+      .then((status) => {
+        if (!cancelled) setGitStatus(status);
+      })
+      .catch(() => {
+        if (!cancelled) setGitStatus(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [root]);
+
   async function pasteClipboard() {
     const t = await readClipboardText();
     if (!t) return;
@@ -82,11 +178,37 @@ export function ChatPanel({
   async function pickFiles() {
     const chosen = await openDialog({ multiple: true, directory: false });
     const paths = Array.isArray(chosen) ? chosen : chosen ? [chosen] : [];
-    for (const path of paths) {
-      if (typeof path === "string" && !selectedFiles.includes(path)) {
-        toggleFile(path);
-      }
+    addFiles(paths.filter((path): path is string => typeof path === "string"));
+  }
+
+  async function previewFile(path: string) {
+    setPreview({ path, content: "", loading: true });
+    try {
+      const content = await workspaceReadFile(path);
+      setPreview({
+        path,
+        content:
+          content.length > 80_000
+            ? `${content.slice(0, 80_000)}\n\n[preview truncated]`
+            : content,
+        loading: false,
+      });
+    } catch (e) {
+      setPreview({
+        path,
+        content: "",
+        error: e instanceof Error ? e.message : String(e),
+        loading: false,
+      });
     }
+  }
+
+  function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const paths = Array.from(e.dataTransfer.files)
+      .map((file) => (file as File & { path?: string }).path)
+      .filter((path): path is string => Boolean(path));
+    if (paths.length > 0) addFiles(paths);
   }
 
   async function browseRemoteWorkspace() {
@@ -128,6 +250,7 @@ export function ChatPanel({
         data_b64: entry.data_b64,
         filename: entry.filename,
         mime_type: entry.mime_type,
+        size: entry.size,
         source: entry.source === "clipboard" ? "clipboard" : "file",
       }));
       chat.send(trimmed, attachments);
@@ -144,7 +267,11 @@ export function ChatPanel({
   const remoteCode = isCode && active && active.transport !== "local";
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)]">
+    <div
+      className="grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)]"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+    >
       <SessionRail
         sessions={chat.sessions}
         activeSessionId={chat.sessionId}
@@ -260,7 +387,12 @@ export function ChatPanel({
         </div>
 
         <footer className="border-t border-neutral-800 px-3 pb-3 pt-2">
-          <AttachmentStrip files={selectedFiles} onClear={clearSelection} />
+          <GitContextSummary status={gitStatus} />
+          <AttachmentStrip
+            files={attachmentDrafts}
+            onClear={clearSelection}
+            onPreview={(path) => void previewFile(path)}
+          />
           {composerError && (
             <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200">
               {composerError}
@@ -309,6 +441,9 @@ export function ChatPanel({
           </div>
         </footer>
       </div>
+      {preview && (
+        <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />
+      )}
     </div>
   );
 }
@@ -444,37 +579,130 @@ function SessionButton({
 function AttachmentStrip({
   files,
   onClear,
+  onPreview,
 }: {
-  files: string[];
+  files: ContextAttachmentDraft[];
   onClear: () => void;
+  onPreview: (path: string) => void;
 }) {
   if (files.length === 0) return null;
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-1 text-[10px]">
-      <Paperclip size={10} className="text-orange-400" />
-      <span className="text-neutral-400">
-        {files.length} attachment{files.length === 1 ? "" : "s"}:
-      </span>
-      {files.slice(0, 5).map((p) => (
-        <span
-          key={p}
-          className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-neutral-300"
-          title={p}
-        >
-          {p.split("/").slice(-1)[0]}
+    <div className="mb-2 rounded border border-neutral-800 bg-neutral-950/80 p-2 text-[10px]">
+      <div className="mb-1 flex items-center gap-1 text-neutral-400">
+        <Paperclip size={10} className="text-orange-400" />
+        <span>
+          {files.length} attachment{files.length === 1 ? "" : "s"}
         </span>
-      ))}
-      {files.length > 5 && (
-        <span className="text-neutral-500">+{files.length - 5} more</span>
+        <span className="text-neutral-600">drop files here or use the file button</span>
+        <button
+          type="button"
+          onClick={onClear}
+          className="ml-auto text-neutral-500 hover:text-red-300"
+          title="Clear attachments"
+        >
+          <X size={10} />
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {files.map((file) => (
+          <div
+            key={file.path}
+            className="group flex max-w-full items-center gap-1 rounded bg-neutral-900 px-1.5 py-1 font-mono text-neutral-300"
+            title={file.path}
+          >
+            <FileText size={10} className="shrink-0 text-neutral-500" />
+            <span className="max-w-40 truncate">{file.filename}</span>
+            <span className="rounded bg-neutral-800 px-1 text-neutral-500">
+              {file.embedBytes ? "bytes" : "path"}
+            </span>
+            <span className="text-neutral-600">{file.mime}</span>
+            <span className="text-neutral-600">{formatBytes()}</span>
+            <button
+              type="button"
+              onClick={() => onPreview(file.path)}
+              className="ml-0.5 text-neutral-500 opacity-0 hover:text-orange-300 group-hover:opacity-100"
+              title="Preview file"
+            >
+              <Eye size={10} />
+            </button>
+          </div>
+        ))}
+      </div>
+      {files.length > 0 && (
+        <p className="mt-1 text-[10px] text-neutral-600">
+          Files over {formatBytes(MAX_ATTACHMENT_BYTES)} are rejected during send.
+        </p>
       )}
-      <button
-        type="button"
-        onClick={onClear}
-        className="ml-1 text-neutral-500 hover:text-red-300"
-        title="Clear attachments"
-      >
-        <X size={10} />
-      </button>
+    </div>
+  );
+}
+
+function GitContextSummary({ status }: { status: WorkspaceGitStatus | null }) {
+  if (!status?.is_repo) return null;
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-neutral-800 bg-neutral-950/70 px-2 py-1.5 text-[10px] text-neutral-500">
+      <GitBranch size={11} className="text-orange-400" />
+      <span className="font-mono text-neutral-300">
+        {status.branch ?? "detached"}
+      </span>
+      <span>{status.changed_count} changed</span>
+      {status.diff_stat && (
+        <span className="min-w-0 flex-1 truncate font-mono" title={status.diff_stat}>
+          {status.diff_stat}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function FilePreviewDialog({
+  preview,
+  onClose,
+}: {
+  preview: { path: string; content: string; error?: string; loading: boolean };
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+      <div className="flex max-h-[82vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl">
+        <header className="flex shrink-0 items-center gap-2 border-b border-neutral-800 px-3 py-2 text-xs">
+          <FileText size={13} className="text-orange-400" />
+          <span className="min-w-0 flex-1 truncate font-mono text-neutral-200">
+            {preview.path}
+          </span>
+          <button
+            type="button"
+            onClick={() => void navigator.clipboard?.writeText(preview.path)}
+            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+            title="Copy path"
+          >
+            <Copy size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-neutral-900 hover:text-red-300"
+          >
+            <X size={12} />
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-auto p-3">
+          {preview.loading ? (
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              <Loader2 size={13} className="animate-spin" />
+              Loading preview...
+            </div>
+          ) : preview.error ? (
+            <pre className="whitespace-pre-wrap text-xs text-red-300">
+              {preview.error}
+            </pre>
+          ) : (
+            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-300">
+              {preview.content}
+            </pre>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -504,6 +732,11 @@ function MessageRow({
                 className="rounded bg-neutral-950 px-1.5 py-0.5 font-mono"
               >
                 {attachment.filename}
+                {attachment.size !== undefined && (
+                  <span className="ml-1 text-neutral-600">
+                    {formatBytes(attachment.size)}
+                  </span>
+                )}
               </span>
             ))}
           </div>
@@ -546,15 +779,19 @@ function MessageRow({
         ))}
 
         {message.approval && (
-          <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
-            <p className="mb-2 flex items-center gap-1 font-medium text-amber-200">
-              <GitCompare size={12} />
-              Approval required
-            </p>
-            <p className="mb-2 text-neutral-300">
-              Tool <code className="text-amber-300">{message.approval.tool}</code>{" "}
-              wants to run.
-            </p>
+          <div className="mb-2 overflow-hidden rounded-lg border border-amber-500/40 bg-amber-500/10 text-xs">
+            <div className="border-b border-amber-500/20 px-3 py-2">
+              <p className="flex items-center gap-1 font-medium text-amber-200">
+                <GitCompare size={12} />
+                Approval required
+              </p>
+              <p className="mt-1 text-neutral-300">
+                Tool <code className="text-amber-300">{message.approval.tool}</code>{" "}
+                wants to change local state. Review the preview before choosing a
+                response.
+              </p>
+            </div>
+            <div className="p-3">
             {message.approval.preview ? (
               <DiffPreviewBlock preview={message.approval.preview} />
             ) : (
@@ -562,7 +799,7 @@ function MessageRow({
                 {message.approval.arguments_summary}
               </pre>
             )}
-            <div className="flex gap-2">
+            <div className="sticky bottom-0 flex gap-2 bg-amber-950/20 pt-2">
               <button
                 type="button"
                 onClick={() => onApprove(message.approval!.request_id, "approve")}
@@ -574,8 +811,9 @@ function MessageRow({
                 type="button"
                 onClick={() => onApprove(message.approval!.request_id, "always")}
                 className="rounded bg-emerald-500/10 px-2 py-1 text-emerald-300 hover:bg-emerald-500/20"
+                title="Always approve this request pattern for the current gateway policy"
               >
-                always
+                always approve
               </button>
               <button
                 type="button"
@@ -584,6 +822,7 @@ function MessageRow({
               >
                 <Trash2 size={10} /> deny
               </button>
+            </div>
             </div>
           </div>
         )}
@@ -621,8 +860,18 @@ function DiffPreviewBlock({
   if (!preview) return null;
   return (
     <div className="mb-2 overflow-hidden rounded border border-neutral-800 bg-black/40">
-      <div className="border-b border-neutral-800 px-2 py-1 font-mono text-[10px] text-neutral-400">
-        {preview.title}
+      <div className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1 font-mono text-[10px] text-neutral-400">
+        <span className="min-w-0 flex-1 truncate">{preview.title}</span>
+        {preview.path && (
+          <button
+            type="button"
+            onClick={() => void navigator.clipboard?.writeText(preview.path ?? "")}
+            className="shrink-0 rounded px-1 py-0.5 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+            title="Copy path"
+          >
+            <Copy size={10} />
+          </button>
+        )}
       </div>
       <pre className="max-h-72 overflow-auto p-2 text-[10px] leading-relaxed">
         {lines.map((line, idx) => (
@@ -641,6 +890,11 @@ function DiffPreviewBlock({
           </div>
         ))}
       </pre>
+      {preview.truncated && (
+        <div className="border-t border-neutral-800 px-2 py-1 text-[10px] text-amber-300">
+          Preview truncated to 400 lines.
+        </div>
+      )}
     </div>
   );
 }

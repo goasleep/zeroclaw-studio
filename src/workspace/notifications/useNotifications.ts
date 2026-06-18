@@ -7,6 +7,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+import { loadPreferences } from "@/workspace/preferences/preferences";
 
 let permissionState: "unknown" | "granted" | "denied" = "unknown";
 
@@ -23,6 +24,8 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 export async function notify(title: string, body: string) {
+  const prefs = await loadPreferences().catch(() => null);
+  if (prefs && !prefs.notifications) return;
   if (!(await ensureNotificationPermission())) return;
   sendNotification({ title, body });
 }
