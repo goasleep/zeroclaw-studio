@@ -22,6 +22,7 @@ interface WorkspaceContextValue {
   root: string | null;
   setRoot: (path: string) => Promise<void>;
   selectedFiles: string[];
+  addFiles: (paths: string[]) => void;
   toggleFile: (path: string) => void;
   clearSelection: () => void;
   /** Bumped each time the watcher reports an fs change — file tree subscribes. */
@@ -61,6 +62,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const addFiles = useCallback((paths: string[]) => {
+    setSelectedFiles((prev) => {
+      const next = [...prev];
+      for (const path of paths) {
+        if (path && !next.includes(path)) next.push(path);
+      }
+      return next;
+    });
+  }, []);
+
   const clearSelection = useCallback(() => setSelectedFiles([]), []);
 
   const value = useMemo(
@@ -68,11 +79,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       root,
       setRoot,
       selectedFiles,
+      addFiles,
       toggleFile,
       clearSelection,
       changeNonce,
     }),
-    [root, setRoot, selectedFiles, toggleFile, clearSelection, changeNonce],
+    [root, setRoot, selectedFiles, addFiles, toggleFile, clearSelection, changeNonce],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

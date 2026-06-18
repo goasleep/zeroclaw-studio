@@ -99,6 +99,21 @@ async reactivate() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Non-mutating connectivity probe for a saved connection.
+	 *
+ * This only checks the connection's current URL. It never starts a managed
+ * gateway and never opens an SSH tunnel; activation remains the only path that
+ * owns lifecycle side effects.
+ */
+async connectionProbe(id: string) : Promise<Result<ConnectionProbeResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("connection_probe", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async discoverLocalGateway() : Promise<Result<DiscoveredLocal | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("discover_local_gateway") };
@@ -244,6 +259,14 @@ async workspaceWatchStop() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async workspaceGitStatus(root: string) : Promise<Result<WorkspaceGitStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_git_status", { root }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -275,7 +298,7 @@ export type AuthMode =
 export type ChatCloseRequest = { session_id: string }
 export type ChatConnectRequest = { url: string; agent_alias: string; session_id: string | null; token: string; mode: ChatMode | null; workspace_dir: string | null }
 export type ChatError = { message: string }
-export type ChatFileEntry = { path: string | null; data_b64: string | null; filename: string; mime_type: string; source: string }
+export type ChatFileEntry = { path: string | null; data_b64: string | null; filename: string; mime_type: string; size: number; source: string }
 export type ChatMode = "chat" | "acp"
 export type ChatSendRequest = { session_id: string; frame: string }
 export type ChatSessionInfo = { session_id: string }
@@ -289,6 +312,7 @@ url: string; ssh: SshConfig | null; auth: AuthConfig; lifecycle: Lifecycle;
  * For `Lifecycle::Managed` connections only.
  */
 binary_path: string | null }
+export type ConnectionProbeResult = { connection_id: string; reachable: boolean; latency_ms: number | null; status: string; error: string | null; checked_at: string }
 export type DetectedBinary = { path: string; version: string | null }
 export type DirEntry = { name: string; path: string; isDir: boolean; size: number | null }
 export type DiscoveredLocal = { url: string; healthy: boolean; require_pairing: boolean }
@@ -354,6 +378,7 @@ export type Transport =
  * Tailscale-routed (semantically `Http` over MagicDNS; kept separate for UI).
  */
 "tailscale"
+export type WorkspaceGitStatus = { root: string; is_repo: boolean; branch: string | null; changed_count: number; diff_stat: string | null }
 
 /** tauri-specta globals **/
 
