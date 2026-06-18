@@ -34,6 +34,12 @@ import { DoctorPanel } from "@/features/doctor/DoctorPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { apiQuickstartState } from "@/api/client";
+import {
+  DEFAULT_PREFERENCES,
+  loadPreferences,
+  savePreference,
+  type AppPreferences,
+} from "@/workspace/preferences/preferences";
 
 type Page = "chat" | "code" | "settings";
 type SettingsSection =
@@ -65,6 +71,7 @@ const SETTINGS_SECTIONS: Array<{
 ];
 
 export function WorkspaceShell() {
+  const { addFiles } = useWorkspace();
   const [page, setPage] = useState<Page>("chat");
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("app");
@@ -92,6 +99,49 @@ export function WorkspaceShell() {
   useEffect(() => {
     loadAgents();
   }, [loadAgents]);
+
+  useEffect(() => {
+    function onOpenSettings(e: Event) {
+      const section = (e as CustomEvent<string>).detail;
+      if (isSettingsSection(section)) {
+        setSettingsSection(section);
+      } else {
+        setSettingsSection("app");
+      }
+      setPage("settings");
+    }
+
+    function onDeepLink(e: Event) {
+      const url = (e as CustomEvent<URL>).detail;
+      const arg = firstPathArg(url);
+      if (url.host === "agent" && arg) {
+        setActiveAgent(arg);
+        setPage("chat");
+        return;
+      }
+      if (url.host === "session" && arg) {
+        setPage("chat");
+        window.dispatchEvent(
+          new CustomEvent("zeroclaw://select-session", { detail: arg }),
+        );
+        return;
+      }
+      if (url.host === "file") {
+        const path = decodeURIComponent(url.pathname || "");
+        if (path) {
+          addFiles([path]);
+          setPage("chat");
+        }
+      }
+    }
+
+    window.addEventListener("zeroclaw://open-settings", onOpenSettings);
+    window.addEventListener("zeroclaw://deep-link", onDeepLink);
+    return () => {
+      window.removeEventListener("zeroclaw://open-settings", onOpenSettings);
+      window.removeEventListener("zeroclaw://deep-link", onDeepLink);
+    };
+  }, [addFiles]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-neutral-950 text-neutral-100">
@@ -123,6 +173,14 @@ export function WorkspaceShell() {
       )}
     </div>
   );
+}
+
+function isSettingsSection(value: string): value is SettingsSection {
+  return SETTINGS_SECTIONS.some((section) => section.id === value);
+}
+
+function firstPathArg(url: URL) {
+  return decodeURIComponent(url.pathname.replace(/^\/+/, "")).trim();
 }
 
 function Sidebar({
@@ -459,7 +517,23 @@ function SettingsNav({
 function AppSettings() {
   const { active, connections, health, activation } = useConnections();
   const { root, selectedFiles } = useWorkspace();
+  const [preferences, setPreferences] =
+    useState<AppPreferences>(DEFAULT_PREFERENCES);
   const online = active && health?.connection_id === active.id && health.healthy;
+
+  useEffect(() => {
+    void loadPreferences()
+      .then(setPreferences)
+      .catch(() => setPreferences(DEFAULT_PREFERENCES));
+  }, []);
+
+  async function updatePreference<K extends keyof AppPreferences>(
+    key: K,
+    value: AppPreferences[K],
+  ) {
+    setPreferences((prev) => ({ ...prev, [key]: value }));
+    await savePreference(key, value);
+  }
 
   return (
     <div className="h-full overflow-auto p-5 text-sm">
@@ -498,12 +572,55 @@ function AppSettings() {
 
         <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
           <h2 className="mb-2 text-sm font-medium text-neutral-100">
-            App Settings
+            Local Preferences
           </h2>
-          <p className="text-xs leading-relaxed text-neutral-500">
-            This page reflects current app state and gateway operations. Local
-            UI preferences are not persisted yet.
-          </p>
+          <div className="space-y-3 text-xs">
+            <label className="block">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                Global shortcut
+              </span>
+              <input
+                value={preferences.shortcut}
+                onChange={(e) =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    shortcut: e.target.value,
+                  }))
+                }
+                onBlur={(e) => void updatePreference("shortcut", e.target.value)}
+                className="w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-neutral-200 outline-none focus:border-orange-500"
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5">
+              <span>
+                <span className="block text-neutral-300">Notifications</span>
+                <span className="text-[10px] text-neutral-500">
+                  Notify on hidden-window approvals and completed turns.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={preferences.notifications}
+                onChange={(e) =>
+                  void updatePreference("notifications", e.target.checked)
+                }
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5">
+              <span>
+                <span className="block text-neutral-300">Tray / menu bar</span>
+                <span className="text-[10px] text-neutral-500">
+                  Tray is available in this build; preference is stored locally.
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={preferences.tray}
+                onChange={(e) => void updatePreference("tray", e.target.checked)}
+              />
+            </label>
+            <InfoItem label="Deep link scheme" value="zeroclaw:// registered" />
+          </div>
         </section>
       </div>
     </div>

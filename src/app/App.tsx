@@ -12,7 +12,7 @@ import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
 type AddPath = "remote" | "local-attach" | "local-install" | null;
 
 function Shell() {
-  const { connections, active, loading } = useConnections();
+  const { connections, active, loading, retry } = useConnections();
   const [addPath, setAddPath] = useState<AddPath>(null);
 
   // Native quick-interaction capabilities (Phase 5).
@@ -31,6 +31,16 @@ function Shell() {
     return () =>
       window.removeEventListener("zeroclaw://deep-link", onDeepLink);
   }, []);
+
+  useEffect(() => {
+    function onTrayAction(e: Event) {
+      const action = (e as CustomEvent<string>).detail;
+      if (action === "retry-active-connection") void retry();
+    }
+    window.addEventListener("zeroclaw://tray-action", onTrayAction);
+    return () =>
+      window.removeEventListener("zeroclaw://tray-action", onTrayAction);
+  }, [retry]);
 
   if (loading) {
     return (

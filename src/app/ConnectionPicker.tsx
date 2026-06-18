@@ -1,6 +1,6 @@
 // Connection picker in the title bar.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -13,7 +13,14 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useConnections } from "@/app/connection-context";
-import type { ActivationStep, Connection } from "@/api/tauri";
+import {
+  connectionProbe,
+  runtimeStatus,
+  type ActivationStep,
+  type Connection,
+  type ConnectionProbeResult,
+} from "@/api/tauri";
+import { apiDoctor, apiHealth, apiLogs, apiStatus } from "@/api/client";
 
 interface Props {
   onAdd: () => void;
@@ -59,6 +66,13 @@ export function ConnectionPicker({ onAdd }: Props) {
   const { connections, active, activate, health, activation, retry } =
     useConnections();
   const [open, setOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [probes, setProbes] = useState<Record<string, ConnectionProbeResult>>({});
+  const [activeDetails, setActiveDetails] = useState<{
+    loading: boolean;
+    rows: Array<{ label: string; value: string }>;
+    errors: string[];
+  }>({ loading: false, rows: [], errors: [] });
 
   const healthy = health?.healthy ?? false;
   const showingActive =
@@ -76,6 +90,85 @@ export function ConnectionPicker({ onAdd }: Props) {
     (activation.type === "failed" ||
       activation.type === "binary_missing" ||
       activation.type === "needs_manual_pairing");
+
+  useEffect(() => {
+    if (!open || connections.length === 0) return;
+    let cancelled = false;
+    void Promise.all(
+      connections.map((conn) =>
+        connectionProbe(conn.id)
+          .then((probe) => [conn.id, probe] as const)
+          .catch(
+            (e) =>
+              [
+                conn.id,
+                {
+                  connection_id: conn.id,
+                  reachable: false,
+                  latency_ms: null,
+                  status: "error",
+                  error: formatError(e),
+                  checked_at: String(Date.now()),
+                } satisfies ConnectionProbeResult,
+              ] as const,
+          ),
+      ),
+    ).then((results) => {
+      if (!cancelled) setProbes(Object.fromEntries(results));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [connections, open]);
+
+  useEffect(() => {
+    if (!detailsOpen || !active) return;
+    let cancelled = false;
+    setActiveDetails({ loading: true, rows: [], errors: [] });
+
+    async function load() {
+      const rows: Array<{ label: string; value: string }> = [];
+      const errors: string[] = [];
+      await Promise.all([
+        apiHealth()
+          .then((r) => rows.push({ label: "Gateway health", value: r.status }))
+          .catch((e) => errors.push(`health: ${formatError(e)}`)),
+        apiStatus()
+          .then((r) =>
+            rows.push({ label: "Gateway version", value: r.version ?? "unknown" }),
+          )
+          .catch((e) => errors.push(`status: ${formatError(e)}`)),
+        runtimeStatus()
+          .then((r) => rows.push({ label: "Managed runtime", value: String(r) }))
+          .catch((e) => errors.push(`runtime: ${formatError(e)}`)),
+        apiDoctor()
+          .then((r) =>
+            rows.push({
+              label: "Doctor",
+              value: `${r.results.length} result${r.results.length === 1 ? "" : "s"}`,
+            }),
+          )
+          .catch((e) => errors.push(`doctor: ${formatError(e)}`)),
+        apiLogs()
+          .then((r) => {
+            const recentError = r.events.find((ev) =>
+              String(ev.severity_text ?? "").toLowerCase().includes("error"),
+            );
+            rows.push({
+              label: "Recent log error",
+              value: recentError?.message ?? "none",
+            });
+          })
+          .catch((e) => errors.push(`logs: ${formatError(e)}`)),
+      ]);
+      if (!cancelled) setActiveDetails({ loading: false, rows, errors });
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [active, detailsOpen]);
 
   async function choose(id: string | null) {
     setOpen(false);
@@ -143,6 +236,9 @@ export function ConnectionPicker({ onAdd }: Props) {
                     <span className="block truncate font-mono text-[10px] text-neutral-500">
                       {c.url || "pending tunnel"}
                     </span>
+                    <span className="mt-0.5 block truncate text-[10px] text-neutral-600">
+                      {probeLabel(probes[c.id])}
+                    </span>
                   </span>
                   <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
                     {transportLabel(c)}
@@ -186,7 +282,9 @@ export function ConnectionPicker({ onAdd }: Props) {
       )}
 
       {active && !stepLabel && (
-        <span
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
           className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-xs ${
             showingActive
               ? "bg-emerald-500/10 text-emerald-300"
@@ -196,7 +294,53 @@ export function ConnectionPicker({ onAdd }: Props) {
         >
           {showingActive ? <Wifi size={12} /> : <WifiOff size={12} />}
           {showingActive ? "Online" : "Offline"}
-        </span>
+        </button>
+      )}
+
+      {detailsOpen && active && (
+        <div className="absolute right-4 top-11 z-50 w-[420px] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
+          <div className="border-b border-neutral-800 px-3 py-2 text-xs">
+            <div className="font-medium text-neutral-100">{active.name}</div>
+            <div className="mt-0.5 truncate font-mono text-[10px] text-neutral-500">
+              {active.url || "pending tunnel"}
+            </div>
+          </div>
+          <div className="max-h-96 overflow-auto p-3 text-xs">
+            {activeDetails.loading ? (
+              <div className="flex items-center gap-2 text-neutral-500">
+                <Loader2 size={12} className="animate-spin" />
+                Checking connection...
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {activeDetails.rows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-[120px_minmax(0,1fr)] gap-2"
+                  >
+                    <span className="text-[10px] uppercase tracking-wide text-neutral-500">
+                      {row.label}
+                    </span>
+                    <span
+                      className="truncate font-mono text-neutral-300"
+                      title={row.value}
+                    >
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+                {activeDetails.errors.map((error) => (
+                  <div
+                    key={error}
+                    className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-200"
+                  >
+                    {error}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {showRetry && (
@@ -222,4 +366,19 @@ export function ConnectionPicker({ onAdd }: Props) {
       </button>
     </div>
   );
+}
+
+function probeLabel(probe: ConnectionProbeResult | undefined) {
+  if (!probe) return "probe pending";
+  if (probe.status === "tunnel_inactive") {
+    return "Tunnel inactive / activate to probe";
+  }
+  const latency = probe.latency_ms == null ? "" : ` (${probe.latency_ms} ms)`;
+  return probe.reachable ? `reachable${latency}` : `${probe.status}${latency}`;
+}
+
+function formatError(e: unknown) {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  return String(e);
 }

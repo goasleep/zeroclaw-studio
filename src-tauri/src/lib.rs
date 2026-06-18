@@ -12,8 +12,17 @@ use connection::ssh::TunnelRegistry;
 use connection::store::ConnectionBook;
 use runtime::supervisor::Supervisor;
 use std::sync::Arc;
-use tauri::{Manager, RunEvent};
+use tauri::menu::MenuBuilder;
+use tauri::tray::TrayIconBuilder;
+use tauri::{Emitter, Manager, RunEvent};
 use workspace::fs::WorkspaceState;
+
+const TRAY_SHOW_HIDE: &str = "tray_show_hide";
+const TRAY_FOCUS_CHAT: &str = "tray_focus_chat";
+const TRAY_RETRY_CONNECTION: &str = "tray_retry_connection";
+const TRAY_OPEN_SETTINGS: &str = "tray_open_settings";
+const TRAY_OPEN_LOGS: &str = "tray_open_logs";
+const TRAY_QUIT: &str = "tray_quit";
 
 pub fn run() {
     let book = ConnectionBook::new();
@@ -98,6 +107,7 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 let book_for_setup = book.clone();
                 let supervisor_for_setup = supervisor.clone();
+                install_tray(app.handle())?;
                 // Load saved connections, then auto-onboard (first-run only)
                 // and auto-activate the persisted active one — the
                 // "open the app, it just works" path:
@@ -184,6 +194,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::connection::remove_connection::<tauri::Wry>,
         commands::connection::set_active_connection::<tauri::Wry>,
         commands::connection::reactivate::<tauri::Wry>,
+        commands::connection::connection_probe,
         commands::gateway::discover_local_gateway,
         commands::gateway::ensure_token::<tauri::Wry>,
         commands::gateway::pair_with_code::<tauri::Wry>,
@@ -202,7 +213,70 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::fs::workspace_write_file,
         commands::fs::workspace_watch_start::<tauri::Wry>,
         commands::fs::workspace_watch_stop,
+        commands::fs::workspace_git_status,
     ])
+}
+
+fn install_tray(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
+    let menu = MenuBuilder::new(app)
+        .text(TRAY_SHOW_HIDE, "Show/Hide Window")
+        .text(TRAY_FOCUS_CHAT, "Focus Chat")
+        .separator()
+        .text(TRAY_RETRY_CONNECTION, "Retry Active Connection")
+        .text(TRAY_OPEN_SETTINGS, "Open Settings")
+        .text(TRAY_OPEN_LOGS, "Open Logs")
+        .separator()
+        .text(TRAY_QUIT, "Quit")
+        .build()?;
+
+    let mut tray = TrayIconBuilder::with_id("main")
+        .menu(&menu)
+        .tooltip("ZeroClaw Workspace")
+        .show_menu_on_left_click(true)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            TRAY_SHOW_HIDE => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let visible = window.is_visible().unwrap_or(false);
+                    if visible {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+            TRAY_FOCUS_CHAT => {
+                focus_main_window(app);
+                let _ = app.emit("zeroclaw://quick-invoke", ());
+            }
+            TRAY_RETRY_CONNECTION => {
+                let _ = app.emit("zeroclaw://tray-action", "retry-active-connection");
+            }
+            TRAY_OPEN_SETTINGS => {
+                focus_main_window(app);
+                let _ = app.emit("zeroclaw://open-settings", "app");
+            }
+            TRAY_OPEN_LOGS => {
+                focus_main_window(app);
+                let _ = app.emit("zeroclaw://open-settings", "logs");
+            }
+            TRAY_QUIT => app.exit(0),
+            _ => {}
+        });
+
+    if let Some(icon) = app.default_window_icon().cloned() {
+        tray = tray.icon(icon);
+    }
+
+    let _ = tray.build(app)?;
+    Ok(())
+}
+
+fn focus_main_window(app: &tauri::AppHandle<tauri::Wry>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
 }
 
 /// TypeScript export configuration. BigInt types (e.g. `DirEntry.size: u64`)

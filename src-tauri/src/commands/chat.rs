@@ -68,6 +68,7 @@ pub struct ChatFileEntry {
     pub data_b64: Option<String>,
     pub filename: String,
     pub mime_type: String,
+    pub size: u64,
     pub source: String,
 }
 
@@ -332,6 +333,7 @@ fn prepare_one_attachment(raw: &str, embed_bytes: bool) -> Result<ChatFileEntry,
             data_b64: Some(base64_encode(&bytes)),
             filename,
             mime_type,
+            size: meta.len(),
             source: "file".to_string(),
         })
     } else {
@@ -340,6 +342,7 @@ fn prepare_one_attachment(raw: &str, embed_bytes: bool) -> Result<ChatFileEntry,
             data_b64: None,
             filename,
             mime_type,
+            size: meta.len(),
             source: "file".to_string(),
         })
     }

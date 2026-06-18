@@ -4,12 +4,14 @@ export type DiffPreview =
       path?: string;
       title: string;
       lines: Array<{ type: "context" | "add" | "remove"; text: string }>;
+      truncated?: boolean;
     }
   | {
       kind: "write";
       path?: string;
       title: string;
       lines: Array<{ type: "context" | "add" | "remove"; text: string }>;
+      truncated?: boolean;
     };
 
 export function buildApprovalPreview(
@@ -35,7 +37,7 @@ export function buildApprovalPreview(
       kind: "write",
       path: path ?? undefined,
       title: `Write ${path ?? "file"}`,
-      lines: content.split(/\r?\n/).map((text) => ({ type: "add", text })),
+      ...limitedLines(content.split(/\r?\n/).map((text) => ({ type: "add" as const, text }))),
     };
   }
 
@@ -59,7 +61,7 @@ export function buildApprovalPreview(
     kind: "diff",
     path: path ?? undefined,
     title: `Edit ${path ?? "file"}`,
-    lines: simpleDiff(before, after),
+    ...limitedLines(simpleDiff(before, after)),
   };
 }
 
@@ -82,7 +84,16 @@ function simpleDiff(
   }
   while (i < a.length) lines.push({ type: "remove", text: a[i++] });
   while (j < b.length) lines.push({ type: "add", text: b[j++] });
-  return lines.slice(0, 400);
+  return lines;
+}
+
+function limitedLines(
+  lines: Array<{ type: "context" | "add" | "remove"; text: string }>,
+) {
+  return {
+    lines: lines.slice(0, 400),
+    truncated: lines.length > 400,
+  };
 }
 
 function longestCommonSubsequence(a: string[], b: string[]) {

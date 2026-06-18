@@ -50,7 +50,7 @@ export interface ChatMessage {
   content: string;
   thinking?: string;
   toolCalls: Array<{ name: string; args: unknown; result?: unknown }>;
-  attachments?: Array<{ filename: string; mime_type: string }>;
+  attachments?: Array<{ filename: string; mime_type: string; size?: number }>;
   approval?: {
     request_id: string;
     tool: string;
@@ -70,7 +70,7 @@ type Action =
   | {
       type: "push-user";
       content: string;
-      attachments?: Array<{ filename: string; mime_type: string }>;
+      attachments?: Array<{ filename: string; mime_type: string; size?: number }>;
     }
   | { type: "frame"; frame: ChatFrame };
 
@@ -374,6 +374,7 @@ export function useChat({
       const attachmentSummary = attachments?.map((a) => ({
         filename: a.filename,
         mime_type: a.mime_type,
+        size: a.size,
       }));
       dispatch({ type: "push-user", content, attachments: attachmentSummary });
       clientRef.current.send({
