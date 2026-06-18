@@ -14,10 +14,7 @@ import {
   GitBranch,
   GitCompare,
   Loader2,
-  MessageSquarePlus,
   Paperclip,
-  Pencil,
-  RefreshCw,
   RotateCcw,
   Send,
   Sparkles,
@@ -29,7 +26,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { useChat, type ChatMessage, type NormalizedSession } from "./use-chat";
+import { useChat, type ChatMessage } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
 import { apiAgentWorkspaceList } from "@/api/client";
@@ -152,6 +149,23 @@ export function ChatPanel({
   }, [chat.selectSession]);
 
   useEffect(() => {
+    function newSession() {
+      chat.newSession();
+    }
+
+    function refreshSessions() {
+      void chat.refreshSessions();
+    }
+
+    window.addEventListener("zeroclaw://new-session", newSession);
+    window.addEventListener("zeroclaw://refresh-sessions", refreshSessions);
+    return () => {
+      window.removeEventListener("zeroclaw://new-session", newSession);
+      window.removeEventListener("zeroclaw://refresh-sessions", refreshSessions);
+    };
+  }, [chat.newSession, chat.refreshSessions]);
+
+  useEffect(() => {
     if (!root) {
       setGitStatus(null);
       return;
@@ -265,34 +279,28 @@ export function ChatPanel({
 
   const isCode = mode === "acp";
   const remoteCode = isCode && active && active.transport !== "local";
+  const currentSession = chat.sessions.find(
+    (session) => session.session_id === chat.sessionId,
+  );
 
   return (
     <div
-      className="grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)]"
+      className="relative flex h-full min-h-0 overflow-hidden"
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <SessionRail
-        sessions={chat.sessions}
-        activeSessionId={chat.sessionId}
-        loading={chat.sessionsLoading}
-        error={chat.sessionError}
-        onRefresh={() => void chat.refreshSessions()}
-        onNew={chat.newSession}
-        onSelect={chat.selectSession}
-        onRename={(id, name) => void chat.renameSession(id, name)}
-        onDelete={(id) => void chat.deleteSession(id)}
-      />
-
-      <div className="flex min-w-0 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
           {isCode ? (
             <TerminalSquare size={12} className="text-orange-400" />
           ) : (
             <Sparkles size={12} className="text-orange-400" />
           )}
-          <span className="text-neutral-300">
-            {isCode ? "Code" : "Chat"} / {agentAlias}
+          <span className="min-w-0 truncate text-neutral-300">
+            {currentSession?.name ?? `New ${isCode ? "code" : "chat"}`}
+          </span>
+          <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
+            {agentAlias}
           </span>
           <span
             className={`ml-1 rounded px-1.5 py-0.5 text-[10px] ${
@@ -444,134 +452,6 @@ export function ChatPanel({
       {preview && (
         <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />
       )}
-    </div>
-  );
-}
-
-function SessionRail({
-  sessions,
-  activeSessionId,
-  loading,
-  error,
-  onRefresh,
-  onNew,
-  onSelect,
-  onRename,
-  onDelete,
-}: {
-  sessions: NormalizedSession[];
-  activeSessionId: string | null;
-  loading: boolean;
-  error: string | null;
-  onRefresh: () => void;
-  onNew: () => void;
-  onSelect: (sessionId: string | null) => void;
-  onRename: (sessionId: string, name: string) => void;
-  onDelete: (sessionId: string) => void;
-}) {
-  return (
-    <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-      <header className="shrink-0 border-b border-neutral-800 p-2">
-        <div className="mb-2 flex items-center gap-1">
-          <button
-            type="button"
-            onClick={onNew}
-            className="flex flex-1 items-center justify-center gap-1 rounded bg-orange-500/15 px-2 py-1.5 text-xs text-orange-200 hover:bg-orange-500/25"
-          >
-            <MessageSquarePlus size={12} />
-            New
-          </button>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="rounded border border-neutral-800 px-2 py-1.5 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
-            title="Refresh sessions"
-          >
-            <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-          </button>
-        </div>
-        {error && <p className="text-[10px] text-red-300">{error}</p>}
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
-        {sessions.length === 0 && !loading ? (
-          <p className="rounded border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs text-neutral-500">
-            No saved sessions.
-          </p>
-        ) : (
-          <div className="space-y-1">
-            {sessions.map((session) => (
-              <SessionButton
-                key={session.session_id}
-                session={session}
-                active={session.session_id === activeSessionId}
-                onSelect={() => onSelect(session.session_id)}
-                onRename={(name) => onRename(session.session_id, name)}
-                onDelete={() => onDelete(session.session_id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </aside>
-  );
-}
-
-function SessionButton({
-  session,
-  active,
-  onSelect,
-  onRename,
-  onDelete,
-}: {
-  session: NormalizedSession;
-  active: boolean;
-  onSelect: () => void;
-  onRename: (name: string) => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div
-      className={`group rounded-md border ${
-        active
-          ? "border-orange-500/30 bg-orange-500/10"
-          : "border-transparent hover:bg-neutral-900"
-      }`}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="w-full min-w-0 px-2 py-2 text-left"
-      >
-        <span className="block truncate text-xs text-neutral-200">
-          {session.name}
-        </span>
-        <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
-          {session.session_id}
-        </span>
-      </button>
-      <div className="flex items-center justify-end gap-1 px-1 pb-1 opacity-0 transition group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={() => {
-            const name = window.prompt("Rename session", session.name);
-            if (name?.trim()) onRename(name.trim());
-          }}
-          className="rounded px-1 py-0.5 text-neutral-500 hover:text-orange-300"
-          title="Rename"
-        >
-          <Pencil size={10} />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (window.confirm(`Delete "${session.name}"?`)) onDelete();
-          }}
-          className="rounded px-1 py-0.5 text-neutral-500 hover:text-red-300"
-          title="Delete"
-        >
-          <Trash2 size={10} />
-        </button>
-      </div>
     </div>
   );
 }

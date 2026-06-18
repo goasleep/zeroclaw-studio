@@ -448,7 +448,7 @@ export function useChat({
   );
 }
 
-function normalizeSession(item: SessionListItem): NormalizedSession | null {
+export function normalizeSession(item: SessionListItem): NormalizedSession | null {
   const id = item.session_id ?? item.id;
   if (!id) return null;
   return {
@@ -462,13 +462,13 @@ function normalizeSession(item: SessionListItem): NormalizedSession | null {
   };
 }
 
-function sessionSort(a: NormalizedSession, b: NormalizedSession) {
+export function sessionSort(a: NormalizedSession, b: NormalizedSession) {
   const at = a.last_message_at ?? a.updated_at ?? a.created_at ?? "";
   const bt = b.last_message_at ?? b.updated_at ?? b.created_at ?? "";
   return bt.localeCompare(at);
 }
 
-function shortSessionName(id: string) {
+export function shortSessionName(id: string) {
   return `session ${id.slice(0, 8)}`;
 }
 

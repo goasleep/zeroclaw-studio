@@ -12,11 +12,20 @@ use connection::ssh::TunnelRegistry;
 use connection::store::ConnectionBook;
 use runtime::supervisor::Supervisor;
 use std::sync::Arc;
-use tauri::menu::MenuBuilder;
+use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, RunEvent};
 use workspace::fs::WorkspaceState;
 
+const MENU_FOCUS_CHAT: &str = "menu_focus_chat";
+const MENU_FOCUS_CODE: &str = "menu_focus_code";
+const MENU_OPEN_PROJECT: &str = "menu_open_project";
+const MENU_NEW_SESSION: &str = "menu_new_session";
+const MENU_REFRESH_SESSIONS: &str = "menu_refresh_sessions";
+const MENU_RETRY_CONNECTION: &str = "menu_retry_connection";
+const MENU_OPEN_SETTINGS: &str = "menu_open_settings";
+const MENU_OPEN_LOGS: &str = "menu_open_logs";
+const MENU_OPEN_DOCTOR: &str = "menu_open_doctor";
 const TRAY_SHOW_HIDE: &str = "tray_show_hide";
 const TRAY_FOCUS_CHAT: &str = "tray_focus_chat";
 const TRAY_RETRY_CONNECTION: &str = "tray_retry_connection";
@@ -100,6 +109,7 @@ pub fn run() {
         .manage(chat_manager.clone())
         .manage(http_client.clone())
         .invoke_handler(specta.invoke_handler())
+        .on_menu_event(|app, event| handle_app_menu_event(app, event.id().as_ref()))
         .setup({
             let book = book.clone();
             let supervisor = supervisor.clone();
@@ -107,6 +117,7 @@ pub fn run() {
                 let app_handle = app.handle().clone();
                 let book_for_setup = book.clone();
                 let supervisor_for_setup = supervisor.clone();
+                install_app_menu(app.handle())?;
                 install_tray(app.handle())?;
                 // Load saved connections, then auto-onboard (first-run only)
                 // and auto-activate the persisted active one — the
@@ -217,6 +228,76 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     ])
 }
 
+fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
+    let focus_chat = MenuItemBuilder::with_id(MENU_FOCUS_CHAT, "Focus Chat")
+        .accelerator("CmdOrCtrl+1")
+        .build(app)?;
+    let focus_code = MenuItemBuilder::with_id(MENU_FOCUS_CODE, "Focus Code")
+        .accelerator("CmdOrCtrl+2")
+        .build(app)?;
+    let open_project = MenuItemBuilder::with_id(MENU_OPEN_PROJECT, "Open Project...")
+        .accelerator("CmdOrCtrl+O")
+        .build(app)?;
+    let new_session = MenuItemBuilder::with_id(MENU_NEW_SESSION, "New Session")
+        .accelerator("CmdOrCtrl+N")
+        .build(app)?;
+    let refresh_sessions = MenuItemBuilder::with_id(MENU_REFRESH_SESSIONS, "Refresh Sessions")
+        .accelerator("CmdOrCtrl+R")
+        .build(app)?;
+    let retry_connection =
+        MenuItemBuilder::with_id(MENU_RETRY_CONNECTION, "Retry Active Connection")
+            .accelerator("CmdOrCtrl+Shift+R")
+            .build(app)?;
+    let settings = MenuItemBuilder::with_id(MENU_OPEN_SETTINGS, "Settings")
+        .accelerator("CmdOrCtrl+,")
+        .build(app)?;
+    let logs = MenuItemBuilder::with_id(MENU_OPEN_LOGS, "Logs").build(app)?;
+    let doctor = MenuItemBuilder::with_id(MENU_OPEN_DOCTOR, "Doctor").build(app)?;
+
+    let workspace = SubmenuBuilder::new(app, "Workspace")
+        .item(&focus_chat)
+        .item(&focus_code)
+        .separator()
+        .item(&open_project)
+        .separator()
+        .item(&new_session)
+        .item(&refresh_sessions)
+        .separator()
+        .item(&retry_connection)
+        .build()?;
+
+    let diagnostics = SubmenuBuilder::new(app, "Diagnostics")
+        .item(&settings)
+        .separator()
+        .item(&logs)
+        .item(&doctor)
+        .build()?;
+
+    let edit = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
+
+    let window = SubmenuBuilder::new(app, "Window")
+        .minimize()
+        .close_window()
+        .build()?;
+
+    let menu = MenuBuilder::new(app)
+        .item(&workspace)
+        .item(&edit)
+        .item(&diagnostics)
+        .item(&window)
+        .build()?;
+    app.set_menu(menu)?;
+    Ok(())
+}
+
 fn install_tray(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
     let menu = MenuBuilder::new(app)
         .text(TRAY_SHOW_HIDE, "Show/Hide Window")
@@ -270,6 +351,48 @@ fn install_tray(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
 
     let _ = tray.build(app)?;
     Ok(())
+}
+
+fn handle_app_menu_event(app: &tauri::AppHandle<tauri::Wry>, id: &str) {
+    match id {
+        MENU_FOCUS_CHAT => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://focus-chat", ());
+        }
+        MENU_FOCUS_CODE => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://focus-code", ());
+        }
+        MENU_OPEN_PROJECT => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://open-project", ());
+        }
+        MENU_NEW_SESSION => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://new-session", ());
+        }
+        MENU_REFRESH_SESSIONS => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://refresh-sessions", ());
+        }
+        MENU_RETRY_CONNECTION => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://tray-action", "retry-active-connection");
+        }
+        MENU_OPEN_SETTINGS => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://open-settings", "app");
+        }
+        MENU_OPEN_LOGS => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://open-settings", "logs");
+        }
+        MENU_OPEN_DOCTOR => {
+            focus_main_window(app);
+            let _ = app.emit("zeroclaw://open-settings", "doctor");
+        }
+        _ => {}
+    }
 }
 
 fn focus_main_window(app: &tauri::AppHandle<tauri::Wry>) {

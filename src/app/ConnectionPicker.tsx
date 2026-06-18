@@ -185,7 +185,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           <div className="text-[11px] uppercase tracking-wide text-neutral-500">
             ZeroClaw Workspace
           </div>
-          <div className="text-xs text-neutral-300">Connection target</div>
+          <div className="text-xs text-neutral-300">Workspace runtime</div>
         </div>
       </div>
 
@@ -213,7 +213,7 @@ export function ConnectionPicker({ onAdd }: Props) {
       {open && (
         <div className="absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
           <div className="border-b border-neutral-800 px-3 py-2 text-[10px] uppercase tracking-wide text-neutral-500">
-            Saved connections
+            Runtimes
           </div>
           {connections.length === 0 ? (
             <div className="px-3 py-3 text-xs text-neutral-500">
@@ -256,7 +256,7 @@ export function ConnectionPicker({ onAdd }: Props) {
             className="flex w-full items-center gap-2 border-t border-neutral-800 px-3 py-2 text-xs text-orange-300 hover:bg-orange-500/10"
           >
             <Plus size={12} />
-            Add another connection
+            Add runtime
           </button>
         </div>
       )}
@@ -362,7 +362,7 @@ export function ConnectionPicker({ onAdd }: Props) {
         className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-200 transition hover:border-orange-500 hover:text-orange-300"
       >
         <Plus size={12} />
-        Add connection
+        Add runtime
       </button>
     </div>
   );
