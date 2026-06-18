@@ -11,6 +11,7 @@ import {
   Search,
   Trash2,
   TriangleAlert,
+  Wrench,
 } from "lucide-react";
 import {
   ApiError,
@@ -34,6 +35,8 @@ import {
   type PatchOp,
   type PickerItem,
 } from "@/api/client";
+import { SetupDoctorTab } from "./SetupDoctorTab";
+import { setupTargetsForPrefix } from "./setup-targets";
 
 const GROUP_ORDER = [
   "Foundation",
@@ -695,6 +698,7 @@ function ConfigFieldForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<"fields" | "setup">("fields");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -719,6 +723,11 @@ function ConfigFieldForm({
 
   const dirtyEntries = entries.filter((entry) => draft[entry.path] !== seed[entry.path]);
   const tabs = useMemo(() => groupFields(entries), [entries]);
+  const setupTargets = useMemo(() => setupTargetsForPrefix(target.prefix), [target.prefix]);
+
+  useEffect(() => {
+    setActiveTab("fields");
+  }, [target.prefix]);
 
   async function save() {
     if (dirtyEntries.length === 0) return;
@@ -771,64 +780,102 @@ function ConfigFieldForm({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={dirtyEntries.length === 0 || saving}
-            className="flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {saving ? (
-              <Loader2 size={12} className="animate-spin" />
-            ) : saved ? (
-              <Check size={12} />
-            ) : (
-              <Save size={12} />
-            )}
-            {saved ? "Saved" : "Save"}
-          </button>
+          {activeTab === "fields" && (
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={dirtyEntries.length === 0 || saving}
+              className="flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {saving ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : saved ? (
+                <Check size={12} />
+              ) : (
+                <Save size={12} />
+              )}
+              {saved ? "Saved" : "Save"}
+            </button>
+          )}
         </div>
-      </header>
-      <div className="min-h-0 flex-1 overflow-auto p-5">
-        {loading && <LoadingInline label="Loading fields..." />}
-        {error && <ErrorBox message={error} />}
-        {!loading && !error && entries.length === 0 && (
-          <EmptyState
-            icon={<Code2 size={28} />}
-            title="No fields for this prefix"
-            body="The gateway did not report editable config fields under this prefix."
-          />
-        )}
-        {!loading && entries.length > 0 && (
-          <div className="mx-auto max-w-4xl space-y-5">
-            {tabs.map(({ label, fields }) => (
-              <section
-                key={label}
-                className="rounded-lg border border-neutral-800 bg-neutral-900/30"
-              >
-                <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
-                  {label}
-                </h3>
-                <div className="divide-y divide-neutral-800">
-                  {fields.map((entry) => (
-                    <FieldRow
-                      key={entry.path}
-                      entry={entry}
-                      value={draft[entry.path] ?? ""}
-                      dirty={draft[entry.path] !== seed[entry.path]}
-                      onChange={(value) =>
-                        setDraft((current) => ({
-                          ...current,
-                          [entry.path]: value,
-                        }))
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+        {setupTargets.length > 0 && (
+          <div className="mt-3 flex gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("fields")}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] ${
+                activeTab === "fields"
+                  ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
+                  : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-100"
+              }`}
+            >
+              <Code2 size={12} />
+              Fields
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("setup")}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] ${
+                activeTab === "setup"
+                  ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
+                  : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-100"
+              }`}
+            >
+              <Wrench size={12} />
+              Setup/Doctor
+            </button>
           </div>
         )}
-      </div>
+      </header>
+      {activeTab === "setup" && setupTargets.length > 0 ? (
+        <SetupDoctorTab
+          prefix={target.prefix}
+          title={target.title}
+          onConfigSaved={onSaved}
+        />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-auto p-5">
+          {loading && <LoadingInline label="Loading fields..." />}
+          {error && <ErrorBox message={error} />}
+          {!loading && !error && entries.length === 0 && (
+            <EmptyState
+              icon={<Code2 size={28} />}
+              title="No fields for this prefix"
+              body="The gateway did not report editable config fields under this prefix."
+            />
+          )}
+          {!loading && entries.length > 0 && (
+            <div className="mx-auto max-w-4xl space-y-5">
+              {tabs.map(({ label, fields }) => (
+                <section
+                  key={label}
+                  className="rounded-lg border border-neutral-800 bg-neutral-900/30"
+                >
+                  <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+                    {label}
+                  </h3>
+                  <div className="divide-y divide-neutral-800">
+                    {fields.map((entry) => (
+                      <FieldRow
+                        key={entry.path}
+                        entry={entry}
+                        value={draft[entry.path] ?? ""}
+                        dirty={draft[entry.path] !== seed[entry.path]}
+                        onChange={(value) =>
+                          setDraft((current) => ({
+                            ...current,
+                            [entry.path]: value,
+                          }))
+                        }
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

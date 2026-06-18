@@ -229,6 +229,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::runtime::runtime_start,
         commands::runtime::runtime_stop,
         commands::runtime::runtime_status,
+        commands::setup::setup_get_status,
+        commands::setup::setup_run_action,
         commands::ssh::ssh_open_tunnel::<tauri::Wry>,
         commands::ssh::ssh_close_tunnel,
         commands::fs::workspace_open_root::<tauri::Wry>,

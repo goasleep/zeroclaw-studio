@@ -7,4 +7,5 @@ pub mod gateway;
 pub mod gateway_client;
 pub mod local_state;
 pub mod runtime;
+pub mod setup;
 pub mod ssh;

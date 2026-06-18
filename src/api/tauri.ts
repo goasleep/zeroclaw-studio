@@ -22,6 +22,8 @@ import type {
   Connection,
   GatewayHttpRequest,
   PrepareChatAttachmentsRequest,
+  SetupActionRequest,
+  SetupContext,
 } from "./bindings";
 
 /** Unpack a specta `Result` union into a throwing promise (Tauri's native IPC
@@ -146,6 +148,30 @@ export const runtimeStart = (id: string) => unwrap(commands.runtimeStart(id));
 export const runtimeStop = () => unwrap(commands.runtimeStop());
 
 export const runtimeStatus = () => unwrap(commands.runtimeStatus());
+
+// ---- Local setup / doctor commands ----
+
+export type {
+  SetupAction,
+  SetupActionId,
+  SetupActionRequest,
+  SetupActionResult,
+  SetupCapabilityId,
+  SetupCheck,
+  SetupCheckStatus,
+  SetupConfigRecommendation,
+  SetupConfigValue,
+  SetupContext,
+  SetupOverallStatus,
+  SetupRemediation,
+  SetupStatus,
+} from "./bindings";
+
+export const setupGetStatus = (context: SetupContext) =>
+  unwrap(commands.setupGetStatus(context));
+
+export const setupRunAction = (req: SetupActionRequest) =>
+  unwrap(commands.setupRunAction(req));
 
 // ---- SSH commands ----
 

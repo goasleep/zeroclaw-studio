@@ -188,6 +188,22 @@ async runtimeStatus() : Promise<Result<SupervisorStatus, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async setupGetStatus(context: SetupContext) : Promise<Result<SetupStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("setup_get_status", { context }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async setupRunAction(req: SetupActionRequest) : Promise<Result<SetupActionResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("setup_run_action", { req }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async sshOpenTunnel(id: string) : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("ssh_open_tunnel", { id }) };
@@ -420,6 +436,19 @@ export type Lifecycle =
 export type PairResult = { outcome: string; token: string | null }
 export type PrepareChatAttachmentsRequest = { paths: string[]; connection_id: string }
 export type SessionWorkspaceBinding = { session_id: string; workspace_root: string }
+export type SetupAction = { id: SetupActionId; label: string; description: string; command: string[]; requires_confirmation: boolean }
+export type SetupActionId = "browser_install_agent_browser" | "browser_install_chrome_for_testing" | "docker_pull_alpine"
+export type SetupActionRequest = { action_id: SetupActionId; context: SetupContext }
+export type SetupActionResult = { success: boolean; exit_code: number | null; stdout: string; stderr: string }
+export type SetupCapabilityId = "browser_agent_browser" | "python_skills" | "docker_runtime" | "sandbox_backend" | "mcp_stdio"
+export type SetupCheck = { id: string; label: string; status: SetupCheckStatus; detail: string }
+export type SetupCheckStatus = "pass" | "warn" | "fail" | "info"
+export type SetupConfigRecommendation = { id: string; label: string; description: string; path: string; value: SetupConfigValue; merge: string | null }
+export type SetupConfigValue = { type: "bool"; value: boolean } | { type: "string"; value: string } | { type: "string_array"; value: string[] }
+export type SetupContext = { capability_id: SetupCapabilityId; config_prefix: string; alias: string | null; mcp_transport: string | null; mcp_command: string | null }
+export type SetupOverallStatus = "ready" | "needs_action" | "manual" | "unavailable"
+export type SetupRemediation = { title: string; body: string; commands: string[][] }
+export type SetupStatus = { capability_id: SetupCapabilityId; title: string; summary: string; overall: SetupOverallStatus; checks: SetupCheck[]; actions: SetupAction[]; remediations: SetupRemediation[]; config_recommendations: SetupConfigRecommendation[] }
 export type SshConfig = { host: string; user: string; port: number | null; 
 /**
  * Path to the SSH private key. `None` falls back to ssh-agent / default ids.
