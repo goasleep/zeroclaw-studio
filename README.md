@@ -63,6 +63,9 @@ pnpm install
 pnpm tauri dev
 ```
 
+For formatting, checks, generated bindings, and PR workflow, see
+[`docs/development.md`](docs/development.md).
+
 ## Reuse attribution
 
 Some files are ported from `zeroclaw-labs/zeroclaw` under its dual MIT/Apache-2.0
