@@ -5,9 +5,13 @@
 // maintain the actual `tokio-tungstenite` connection and forwards frames
 // through Tauri events.
 
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { getActiveConnection } from "@/api/tauri";
+import {
+  chatConnect,
+  chatDisconnect,
+  chatSend,
+  getActiveConnection,
+} from "@/api/tauri";
 
 export type ChatMode = "chat" | "acp";
 
@@ -16,6 +20,7 @@ export type FileEntry = {
   data_b64?: string | null;
   filename: string;
   mime_type: string;
+  size?: number;
   source: "file" | "clipboard";
 };
 
@@ -87,11 +92,9 @@ export class ChatClient {
     if (!this.sessionId) {
       throw new Error("chat socket not open");
     }
-    void invoke("chat_send", {
-      req: {
-        session_id: this.sessionId,
-        frame: JSON.stringify(frame),
-      },
+    void chatSend({
+      session_id: this.sessionId,
+      frame: JSON.stringify(frame),
     });
   }
 
@@ -102,9 +105,7 @@ export class ChatClient {
     this.closeListeners.forEach((u) => u());
     this.closeListeners = [];
     if (this.sessionId) {
-      void invoke("chat_disconnect", {
-        req: { session_id: this.sessionId },
-      });
+      void chatDisconnect({ session_id: this.sessionId });
       this.sessionId = null;
     }
   }
@@ -150,15 +151,13 @@ export class ChatClient {
     );
     this.closeListeners.push(unlistenClose);
 
-    const info = await invoke<{ session_id: string }>("chat_connect", {
-      req: {
-        url: conn.url,
-        agent_alias: this.opts.agentAlias,
-        session_id: sessionId,
-        token: conn.auth.token ?? "",
-        mode: this.opts.mode ?? "chat",
-        workspace_dir: this.opts.workspaceDir ?? null,
-      },
+    const info = await chatConnect({
+      url: conn.url,
+      agent_alias: this.opts.agentAlias,
+      session_id: sessionId,
+      token: conn.auth.token ?? "",
+      mode: this.opts.mode ?? "chat",
+      workspace_dir: this.opts.workspaceDir ?? null,
     }).catch((err) => {
       this.unlisten?.();
       this.unlisten = null;

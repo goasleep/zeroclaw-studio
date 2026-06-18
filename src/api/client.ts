@@ -5,7 +5,7 @@
 // active connection rather than a fixed `apiOrigin` — workspace can swap
 // connections at runtime and every request follows the new base.
 
-import { getActiveConnection, gatewayRequest } from "@/api/tauri";
+import { getActiveConnection, gatewayRequest, type Connection } from "@/api/tauri";
 
 export class UnauthorizedError extends Error {
   constructor() {
@@ -33,8 +33,9 @@ export class ApiError extends Error {
  * Resolved active-connection details cached for a single request burst. Refresh
  * by calling `refreshActive()` (e.g. when the user switches connections).
  *
- * We avoid hitting Tauri on every request because that's an IPC round trip;
- * the cache is invalidated explicitly by the connection context.
+ * We avoid hitting Tauri on every request because that's an IPC round trip.
+ * The connection context keeps this snapshot in sync whenever the active
+ * connection changes.
  */
 interface ActiveSnapshot {
   url: string;
@@ -43,10 +44,14 @@ interface ActiveSnapshot {
 
 let cached: ActiveSnapshot | null = null;
 
+export function cacheActiveConnection(conn: Connection | null): ActiveSnapshot | null {
+  cached = conn ? { url: conn.url, token: conn.auth.token } : null;
+  return cached;
+}
+
 export async function refreshActive(): Promise<ActiveSnapshot | null> {
   const c = await getActiveConnection();
-  cached = c ? { url: c.url, token: c.auth.token } : null;
-  return cached;
+  return cacheActiveConnection(c);
 }
 
 async function active(): Promise<ActiveSnapshot> {
