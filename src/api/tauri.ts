@@ -56,6 +56,7 @@ export type {
   Lifecycle,
   PairResult,
   PrepareChatAttachmentsRequest,
+  SessionWorkspaceBinding,
   SshConfig,
   SupervisorStatus,
   Transport,
@@ -192,23 +193,52 @@ export const workspaceGitStatus = (root: string) =>
 // ---- Desktop-local chat state ----
 
 export const chatLocalGetSelectedSession = (
+  workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
-) => unwrap(commands.chatLocalGetSelectedSession(mode, agentAlias));
+) =>
+  unwrap(commands.chatLocalGetSelectedSession(workspaceRoot, mode, agentAlias));
 
 export const chatLocalSetSelectedSession = (
+  workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string | null,
-) => unwrap(commands.chatLocalSetSelectedSession(mode, agentAlias, sessionId));
+) =>
+  unwrap(
+    commands.chatLocalSetSelectedSession(
+      workspaceRoot,
+      mode,
+      agentAlias,
+      sessionId,
+    ),
+  );
+
+export const chatLocalListSessionWorkspaces = () =>
+  unwrap(commands.chatLocalListSessionWorkspaces());
+
+export const chatLocalAssignSessionWorkspace = (
+  sessionId: string,
+  workspaceRoot: string,
+) => unwrap(commands.chatLocalAssignSessionWorkspace(sessionId, workspaceRoot));
 
 export const chatLocalGetTranscript = (
+  workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
-) => unwrap(commands.chatLocalGetTranscript(mode, agentAlias, sessionId));
+) =>
+  unwrap(
+    commands.chatLocalGetTranscript(
+      workspaceRoot,
+      mode,
+      agentAlias,
+      sessionId,
+    ),
+  );
 
 export const chatLocalSetTranscript = (
+  workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
@@ -216,6 +246,7 @@ export const chatLocalSetTranscript = (
 ) =>
   unwrap(
     commands.chatLocalSetTranscript(
+      workspaceRoot,
       mode,
       agentAlias,
       sessionId,
@@ -224,7 +255,16 @@ export const chatLocalSetTranscript = (
   );
 
 export const chatLocalClearTranscript = (
+  workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
-) => unwrap(commands.chatLocalClearTranscript(mode, agentAlias, sessionId));
+) =>
+  unwrap(
+    commands.chatLocalClearTranscript(
+      workspaceRoot,
+      mode,
+      agentAlias,
+      sessionId,
+    ),
+  );

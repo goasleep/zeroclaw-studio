@@ -16,7 +16,7 @@ import type {
 import type { NormalizedSession } from "@/features/chat/use-chat";
 
 export function WorkspaceShell() {
-  const { addFiles, setRoot } = useWorkspace();
+  const { root, addFiles, setRoot } = useWorkspace();
   const [page, setPage] = useState<WorkspacePage>("chat");
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("app");
@@ -26,8 +26,12 @@ export function WorkspaceShell() {
   const [agents, setAgents] = useState<string[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [chatScopeRoot, setChatScopeRoot] = useState<string | null | undefined>(
+    undefined,
+  );
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const threads = useThreads();
+  const activeChatWorkspaceRoot = chatScopeRoot === undefined ? root : chatScopeRoot;
 
   const loadAgents = useCallback(() => {
     void apiQuickstartState()
@@ -44,28 +48,42 @@ export function WorkspaceShell() {
       });
   }, []);
 
-  const openProject = useCallback(async () => {
-    const chosen = await openDialog({ directory: true, multiple: false });
-    if (typeof chosen === "string") {
-      await setRoot(chosen);
-    }
-  }, [setRoot]);
-
-  const openSettings = useCallback((section: string) => {
-    setSettingsSection(isSettingsSection(section) ? section : "app");
-    setPage("settings");
-  }, []);
-
   const focusComposer = useCallback(() => {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("zeroclaw://quick-invoke"));
     });
   }, []);
 
+  const pickProject = useCallback(async () => {
+    const chosen = await openDialog({ directory: true, multiple: false });
+    if (typeof chosen === "string") {
+      await setRoot(chosen);
+      setChatScopeRoot(chosen);
+      setActiveThreadId(null);
+    }
+  }, [setRoot]);
+
+  const openProjectRoot = useCallback(
+    async (path: string) => {
+      await setRoot(path);
+      setChatScopeRoot(path);
+      setActiveThreadId(null);
+      setPage("chat");
+      focusComposer();
+    },
+    [focusComposer, setRoot],
+  );
+
+  const openSettings = useCallback((section: string) => {
+    setSettingsSection(isSettingsSection(section) ? section : "app");
+    setPage("settings");
+  }, []);
+
   const openThread = useCallback(
-    (thread: NormalizedSession) => {
+    (thread: NormalizedSession, workspaceRoot: string | null) => {
       const agent = thread.agent_alias || activeAgent || agents[0];
       if (agent) setActiveAgent(agent);
+      setChatScopeRoot(workspaceRoot);
       setActiveThreadId(thread.session_id);
       setPendingSessionId(thread.session_id);
       setPage("chat");
@@ -73,12 +91,18 @@ export function WorkspaceShell() {
     [activeAgent, agents],
   );
 
-  const newThread = useCallback(() => {
-    setActiveThreadId(null);
-    setPage("chat");
-    window.dispatchEvent(new CustomEvent("zeroclaw://new-session"));
-    focusComposer();
-  }, [focusComposer]);
+  const newThread = useCallback(
+    (workspaceRoot: string | null) => {
+      setChatScopeRoot(workspaceRoot);
+      setActiveThreadId(null);
+      setPage("chat");
+      window.requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent("zeroclaw://new-session"));
+        focusComposer();
+      });
+    },
+    [focusComposer],
+  );
 
   useEffect(() => {
     loadAgents();
@@ -128,7 +152,7 @@ export function WorkspaceShell() {
     }
 
     function onOpenProject() {
-      void openProject();
+      void pickProject();
     }
 
     function onFocusChat() {
@@ -153,7 +177,7 @@ export function WorkspaceShell() {
       window.removeEventListener("zeroclaw://focus-chat", onFocusChat);
       window.removeEventListener("zeroclaw://focus-code", onFocusCode);
     };
-  }, [addFiles, focusComposer, openProject, openSettings]);
+  }, [addFiles, focusComposer, pickProject, openSettings]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-neutral-950 text-neutral-100">
@@ -162,19 +186,24 @@ export function WorkspaceShell() {
           <WorkspaceSidebar
             page={page}
             threads={threads.threads}
+            workspaceMap={threads.workspaceMap}
             activeThreadId={activeThreadId}
+            activeWorkspaceRoot={activeChatWorkspaceRoot}
             threadsLoading={threads.loading}
             threadError={threads.error}
             onPage={setPage}
+            onProject={openProjectRoot}
             onThread={openThread}
             onNewThread={newThread}
             onRefreshThreads={() => void threads.refresh()}
             onRenameThread={(id, name) => void threads.rename(id, name)}
             onDeleteThread={(id) => void threads.remove(id)}
-            onPickRoot={() => void openProject()}
+            onPickRoot={() => void pickProject()}
           />
           <ChatWorkspace
             mode={page === "code" ? "acp" : "chat"}
+            workspaceRoot={activeChatWorkspaceRoot}
+            onWorkspaceRoot={setChatScopeRoot}
             agents={agents}
             activeAgent={activeAgent}
             onAgentCreated={loadAgents}

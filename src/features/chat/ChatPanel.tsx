@@ -5,12 +5,14 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Brain,
   Check,
+  ChevronDown,
   CircleStop,
   Clipboard,
   Copy,
   Eye,
   FileText,
   FilePlus2,
+  FolderOpen,
   GitBranch,
   GitCompare,
   Loader2,
@@ -82,14 +84,19 @@ function formatBytes(size?: number) {
 export function ChatPanel({
   agentAlias,
   mode = "chat",
+  workspaceRoot = null,
+  onWorkspaceRoot,
   workspaceDir,
 }: {
   agentAlias: string;
   mode?: ChatMode;
+  workspaceRoot?: string | null;
+  onWorkspaceRoot?: (path: string | null) => void;
   workspaceDir?: string | null;
 }) {
   const { active } = useConnections();
-  const { root, selectedFiles, addFiles, clearSelection } = useWorkspace();
+  const { recentRoots, selectedFiles, addFiles, clearSelection, setRoot } =
+    useWorkspace();
   const [cwd, setCwd] = useState(workspaceDir ?? "");
   const [appliedCwd, setAppliedCwd] = useState(workspaceDir ?? "");
   const [remoteEntries, setRemoteEntries] = useState<
@@ -99,6 +106,7 @@ export function ChatPanel({
   const chat = useChat({
     agentAlias,
     mode,
+    workspaceRoot,
     workspaceDir: mode === "acp" ? appliedCwd || workspaceDir || null : null,
   });
   const [draft, setDraft] = useState("");
@@ -111,6 +119,7 @@ export function ChatPanel({
     loading: boolean;
   } | null>(null);
   const [gitStatus, setGitStatus] = useState<WorkspaceGitStatus | null>(null);
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentDrafts = useMemo<ContextAttachmentDraft[]>(
     () =>
@@ -166,12 +175,12 @@ export function ChatPanel({
   }, [chat.newSession, chat.refreshSessions]);
 
   useEffect(() => {
-    if (!root) {
+    if (!workspaceRoot) {
       setGitStatus(null);
       return;
     }
     let cancelled = false;
-    void workspaceGitStatus(root)
+    void workspaceGitStatus(workspaceRoot)
       .then((status) => {
         if (!cancelled) setGitStatus(status);
       })
@@ -181,7 +190,7 @@ export function ChatPanel({
     return () => {
       cancelled = true;
     };
-  }, [root]);
+  }, [workspaceRoot]);
 
   async function pasteClipboard() {
     const t = await readClipboardText();
@@ -193,6 +202,22 @@ export function ChatPanel({
     const chosen = await openDialog({ multiple: true, directory: false });
     const paths = Array.isArray(chosen) ? chosen : chosen ? [chosen] : [];
     addFiles(paths.filter((path): path is string => typeof path === "string"));
+  }
+
+  async function pickWorkspaceRoot() {
+    const chosen = await openDialog({ directory: true, multiple: false });
+    if (typeof chosen !== "string") return;
+    await setRoot(chosen);
+    onWorkspaceRoot?.(chosen);
+    setWorkspaceMenuOpen(false);
+  }
+
+  async function selectWorkspaceRoot(path: string | null) {
+    if (path) {
+      await setRoot(path);
+    }
+    onWorkspaceRoot?.(path);
+    setWorkspaceMenuOpen(false);
   }
 
   async function previewFile(path: string) {
@@ -281,6 +306,147 @@ export function ChatPanel({
   const remoteCode = isCode && active && active.transport !== "local";
   const currentSession = chat.sessions.find(
     (session) => session.session_id === chat.sessionId,
+  );
+  const hasMessages = chat.messages.length > 0;
+  const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : "No project";
+  const renderComposer = (variant: "center" | "footer") => (
+    <div
+      className={
+        variant === "center"
+          ? "rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl shadow-black/30"
+          : ""
+      }
+    >
+      <div className={variant === "center" ? "p-3" : undefined}>
+        {variant === "footer" && <GitContextSummary status={gitStatus} />}
+        <AttachmentStrip
+          files={attachmentDrafts}
+          onClear={clearSelection}
+          onPreview={(path) => void previewFile(path)}
+        />
+        {composerError && (
+          <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200">
+            {composerError}
+          </div>
+        )}
+        <div
+          className={
+            variant === "center"
+              ? "flex min-h-36 flex-col"
+              : "flex items-end gap-2"
+          }
+        >
+          <textarea
+            ref={textareaRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void submit();
+              }
+            }}
+            rows={variant === "center" ? 4 : 2}
+            placeholder={variant === "center" ? "Do anything" : `${isCode ? "Ask Code" : "Message"} ${agentAlias}...`}
+            className={
+              variant === "center"
+                ? "min-h-20 flex-1 resize-none bg-transparent px-2 py-1 text-base text-neutral-100 outline-none placeholder:text-neutral-600"
+                : "flex-1 resize-none rounded border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+            }
+          />
+          <div
+            className={
+              variant === "center"
+                ? "mt-2 flex items-center gap-2 border-t border-neutral-900 pt-2"
+                : "flex items-end gap-2"
+            }
+          >
+            <button
+              type="button"
+              onClick={() => void pickFiles()}
+              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+              title="Add file attachment"
+            >
+              <FilePlus2 size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void pasteClipboard()}
+              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+              title="Paste clipboard into message"
+            >
+              <Clipboard size={12} />
+            </button>
+            {variant === "center" && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setWorkspaceMenuOpen((open) => !open)}
+                  className="flex max-w-64 items-center gap-2 rounded border border-transparent px-2 py-2 text-sm text-neutral-400 hover:border-neutral-800 hover:bg-neutral-900 hover:text-neutral-200"
+                  title={workspaceRoot ?? "No project"}
+                >
+                  <FolderOpen size={13} />
+                  <span className="min-w-0 truncate">{workspaceName}</span>
+                  <ChevronDown size={12} className="shrink-0" />
+                </button>
+                {workspaceMenuOpen && (
+                  <div className="absolute bottom-11 left-0 z-20 w-72 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 py-1 shadow-xl">
+                    <button
+                      type="button"
+                      onClick={() => void selectWorkspaceRoot(null)}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
+                        !workspaceRoot
+                          ? "bg-neutral-900 text-neutral-100"
+                          : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                      }`}
+                    >
+                      <FolderOpen size={12} className="text-neutral-500" />
+                      <span className="min-w-0 flex-1 truncate">No project</span>
+                    </button>
+                    {recentRoots.slice(0, 8).map((path) => (
+                      <button
+                        key={path}
+                        type="button"
+                        onClick={() => void selectWorkspaceRoot(path)}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
+                          workspaceRoot === path
+                            ? "bg-neutral-900 text-neutral-100"
+                            : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                        }`}
+                        title={path}
+                      >
+                        <FolderOpen size={12} className="text-orange-400" />
+                        <span className="min-w-0 flex-1 truncate">
+                          {filenameFromPath(path)}
+                        </span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => void pickWorkspaceRoot()}
+                      className="flex w-full items-center gap-2 border-t border-neutral-900 px-3 py-2 text-left text-xs text-orange-300 hover:bg-neutral-900"
+                    >
+                      <FilePlus2 size={12} />
+                      <span className="min-w-0 flex-1 truncate">Open project...</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {variant === "center" && <div className="flex-1" />}
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={sending}
+              className="flex items-center gap-1 rounded bg-orange-500 px-3 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+            >
+              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+              {variant === "footer" && "Send"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
   return (
@@ -378,12 +544,20 @@ export function ChatPanel({
           </div>
         )}
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm">
-          {chat.messages.length === 0 && (
-            <p className="text-xs text-neutral-500">
-              No messages yet. Type a message below, or attach files before
-              sending.
-            </p>
+        <div
+          className={
+            hasMessages
+              ? "flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm"
+              : "flex flex-1 items-center justify-center overflow-y-auto px-6 py-10"
+          }
+        >
+          {!hasMessages && (
+            <div className="w-full max-w-4xl">
+              <h1 className="mb-7 text-center text-3xl font-medium tracking-normal text-neutral-100">
+                What should we build?
+              </h1>
+              {renderComposer("center")}
+            </div>
           )}
           {chat.messages.map((m) => (
             <MessageRow
@@ -394,60 +568,11 @@ export function ChatPanel({
           ))}
         </div>
 
-        <footer className="border-t border-neutral-800 px-3 pb-3 pt-2">
-          <GitContextSummary status={gitStatus} />
-          <AttachmentStrip
-            files={attachmentDrafts}
-            onClear={clearSelection}
-            onPreview={(path) => void previewFile(path)}
-          />
-          {composerError && (
-            <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs text-red-200">
-              {composerError}
-            </div>
-          )}
-          <div className="flex items-end gap-2">
-            <textarea
-              ref={textareaRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void submit();
-                }
-              }}
-              rows={2}
-              placeholder={`${isCode ? "Ask Code" : "Message"} ${agentAlias}...`}
-              className="flex-1 resize-none rounded border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
-            />
-            <button
-              type="button"
-              onClick={() => void pickFiles()}
-              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
-              title="Add file attachment"
-            >
-              <FilePlus2 size={12} />
-            </button>
-            <button
-              type="button"
-              onClick={() => void pasteClipboard()}
-              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
-              title="Paste clipboard into message"
-            >
-              <Clipboard size={12} />
-            </button>
-            <button
-              type="button"
-              onClick={() => void submit()}
-              disabled={sending}
-              className="flex items-center gap-1 rounded bg-orange-500 px-3 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
-            >
-              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-              Send
-            </button>
-          </div>
-        </footer>
+        {hasMessages && (
+          <footer className="border-t border-neutral-800 px-3 pb-3 pt-2">
+            {renderComposer("footer")}
+          </footer>
+        )}
       </div>
       {preview && (
         <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />

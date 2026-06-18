@@ -17,12 +17,15 @@ import type { WorkspacePage } from "./types";
 interface WorkspaceSidebarProps {
   page: WorkspacePage;
   threads: NormalizedSession[];
+  workspaceMap: Map<string, string>;
   activeThreadId: string | null;
+  activeWorkspaceRoot: string | null;
   threadsLoading: boolean;
   threadError: string | null;
   onPage: (page: WorkspacePage) => void;
-  onThread: (thread: NormalizedSession) => void;
-  onNewThread: () => void;
+  onProject: (path: string) => void;
+  onThread: (thread: NormalizedSession, workspaceRoot: string | null) => void;
+  onNewThread: (workspaceRoot: string | null) => void;
   onRefreshThreads: () => void;
   onRenameThread: (sessionId: string, name: string) => void;
   onDeleteThread: (sessionId: string) => void;
@@ -32,10 +35,13 @@ interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({
   page,
   threads,
+  workspaceMap,
   activeThreadId,
+  activeWorkspaceRoot,
   threadsLoading,
   threadError,
   onPage,
+  onProject,
   onThread,
   onNewThread,
   onRefreshThreads,
@@ -44,33 +50,41 @@ export function WorkspaceSidebar({
   onPickRoot,
 }: WorkspaceSidebarProps) {
   const { active, health } = useConnections();
-  const { root, recentRoots, selectedFiles, setRoot } = useWorkspace();
+  const { root, recentRoots, selectedFiles } = useWorkspace();
   const online = active && health?.connection_id === active.id && health.healthy;
 
   return (
     <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-950">
       <WorkspaceHeader
-        root={root}
         connectionName={active?.name ?? null}
         online={Boolean(online)}
-        onPickRoot={onPickRoot}
       />
       <ProjectList
         root={root}
         recentRoots={recentRoots}
+        threads={threads}
+        workspaceMap={workspaceMap}
+        activeThreadId={activeThreadId}
+        activeWorkspaceRoot={activeWorkspaceRoot}
         onPickRoot={onPickRoot}
-        onRoot={(path) => void setRoot(path)}
+        onRoot={onProject}
+        onThread={onThread}
+        onNewThread={onNewThread}
+        onRename={onRenameThread}
+        onDelete={onDeleteThread}
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ThreadNav
-          threads={threads}
+          threads={threads.filter(
+            (thread) => !workspaceMap.has(thread.session_id),
+          )}
           activeThreadId={activeThreadId}
           loading={threadsLoading}
           error={threadError}
           selectedCount={selectedFiles.length}
-          onThread={onThread}
-          onNewThread={onNewThread}
+          onThread={(thread) => onThread(thread, null)}
+          onNewThread={() => onNewThread(null)}
           onRefresh={onRefreshThreads}
           onRename={onRenameThread}
           onDelete={onDeleteThread}
@@ -96,42 +110,15 @@ export function WorkspaceSidebar({
 }
 
 function WorkspaceHeader({
-  root,
   connectionName,
   online,
-  onPickRoot,
 }: {
-  root: string | null;
   connectionName: string | null;
   online: boolean;
-  onPickRoot: () => void;
 }) {
-  const workspaceName = root
-    ? root.split("/").filter(Boolean).slice(-1)[0]
-    : (connectionName ?? "Workspace");
-
   return (
     <header className="shrink-0 border-b border-neutral-800 p-3">
       <div className="flex items-center gap-2 text-xs text-neutral-500">
-        <FolderOpen size={14} className="shrink-0 text-orange-400" />
-        <span>Workspace</span>
-      </div>
-      <div className="mt-2 flex items-center gap-2">
-        <span
-          className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-100"
-          title={root ?? "no workspace"}
-        >
-          {workspaceName}
-        </span>
-        <button
-          type="button"
-          onClick={onPickRoot}
-          className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
-        >
-          {root ? "Switch" : "Open"}
-        </button>
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-[10px] text-neutral-500">
         <Server size={11} className="text-neutral-600" />
         <span className="min-w-0 flex-1 truncate">
           {connectionName ?? "No runtime"}
@@ -147,18 +134,34 @@ function WorkspaceHeader({
 function ProjectList({
   root,
   recentRoots,
+  threads,
+  workspaceMap,
+  activeThreadId,
+  activeWorkspaceRoot,
   onPickRoot,
   onRoot,
+  onThread,
+  onNewThread,
+  onRename,
+  onDelete,
 }: {
   root: string | null;
   recentRoots: string[];
+  threads: NormalizedSession[];
+  workspaceMap: Map<string, string>;
+  activeThreadId: string | null;
+  activeWorkspaceRoot: string | null;
   onPickRoot: () => void;
   onRoot: (path: string) => void;
+  onThread: (thread: NormalizedSession, workspaceRoot: string | null) => void;
+  onNewThread: (workspaceRoot: string | null) => void;
+  onRename: (sessionId: string, name: string) => void;
+  onDelete: (sessionId: string) => void;
 }) {
   const visibleRoots = recentRoots.slice(0, 5);
 
   return (
-    <section className="shrink-0 border-b border-neutral-800 p-3">
+    <section className="shrink-0 border-b border-neutral-800 px-3 py-3">
       <div className="mb-2 flex items-center gap-1">
         <h2 className="min-w-0 flex-1 text-[10px] uppercase tracking-wide text-neutral-500">
           Projects
@@ -176,30 +179,67 @@ function ProjectList({
         <button
           type="button"
           onClick={onPickRoot}
-          className="w-full rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-left text-xs text-neutral-500 hover:border-orange-500/50 hover:text-orange-300"
+          className="w-full px-2 py-1.5 text-left text-xs text-neutral-500 hover:text-orange-300"
         >
           Open a project
         </button>
       ) : (
-        <div className="space-y-1">
-          {visibleRoots.map((path) => (
-            <button
-              key={path}
-              type="button"
-              onClick={() => onRoot(path)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
-                path === root
-                  ? "bg-neutral-800 text-neutral-100"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
-              }`}
-              title={path}
-            >
-              <FolderOpen size={13} className="shrink-0 text-orange-400" />
-              <span className="min-w-0 flex-1 truncate">
-                {basename(path)}
-              </span>
-            </button>
-          ))}
+        <div className="space-y-2">
+          {visibleRoots.map((path) => {
+            const projectThreads = threads.filter(
+              (thread) => workspaceMap.get(thread.session_id) === path,
+            );
+            return (
+              <div key={path} className="min-w-0">
+                <div className="group flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRoot(path)}
+                    className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
+                      activeWorkspaceRoot === path
+                        ? "bg-neutral-900 text-neutral-100"
+                        : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                    }`}
+                    title={path}
+                  >
+                    <FolderOpen
+                      size={13}
+                      className="shrink-0 text-orange-400"
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {basename(path)}
+                    </span>
+                    {path === root && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNewThread(path)}
+                    className="rounded p-1 text-neutral-600 opacity-0 transition hover:bg-neutral-900 hover:text-orange-300 group-hover:opacity-100"
+                    title="New project chat"
+                  >
+                    <MessageSquarePlus size={11} />
+                  </button>
+                </div>
+                {projectThreads.length > 0 && (
+                  <div className="mt-1 space-y-0.5 pl-6">
+                    {projectThreads.slice(0, 5).map((thread) => (
+                      <ThreadButton
+                        key={thread.session_id}
+                        thread={thread}
+                        active={thread.session_id === activeThreadId}
+                        compact
+                        onSelect={() => onThread(thread, path)}
+                        onRename={(name) => onRename(thread.session_id, name)}
+                        onDelete={() => onDelete(thread.session_id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </section>
@@ -286,12 +326,14 @@ function basename(path: string) {
 function ThreadButton({
   thread,
   active,
+  compact = false,
   onSelect,
   onRename,
   onDelete,
 }: {
   thread: NormalizedSession;
   active: boolean;
+  compact?: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
@@ -307,15 +349,21 @@ function ThreadButton({
       <button
         type="button"
         onClick={onSelect}
-        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs"
+        className={`flex w-full items-center gap-2 text-left text-xs ${
+          compact ? "px-1.5 py-1" : "px-2 py-1.5"
+        }`}
       >
-        <MessageSquare size={13} className="shrink-0 text-orange-400" />
+        {!compact && (
+          <MessageSquare size={13} className="shrink-0 text-orange-400" />
+        )}
         <span className="min-w-0 flex-1">
           <span className="block truncate">{thread.name}</span>
-          <span className="block truncate text-[10px] text-neutral-600">
-            {thread.agent_alias ?? "default"}
-            {thread.message_count != null ? ` · ${thread.message_count} messages` : ""}
-          </span>
+          {!compact && (
+            <span className="block truncate text-[10px] text-neutral-600">
+              {thread.agent_alias ?? "default"}
+              {thread.message_count != null ? ` · ${thread.message_count} messages` : ""}
+            </span>
+          )}
         </span>
         {active && <ChevronRight size={12} />}
       </button>

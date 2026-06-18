@@ -243,6 +243,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::fs::workspace_git_status,
         commands::local_state::chat_local_get_selected_session,
         commands::local_state::chat_local_set_selected_session::<tauri::Wry>,
+        commands::local_state::chat_local_list_session_workspaces,
+        commands::local_state::chat_local_assign_session_workspace::<tauri::Wry>,
         commands::local_state::chat_local_get_transcript,
         commands::local_state::chat_local_set_transcript::<tauri::Wry>,
         commands::local_state::chat_local_clear_transcript::<tauri::Wry>,

@@ -27,7 +27,14 @@ struct PersistedLocalState {
     current_root: Option<String>,
     recent_roots: Vec<String>,
     selected_sessions: HashMap<String, String>,
+    session_workspaces: HashMap<String, String>,
     transcript_cache: HashMap<String, Vec<serde_json::Value>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+pub struct SessionWorkspaceBinding {
+    pub session_id: String,
+    pub workspace_root: String,
 }
 
 #[derive(Debug, Default)]
@@ -78,8 +85,9 @@ impl LocalStateStore {
     pub async fn remember_root(&self, path: String) -> WorkspaceLocalState {
         let mut state = self.state.write().await;
         state.current_root = Some(path.clone());
-        state.recent_roots.retain(|item| item != &path);
-        state.recent_roots.insert(0, path);
+        if !state.recent_roots.contains(&path) {
+            state.recent_roots.push(path);
+        }
         state.recent_roots.truncate(MAX_RECENT_ROOTS);
         WorkspaceLocalState {
             current_root: state.current_root.clone(),
@@ -116,20 +124,37 @@ impl LocalStateStore {
         }
     }
 
-    pub async fn selected_session(&self, mode: &str, agent_alias: &str) -> Result<Option<String>> {
-        let key = scoped_key(mode, agent_alias)?;
-        Ok(self.state.read().await.selected_sessions.get(&key).cloned())
+    pub async fn selected_session(
+        &self,
+        workspace_root: Option<&str>,
+        mode: &str,
+        agent_alias: &str,
+    ) -> Result<Option<String>> {
+        let key = selected_session_key(workspace_root, mode, agent_alias)?;
+        let fallback_key = selected_session_key(None, mode, agent_alias)?;
+        let state = self.state.read().await;
+        Ok(state
+            .selected_sessions
+            .get(&key)
+            .or_else(|| state.selected_sessions.get(&fallback_key))
+            .cloned())
     }
 
     pub async fn set_selected_session(
         &self,
+        workspace_root: Option<&str>,
         mode: &str,
         agent_alias: &str,
         session_id: Option<String>,
     ) -> Result<()> {
-        let key = scoped_key(mode, agent_alias)?;
+        let key = selected_session_key(workspace_root, mode, agent_alias)?;
         let mut state = self.state.write().await;
         if let Some(session_id) = session_id.filter(|value| !value.trim().is_empty()) {
+            if let Some(workspace_root) = workspace_root.filter(|value| !value.trim().is_empty()) {
+                state
+                    .session_workspaces
+                    .insert(session_id.clone(), workspace_root.to_string());
+            }
             state.selected_sessions.insert(key, session_id);
         } else {
             state.selected_sessions.remove(&key);
@@ -137,57 +162,115 @@ impl LocalStateStore {
         Ok(())
     }
 
+    pub async fn assign_session_workspace(
+        &self,
+        session_id: &str,
+        workspace_root: &str,
+    ) -> Result<()> {
+        let session_id = validated_segment("session id", session_id)?;
+        let workspace_root = validated_workspace_root(workspace_root)?;
+        self.state
+            .write()
+            .await
+            .session_workspaces
+            .insert(session_id.to_string(), workspace_root.to_string());
+        Ok(())
+    }
+
+    pub async fn session_workspaces(&self) -> Vec<SessionWorkspaceBinding> {
+        let state = self.state.read().await;
+        let mut bindings = state
+            .session_workspaces
+            .iter()
+            .map(|(session_id, workspace_root)| SessionWorkspaceBinding {
+                session_id: session_id.clone(),
+                workspace_root: workspace_root.clone(),
+            })
+            .collect::<Vec<_>>();
+        bindings.sort_by(|a, b| a.session_id.cmp(&b.session_id));
+        bindings
+    }
+
     pub async fn transcript(
         &self,
+        workspace_root: Option<&str>,
         mode: &str,
         agent_alias: &str,
         session_id: &str,
     ) -> Result<Option<Vec<serde_json::Value>>> {
-        let key = transcript_key(mode, agent_alias, session_id)?;
-        Ok(self.state.read().await.transcript_cache.get(&key).cloned())
+        let key = transcript_key(workspace_root, mode, agent_alias, session_id)?;
+        let fallback_key = transcript_key(None, mode, agent_alias, session_id)?;
+        let state = self.state.read().await;
+        Ok(state
+            .transcript_cache
+            .get(&key)
+            .or_else(|| state.transcript_cache.get(&fallback_key))
+            .cloned())
     }
 
     pub async fn set_transcript(
         &self,
+        workspace_root: Option<&str>,
         mode: &str,
         agent_alias: &str,
         session_id: &str,
         mut messages: Vec<serde_json::Value>,
     ) -> Result<()> {
-        let key = transcript_key(mode, agent_alias, session_id)?;
+        let key = transcript_key(workspace_root, mode, agent_alias, session_id)?;
         if messages.len() > MAX_CACHED_MESSAGES {
             messages = messages.split_off(messages.len() - MAX_CACHED_MESSAGES);
         }
-        self.state
-            .write()
-            .await
-            .transcript_cache
-            .insert(key, messages);
+        let mut state = self.state.write().await;
+        if let Some(workspace_root) = workspace_root.filter(|value| !value.trim().is_empty()) {
+            state
+                .session_workspaces
+                .insert(session_id.to_string(), workspace_root.to_string());
+        }
+        state.transcript_cache.insert(key, messages);
         Ok(())
     }
 
     pub async fn clear_transcript(
         &self,
+        workspace_root: Option<&str>,
         mode: &str,
         agent_alias: &str,
         session_id: &str,
     ) -> Result<()> {
-        let key = transcript_key(mode, agent_alias, session_id)?;
+        let key = transcript_key(workspace_root, mode, agent_alias, session_id)?;
         self.state.write().await.transcript_cache.remove(&key);
         Ok(())
     }
 }
 
-fn scoped_key(mode: &str, agent_alias: &str) -> Result<String> {
-    let mode = validated_segment("mode", mode)?;
-    let agent_alias = validated_segment("agent alias", agent_alias)?;
-    Ok(format!("{mode}:{agent_alias}"))
+fn selected_session_key(
+    workspace_root: Option<&str>,
+    mode: &str,
+    agent_alias: &str,
+) -> Result<String> {
+    let scope = scoped_key(workspace_root, mode, agent_alias)?;
+    Ok(format!("selected:{scope}"))
 }
 
-fn transcript_key(mode: &str, agent_alias: &str, session_id: &str) -> Result<String> {
-    let scope = scoped_key(mode, agent_alias)?;
+fn scoped_key(workspace_root: Option<&str>, mode: &str, agent_alias: &str) -> Result<String> {
+    let workspace_root = workspace_root
+        .map(validated_workspace_root)
+        .transpose()?
+        .unwrap_or("");
+    let mode = validated_segment("mode", mode)?;
+    let agent_alias = validated_segment("agent alias", agent_alias)?;
+    serde_json::to_string(&(workspace_root, mode, agent_alias)).context("serialize scope key")
+}
+
+fn transcript_key(
+    workspace_root: Option<&str>,
+    mode: &str,
+    agent_alias: &str,
+    session_id: &str,
+) -> Result<String> {
+    let scope = scoped_key(workspace_root, mode, agent_alias)?;
     let session_id = validated_segment("session id", session_id)?;
-    Ok(format!("{scope}:{session_id}"))
+    Ok(format!("transcript:{scope}:{session_id}"))
 }
 
 fn validated_segment<'a>(label: &str, value: &'a str) -> Result<&'a str> {
@@ -201,12 +284,20 @@ fn validated_segment<'a>(label: &str, value: &'a str) -> Result<&'a str> {
     Ok(trimmed)
 }
 
+fn validated_workspace_root(value: &str) -> Result<&str> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        bail!("workspace root is required");
+    }
+    Ok(trimmed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn remember_root_dedupes_and_truncates_recents() {
+    async fn remember_root_preserves_project_order_and_truncates() {
         let store = LocalStateStore::new();
 
         for index in 0..10 {
@@ -218,7 +309,7 @@ mod tests {
         assert_eq!(snapshot.current_root.as_deref(), Some("/repo/3"));
         assert_eq!(
             snapshot.recent_roots.first().map(String::as_str),
-            Some("/repo/3")
+            Some("/repo/0")
         );
         assert_eq!(snapshot.recent_roots.len(), MAX_RECENT_ROOTS);
         assert_eq!(
@@ -236,12 +327,12 @@ mod tests {
         let store = LocalStateStore::new();
 
         store
-            .set_selected_session("chat", "zeroclaw", Some("session-1".into()))
+            .set_selected_session(None, "chat", "zeroclaw", Some("session-1".into()))
             .await
             .unwrap();
         assert_eq!(
             store
-                .selected_session("chat", "zeroclaw")
+                .selected_session(None, "chat", "zeroclaw")
                 .await
                 .unwrap()
                 .as_deref(),
@@ -249,15 +340,69 @@ mod tests {
         );
 
         store
-            .set_selected_session("chat", "zeroclaw", None)
+            .set_selected_session(None, "chat", "zeroclaw", None)
             .await
             .unwrap();
         assert!(
             store
-                .selected_session("chat", "zeroclaw")
+                .selected_session(None, "chat", "zeroclaw")
                 .await
                 .unwrap()
                 .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn selected_session_is_scoped_to_workspace_and_assigns_session() {
+        let store = LocalStateStore::new();
+
+        store
+            .set_selected_session(
+                Some("/repo/a"),
+                "chat",
+                "zeroclaw",
+                Some("session-a".into()),
+            )
+            .await
+            .unwrap();
+        store
+            .set_selected_session(
+                Some("/repo/b"),
+                "chat",
+                "zeroclaw",
+                Some("session-b".into()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            store
+                .selected_session(Some("/repo/a"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("session-a")
+        );
+        assert_eq!(
+            store
+                .selected_session(Some("/repo/b"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("session-b")
+        );
+        assert_eq!(
+            store.session_workspaces().await,
+            vec![
+                SessionWorkspaceBinding {
+                    session_id: "session-a".into(),
+                    workspace_root: "/repo/a".into(),
+                },
+                SessionWorkspaceBinding {
+                    session_id: "session-b".into(),
+                    workspace_root: "/repo/b".into(),
+                },
+            ]
         );
     }
 
@@ -288,11 +433,11 @@ mod tests {
             .collect();
 
         store
-            .set_transcript("chat", "zeroclaw", "session-1", messages)
+            .set_transcript(Some("/repo/a"), "chat", "zeroclaw", "session-1", messages)
             .await
             .unwrap();
         let cached = store
-            .transcript("chat", "zeroclaw", "session-1")
+            .transcript(Some("/repo/a"), "chat", "zeroclaw", "session-1")
             .await
             .unwrap()
             .unwrap();
@@ -303,15 +448,37 @@ mod tests {
         );
 
         store
-            .clear_transcript("chat", "zeroclaw", "session-1")
+            .clear_transcript(Some("/repo/a"), "chat", "zeroclaw", "session-1")
             .await
             .unwrap();
         assert!(
             store
-                .transcript("chat", "zeroclaw", "session-1")
+                .transcript(Some("/repo/a"), "chat", "zeroclaw", "session-1")
                 .await
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[tokio::test]
+    async fn workspace_transcript_falls_back_to_legacy_unscoped_cache() {
+        let store = LocalStateStore::new();
+        store
+            .set_transcript(
+                None,
+                "chat",
+                "zeroclaw",
+                "session-1",
+                vec![serde_json::json!({ "id": 1 })],
+            )
+            .await
+            .unwrap();
+
+        let cached = store
+            .transcript(Some("/repo/a"), "chat", "zeroclaw", "session-1")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(cached, vec![serde_json::json!({ "id": 1 })]);
     }
 }

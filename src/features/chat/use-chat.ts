@@ -26,6 +26,7 @@ import {
 } from "@/api/client";
 import { buildApprovalPreview, type DiffPreview } from "./diff-preview";
 import {
+  assignSessionWorkspace,
   clearTranscriptCache,
   loadSelectedSession,
   readTranscriptCache,
@@ -85,6 +86,7 @@ interface State {
 export interface UseChatOptions {
   agentAlias: string;
   mode?: ChatMode;
+  workspaceRoot?: string | null;
   workspaceDir?: string | null;
 }
 
@@ -212,6 +214,7 @@ function reducer(state: State, action: Action): State {
 export function useChat({
   agentAlias,
   mode = "chat",
+  workspaceRoot = null,
   workspaceDir = null,
 }: UseChatOptions) {
   const [state, dispatch] = useReducer(reducer, {
@@ -250,8 +253,14 @@ export function useChat({
 
   useEffect(() => {
     if (!state.sessionId || state.messages.length === 0) return;
-    void writeTranscriptCache(agentAlias, mode, state.sessionId, state.messages);
-  }, [agentAlias, mode, state.sessionId, state.messages]);
+    void writeTranscriptCache(
+      workspaceRoot,
+      agentAlias,
+      mode,
+      state.sessionId,
+      state.messages,
+    );
+  }, [agentAlias, mode, workspaceRoot, state.sessionId, state.messages]);
 
   useEffect(() => {
     if (!agentAlias) return;
@@ -264,7 +273,12 @@ export function useChat({
     async function hydrateSession(sessionId: string, messageCount?: number) {
       if (hydratedSessionRef.current === sessionId) return;
       hydratedSessionRef.current = sessionId;
-      const cachedMessages = await readTranscriptCache(agentAlias, mode, sessionId);
+      const cachedMessages = await readTranscriptCache(
+        workspaceRoot,
+        agentAlias,
+        mode,
+        sessionId,
+      );
       if (cancelled) return;
       if (messageCount !== undefined && messageCount <= 0) {
         if (cachedMessages.length > 0) {
@@ -288,11 +302,16 @@ export function useChat({
     }
 
     async function startClient() {
-      const storedSessionId = await loadSelectedSession(agentAlias, mode).catch(
-        () => null,
-      );
+      const storedSessionId = await loadSelectedSession(
+        workspaceRoot,
+        agentAlias,
+        mode,
+      ).catch(() => null);
       if (cancelled) return;
       dispatch({ type: "select-session", sessionId: storedSessionId });
+      if (storedSessionId && workspaceRoot) {
+        void assignSessionWorkspace(storedSessionId, workspaceRoot);
+      }
 
       client = new ChatClient({
         agentAlias,
@@ -302,7 +321,13 @@ export function useChat({
         onFrame: (frame) => {
           dispatch({ type: "frame", frame });
           if (frame.type === "session_start") {
-            void saveSelectedSession(agentAlias, mode, frame.session_id);
+            void saveSelectedSession(
+              workspaceRoot,
+              agentAlias,
+              mode,
+              frame.session_id,
+            );
+            void assignSessionWorkspace(frame.session_id, workspaceRoot);
             void hydrateSession(frame.session_id, frame.message_count);
             void refreshSessions();
           }
@@ -343,6 +368,7 @@ export function useChat({
   }, [
     agentAlias,
     mode,
+    workspaceRoot,
     workspaceDir,
     connectionSeed,
     refreshSessions,
@@ -350,12 +376,15 @@ export function useChat({
 
   const selectSession = useCallback(
     (sessionId: string | null) => {
-      void saveSelectedSession(agentAlias, mode, sessionId);
+      void saveSelectedSession(workspaceRoot, agentAlias, mode, sessionId);
+      if (sessionId && workspaceRoot) {
+        void assignSessionWorkspace(sessionId, workspaceRoot);
+      }
       hydratedSessionRef.current = null;
       dispatch({ type: "select-session", sessionId });
       setConnectionSeed((n) => n + 1);
     },
-    [agentAlias, mode],
+    [agentAlias, mode, workspaceRoot],
   );
 
   const newSession = useCallback(() => {
@@ -373,13 +402,13 @@ export function useChat({
   const deleteSession = useCallback(
     async (sessionId: string) => {
       await apiSessionDelete(sessionId);
-      void clearTranscriptCache(agentAlias, mode, sessionId);
+      void clearTranscriptCache(workspaceRoot, agentAlias, mode, sessionId);
       if (state.sessionId === sessionId) {
         selectSession(null);
       }
       await refreshSessions();
     },
-    [agentAlias, mode, refreshSessions, selectSession, state.sessionId],
+    [agentAlias, mode, workspaceRoot, refreshSessions, selectSession, state.sessionId],
   );
 
   const send = useCallback(

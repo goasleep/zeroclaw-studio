@@ -284,41 +284,57 @@ async workspaceGitStatus(root: string) : Promise<Result<WorkspaceGitStatus, stri
     else return { status: "error", error: e  as any };
 }
 },
-async chatLocalGetSelectedSession(mode: string, agentAlias: string) : Promise<Result<string | null, string>> {
+async chatLocalGetSelectedSession(workspaceRoot: string | null, mode: string, agentAlias: string) : Promise<Result<string | null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_selected_session", { mode, agentAlias }) };
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_selected_session", { workspaceRoot, mode, agentAlias }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async chatLocalSetSelectedSession(mode: string, agentAlias: string, sessionId: string | null) : Promise<Result<null, string>> {
+async chatLocalSetSelectedSession(workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string | null) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_selected_session", { mode, agentAlias, sessionId }) };
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_selected_session", { workspaceRoot, mode, agentAlias, sessionId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async chatLocalGetTranscript(mode: string, agentAlias: string, sessionId: string) : Promise<Result<string | null, string>> {
+async chatLocalListSessionWorkspaces() : Promise<Result<SessionWorkspaceBinding[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_transcript", { mode, agentAlias, sessionId }) };
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_list_session_workspaces") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async chatLocalSetTranscript(mode: string, agentAlias: string, sessionId: string, transcriptJson: string) : Promise<Result<null, string>> {
+async chatLocalAssignSessionWorkspace(sessionId: string, workspaceRoot: string) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_transcript", { mode, agentAlias, sessionId, transcriptJson }) };
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_assign_session_workspace", { sessionId, workspaceRoot }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async chatLocalClearTranscript(mode: string, agentAlias: string, sessionId: string) : Promise<Result<null, string>> {
+async chatLocalGetTranscript(workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string) : Promise<Result<string | null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_clear_transcript", { mode, agentAlias, sessionId }) };
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_transcript", { workspaceRoot, mode, agentAlias, sessionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalSetTranscript(workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string, transcriptJson: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_transcript", { workspaceRoot, mode, agentAlias, sessionId, transcriptJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalClearTranscript(workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_clear_transcript", { workspaceRoot, mode, agentAlias, sessionId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -403,6 +419,7 @@ export type Lifecycle =
 "remote"
 export type PairResult = { outcome: string; token: string | null }
 export type PrepareChatAttachmentsRequest = { paths: string[]; connection_id: string }
+export type SessionWorkspaceBinding = { session_id: string; workspace_root: string }
 export type SshConfig = { host: string; user: string; port: number | null; 
 /**
  * Path to the SSH private key. `None` falls back to ssh-agent / default ids.

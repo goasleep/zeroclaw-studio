@@ -5,9 +5,13 @@ import {
   sessionSort,
   type NormalizedSession,
 } from "@/features/chat/use-chat";
+import { loadSessionWorkspaceMap } from "@/features/chat/chat-local-state";
 
 export function useThreads() {
   const [threads, setThreads] = useState<NormalizedSession[]>([]);
+  const [workspaceMap, setWorkspaceMap] = useState<Map<string, string>>(
+    () => new Map(),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,7 +19,11 @@ export function useThreads() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiSessions();
+      const [data, workspaceMap] = await Promise.all([
+        apiSessions(),
+        loadSessionWorkspaceMap(),
+      ]);
+      setWorkspaceMap(workspaceMap);
       setThreads(
         data.sessions
           .map(normalizeSession)
@@ -63,7 +71,7 @@ export function useThreads() {
   );
 
   return useMemo(
-    () => ({ threads, loading, error, refresh, rename, remove }),
-    [threads, loading, error, refresh, rename, remove],
+    () => ({ threads, workspaceMap, loading, error, refresh, rename, remove }),
+    [threads, workspaceMap, loading, error, refresh, rename, remove],
   );
 }

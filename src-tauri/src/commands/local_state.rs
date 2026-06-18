@@ -1,17 +1,18 @@
 //! Commands for desktop-local state that should live below the web UI.
 
-use crate::workspace::local_state::SharedLocalStateStore;
+use crate::workspace::local_state::{SessionWorkspaceBinding, SharedLocalStateStore};
 use tauri::{AppHandle, Runtime, State};
 
 #[tauri::command]
 #[specta::specta]
 pub async fn chat_local_get_selected_session(
     store: State<'_, SharedLocalStateStore>,
+    workspace_root: Option<String>,
     mode: String,
     agent_alias: String,
 ) -> Result<Option<String>, String> {
     store
-        .selected_session(&mode, &agent_alias)
+        .selected_session(workspace_root.as_deref(), &mode, &agent_alias)
         .await
         .map_err(|e| e.to_string())
 }
@@ -21,12 +22,36 @@ pub async fn chat_local_get_selected_session(
 pub async fn chat_local_set_selected_session<R: Runtime>(
     app: AppHandle<R>,
     store: State<'_, SharedLocalStateStore>,
+    workspace_root: Option<String>,
     mode: String,
     agent_alias: String,
     session_id: Option<String>,
 ) -> Result<(), String> {
     store
-        .set_selected_session(&mode, &agent_alias, session_id)
+        .set_selected_session(workspace_root.as_deref(), &mode, &agent_alias, session_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    store.save(&app).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn chat_local_list_session_workspaces(
+    store: State<'_, SharedLocalStateStore>,
+) -> Result<Vec<SessionWorkspaceBinding>, String> {
+    Ok(store.session_workspaces().await)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn chat_local_assign_session_workspace<R: Runtime>(
+    app: AppHandle<R>,
+    store: State<'_, SharedLocalStateStore>,
+    session_id: String,
+    workspace_root: String,
+) -> Result<(), String> {
+    store
+        .assign_session_workspace(&session_id, &workspace_root)
         .await
         .map_err(|e| e.to_string())?;
     store.save(&app).await.map_err(|e| e.to_string())
@@ -36,12 +61,13 @@ pub async fn chat_local_set_selected_session<R: Runtime>(
 #[specta::specta]
 pub async fn chat_local_get_transcript(
     store: State<'_, SharedLocalStateStore>,
+    workspace_root: Option<String>,
     mode: String,
     agent_alias: String,
     session_id: String,
 ) -> Result<Option<String>, String> {
     let messages = store
-        .transcript(&mode, &agent_alias, &session_id)
+        .transcript(workspace_root.as_deref(), &mode, &agent_alias, &session_id)
         .await
         .map_err(|e| e.to_string())?;
     messages
@@ -54,6 +80,7 @@ pub async fn chat_local_get_transcript(
 pub async fn chat_local_set_transcript<R: Runtime>(
     app: AppHandle<R>,
     store: State<'_, SharedLocalStateStore>,
+    workspace_root: Option<String>,
     mode: String,
     agent_alias: String,
     session_id: String,
@@ -62,7 +89,13 @@ pub async fn chat_local_set_transcript<R: Runtime>(
     let messages: Vec<serde_json::Value> =
         serde_json::from_str(&transcript_json).map_err(|e| e.to_string())?;
     store
-        .set_transcript(&mode, &agent_alias, &session_id, messages)
+        .set_transcript(
+            workspace_root.as_deref(),
+            &mode,
+            &agent_alias,
+            &session_id,
+            messages,
+        )
         .await
         .map_err(|e| e.to_string())?;
     store.save(&app).await.map_err(|e| e.to_string())
@@ -73,12 +106,13 @@ pub async fn chat_local_set_transcript<R: Runtime>(
 pub async fn chat_local_clear_transcript<R: Runtime>(
     app: AppHandle<R>,
     store: State<'_, SharedLocalStateStore>,
+    workspace_root: Option<String>,
     mode: String,
     agent_alias: String,
     session_id: String,
 ) -> Result<(), String> {
     store
-        .clear_transcript(&mode, &agent_alias, &session_id)
+        .clear_transcript(workspace_root.as_deref(), &mode, &agent_alias, &session_id)
         .await
         .map_err(|e| e.to_string())?;
     store.save(&app).await.map_err(|e| e.to_string())

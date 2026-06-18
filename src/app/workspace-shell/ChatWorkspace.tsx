@@ -1,9 +1,10 @@
-import { useWorkspace } from "@/app/workspace-context";
 import { ChatPanel } from "@/features/chat/ChatPanel";
 import { AgentSetupWizard } from "@/features/chat/AgentSetupWizard";
 
 interface ChatWorkspaceProps {
   mode: "chat" | "acp";
+  workspaceRoot: string | null;
+  onWorkspaceRoot: (path: string | null) => void;
   agents: string[];
   activeAgent: string | null;
   onAgentCreated: () => void;
@@ -11,11 +12,12 @@ interface ChatWorkspaceProps {
 
 export function ChatWorkspace({
   mode,
+  workspaceRoot,
+  onWorkspaceRoot,
   agents,
   activeAgent,
   onAgentCreated,
 }: ChatWorkspaceProps) {
-  const { root } = useWorkspace();
   const isCode = mode === "acp";
 
   if (agents.length === 0) {
@@ -33,7 +35,9 @@ export function ChatWorkspace({
           <ChatPanel
             agentAlias={activeAgent}
             mode={mode}
-            workspaceDir={isCode ? root : null}
+            workspaceDir={isCode ? workspaceRoot : null}
+            workspaceRoot={workspaceRoot}
+            onWorkspaceRoot={onWorkspaceRoot}
           />
         )}
       </div>
