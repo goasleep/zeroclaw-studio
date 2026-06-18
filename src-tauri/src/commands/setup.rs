@@ -716,7 +716,7 @@ fn landlock_check() -> SetupCheck {
 fn sandbox_exec_check() -> SetupCheck {
     #[cfg(target_os = "macos")]
     {
-        return executable_check("sandbox-exec", "sandbox-exec");
+        executable_check("sandbox-exec", "sandbox-exec")
     }
     #[cfg(not(target_os = "macos"))]
     SetupCheck {

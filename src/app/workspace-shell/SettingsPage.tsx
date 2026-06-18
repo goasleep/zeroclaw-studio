@@ -51,14 +51,7 @@ export function SettingsPage({
           {section === "app" && <AppSettings />}
           {section === "setup-center" && <SetupCenterPanel />}
           {section === "gateway-config" && <ConfigPanel focusSection={configFocusSection} />}
-          {section === "memory" && (
-            <MemoryPanel
-              onOpenConfig={(sectionKey = "memory") => {
-                onConfigFocusSection(sectionKey);
-                onSection("gateway-config");
-              }}
-            />
-          )}
+          {section === "memory" && <MemoryPanel />}
           {section === "cron" && <CronPanel />}
           {section === "tools" && <ToolsPanel />}
           {section === "integrations" && (

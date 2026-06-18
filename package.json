@@ -3,13 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@10.28.0",
   "description": "Desktop workspace client for ZeroClaw — connect local or remote",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{html,json,ts}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{html,json,ts}\"",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build",
+    "desktop:build": "tauri build",
+    "desktop:dev": "tauri dev",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{html,json,js,ts}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{html,json,js,ts}\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
+    "rust:check": "pnpm rust:fmt && pnpm rust:clippy && pnpm rust:test",
+    "rust:clippy": "cd src-tauri && cargo clippy --all-targets -- -D warnings",
+    "rust:fmt": "cd src-tauri && cargo fmt --all -- --check",
+    "rust:test": "cd src-tauri && cargo test --all-targets",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "tauri": "tauri"
   },
@@ -32,16 +42,22 @@
     "remark-gfm": "~4.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "~4.3.0",
     "@tauri-apps/cli": "~2.11.2",
     "@types/node": "^25.9.2",
     "@types/react": "~19.2.17",
     "@types/react-dom": "~19.2.3",
     "@vitejs/plugin-react": "~6.0.2",
+    "eslint": "^10.5.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.6.0",
     "openapi-typescript": "~7.13.0",
     "prettier": "^3.8.4",
     "tailwindcss": "~4.3.0",
     "typescript": "~5.9.0",
+    "typescript-eslint": "^8.61.1",
     "vite": "~8.0.16"
   }
 }

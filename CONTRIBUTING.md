@@ -19,22 +19,16 @@ workspace supports local-managed, local-attached, and remote
 ## Before opening a PR
 
 ```bash
-# Formatting
-pnpm format:check
-
 # Frontend
-pnpm typecheck
-pnpm build
+pnpm check
 
 # Rust
-cd src-tauri
-cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test --all-targets
+pnpm rust:check
 ```
 
 See [`docs/development.md`](docs/development.md) for local setup, formatting,
-type checking, Rust checks, and generated Tauri command bindings.
+linting, type checking, Rust checks, desktop builds, and generated Tauri command
+bindings.
 
 ## Code organisation
 

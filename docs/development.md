@@ -16,8 +16,11 @@ Install dependencies and start the desktop app:
 
 ```bash
 pnpm install
-pnpm tauri dev
+pnpm desktop:dev
 ```
+
+`pnpm tauri dev` remains available through the Tauri CLI wrapper, but the
+project-level alias is preferred in docs and scripts.
 
 ## Formatting
 
@@ -33,7 +36,7 @@ Editor defaults are defined in `.editorconfig`:
 Frontend formatting is handled by Prettier. The configured scope is:
 
 - `src/**/*.{ts,tsx,css}`
-- root `*.{html,json,ts}` files
+- root `*.{html,json,js,ts}` files
 
 Run this before committing frontend or root config changes:
 
@@ -50,6 +53,24 @@ pnpm format:check
 Generated files, lockfiles, build output, and Tauri target output are excluded
 in `.prettierignore`.
 
+## Linting
+
+Frontend linting is handled by ESLint:
+
+```bash
+pnpm lint
+```
+
+Apply safe automatic fixes:
+
+```bash
+pnpm lint:fix
+```
+
+The initial rule set focuses on TypeScript/JavaScript correctness, React Hooks
+rules, and React Fast Refresh warnings. Generated Tauri command bindings are
+excluded from linting.
+
 ## TypeScript checks
 
 The frontend uses strict TypeScript settings. Run:
@@ -64,16 +85,37 @@ Production frontend build:
 pnpm build
 ```
 
-## Rust checks
-
-Run Rust checks from `src-tauri/`:
+Run the full frontend quality gate:
 
 ```bash
-cd src-tauri
-cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test --all-targets
+pnpm check
 ```
+
+## Rust checks
+
+Run the Rust quality gate:
+
+```bash
+pnpm rust:check
+```
+
+Individual Rust checks are also available:
+
+```bash
+pnpm rust:fmt
+pnpm rust:clippy
+pnpm rust:test
+```
+
+## Desktop builds
+
+Build the packaged Tauri desktop app:
+
+```bash
+pnpm desktop:build
+```
+
+This is equivalent to `pnpm tauri build`.
 
 ## Tauri command bindings
 
@@ -95,14 +137,8 @@ Do not edit `src/api/bindings.ts` by hand.
 Recommended local checklist:
 
 ```bash
-pnpm format:check
-pnpm typecheck
-pnpm build
-
-cd src-tauri
-cargo fmt --all -- --check
-cargo clippy --all-targets -- -D warnings
-cargo test --all-targets
+pnpm check
+pnpm rust:check
 ```
 
 If a change touches the gateway HTTP/WS contract, update
