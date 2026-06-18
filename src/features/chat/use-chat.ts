@@ -25,11 +25,14 @@ import {
   type SessionMessage,
 } from "@/api/client";
 import { buildApprovalPreview, type DiffPreview } from "./diff-preview";
+import {
+  clearTranscriptCache,
+  loadSelectedSession,
+  readTranscriptCache,
+  saveSelectedSession,
+  writeTranscriptCache,
+} from "./chat-local-state";
 
-const SESSION_KEY = (alias: string, mode: ChatMode) =>
-  `zeroclaw_session_id.${mode}.${alias}`;
-const TRANSCRIPT_KEY = (alias: string, mode: ChatMode, sessionId: string) =>
-  `zeroclaw_transcript.${mode}.${alias}.${sessionId}`;
 const MAX_CACHED_MESSAGES = 200;
 
 export type MessageRole = "user" | "assistant";
@@ -211,10 +214,9 @@ export function useChat({
   mode = "chat",
   workspaceDir = null,
 }: UseChatOptions) {
-  const storageKey = SESSION_KEY(agentAlias, mode);
   const [state, dispatch] = useReducer(reducer, {
     messages: [],
-    sessionId: localStorage.getItem(storageKey),
+    sessionId: null,
   });
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -248,20 +250,22 @@ export function useChat({
 
   useEffect(() => {
     if (!state.sessionId || state.messages.length === 0) return;
-    writeTranscriptCache(agentAlias, mode, state.sessionId, state.messages);
+    void writeTranscriptCache(agentAlias, mode, state.sessionId, state.messages);
   }, [agentAlias, mode, state.sessionId, state.messages]);
 
   useEffect(() => {
     if (!agentAlias) return;
-    const storedSessionId = localStorage.getItem(storageKey);
+    let cancelled = false;
+    let client: ChatClient | null = null;
     hydratedSessionRef.current = null;
-    dispatch({ type: "select-session", sessionId: storedSessionId });
+    dispatch({ type: "select-session", sessionId: null });
     setConnected(false);
 
     async function hydrateSession(sessionId: string, messageCount?: number) {
       if (hydratedSessionRef.current === sessionId) return;
       hydratedSessionRef.current = sessionId;
-      const cachedMessages = readTranscriptCache(agentAlias, mode, sessionId);
+      const cachedMessages = await readTranscriptCache(agentAlias, mode, sessionId);
+      if (cancelled) return;
       if (messageCount !== undefined && messageCount <= 0) {
         if (cachedMessages.length > 0) {
           dispatch({ type: "hydrate", sessionId, messages: cachedMessages });
@@ -283,64 +287,75 @@ export function useChat({
       }
     }
 
-    const client = new ChatClient({
-      agentAlias,
-      mode,
-      workspaceDir,
-      sessionId: storedSessionId ?? undefined,
-      onFrame: (frame) => {
-        dispatch({ type: "frame", frame });
-        if (frame.type === "session_start") {
-          localStorage.setItem(storageKey, frame.session_id);
-          void hydrateSession(frame.session_id, frame.message_count);
-          void refreshSessions();
-        }
-        if (frame.type === "approval_request") {
-          window.dispatchEvent(
-            new CustomEvent("zeroclaw://approval-request", {
-              detail: { tool: frame.tool },
-            }),
-          );
-        }
-        if (frame.type === "done") {
-          window.dispatchEvent(
-            new CustomEvent("zeroclaw://chat-done", {
-              detail: { agent: agentAlias },
-            }),
-          );
-          void refreshSessions();
-        }
-      },
-      onOpen: () => setConnected(true),
-      onClose: () => setConnected(false),
-    });
-    clientRef.current = client;
-    void client.start().catch((e) => {
-      setConnected(false);
-      setSessionError(e instanceof Error ? e.message : String(e));
-    });
+    async function startClient() {
+      const storedSessionId = await loadSelectedSession(agentAlias, mode).catch(
+        () => null,
+      );
+      if (cancelled) return;
+      dispatch({ type: "select-session", sessionId: storedSessionId });
+
+      client = new ChatClient({
+        agentAlias,
+        mode,
+        workspaceDir,
+        sessionId: storedSessionId ?? undefined,
+        onFrame: (frame) => {
+          dispatch({ type: "frame", frame });
+          if (frame.type === "session_start") {
+            void saveSelectedSession(agentAlias, mode, frame.session_id);
+            void hydrateSession(frame.session_id, frame.message_count);
+            void refreshSessions();
+          }
+          if (frame.type === "approval_request") {
+            window.dispatchEvent(
+              new CustomEvent("zeroclaw://approval-request", {
+                detail: { tool: frame.tool },
+              }),
+            );
+          }
+          if (frame.type === "done") {
+            window.dispatchEvent(
+              new CustomEvent("zeroclaw://chat-done", {
+                detail: { agent: agentAlias },
+              }),
+            );
+            void refreshSessions();
+          }
+        },
+        onOpen: () => setConnected(true),
+        onClose: () => setConnected(false),
+      });
+      clientRef.current = client;
+      void client.start().catch((e) => {
+        setConnected(false);
+        setSessionError(e instanceof Error ? e.message : String(e));
+      });
+    }
+
+    void startClient();
     return () => {
-      client.close();
-      clientRef.current = null;
+      cancelled = true;
+      client?.close();
+      if (clientRef.current === client) {
+        clientRef.current = null;
+      }
     };
   }, [
     agentAlias,
     mode,
     workspaceDir,
-    storageKey,
     connectionSeed,
     refreshSessions,
   ]);
 
   const selectSession = useCallback(
     (sessionId: string | null) => {
-      if (sessionId) localStorage.setItem(storageKey, sessionId);
-      else localStorage.removeItem(storageKey);
+      void saveSelectedSession(agentAlias, mode, sessionId);
       hydratedSessionRef.current = null;
       dispatch({ type: "select-session", sessionId });
       setConnectionSeed((n) => n + 1);
     },
-    [storageKey],
+    [agentAlias, mode],
   );
 
   const newSession = useCallback(() => {
@@ -358,14 +373,13 @@ export function useChat({
   const deleteSession = useCallback(
     async (sessionId: string) => {
       await apiSessionDelete(sessionId);
-      clearTranscriptCache(agentAlias, mode, sessionId);
+      void clearTranscriptCache(agentAlias, mode, sessionId);
       if (state.sessionId === sessionId) {
-        localStorage.removeItem(storageKey);
         selectSession(null);
       }
       await refreshSessions();
     },
-    [agentAlias, mode, refreshSessions, selectSession, state.sessionId, storageKey],
+    [agentAlias, mode, refreshSessions, selectSession, state.sessionId],
   );
 
   const send = useCallback(
@@ -472,46 +486,6 @@ export function shortSessionName(id: string) {
   return `session ${id.slice(0, 8)}`;
 }
 
-function writeTranscriptCache(
-  alias: string,
-  mode: ChatMode,
-  sessionId: string,
-  messages: ChatMessage[],
-) {
-  try {
-    localStorage.setItem(
-      TRANSCRIPT_KEY(alias, mode, sessionId),
-      JSON.stringify(messages.slice(-MAX_CACHED_MESSAGES)),
-    );
-  } catch {
-    // Best effort cache; gateway remains the source of persisted transcript.
-  }
-}
-
-function readTranscriptCache(
-  alias: string,
-  mode: ChatMode,
-  sessionId: string,
-): ChatMessage[] {
-  try {
-    const raw = localStorage.getItem(TRANSCRIPT_KEY(alias, mode, sessionId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isChatMessage);
-  } catch {
-    return [];
-  }
-}
-
-function clearTranscriptCache(alias: string, mode: ChatMode, sessionId: string) {
-  try {
-    localStorage.removeItem(TRANSCRIPT_KEY(alias, mode, sessionId));
-  } catch {
-    // Best effort cache cleanup.
-  }
-}
-
 function mergeTranscripts(
   gatewayMessages: ChatMessage[],
   cachedMessages: ChatMessage[],
@@ -538,20 +512,4 @@ function messageSignature(message: ChatMessage) {
     message.error ?? "",
     message.attachments?.map((a) => a.filename).join(",") ?? "",
   ].join("\u0000");
-}
-
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== "object") return false;
-  const m = value as Partial<ChatMessage>;
-  return (
-    typeof m.id === "string" &&
-    (m.role === "user" || m.role === "assistant") &&
-    typeof m.content === "string" &&
-    Array.isArray(m.toolCalls) &&
-    (m.status === "pending" ||
-      m.status === "streaming" ||
-      m.status === "done" ||
-      m.status === "aborted" ||
-      m.status === "error")
-  );
 }

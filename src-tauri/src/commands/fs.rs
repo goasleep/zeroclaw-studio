@@ -1,6 +1,7 @@
 //! Workspace file-system commands.
 
 use crate::workspace::fs::{self, DirEntry, WorkspaceState};
+use crate::workspace::local_state::{SharedLocalStateStore, WorkspaceLocalState};
 use notify::{RecommendedWatcher, Watcher};
 use serde::Serialize;
 use std::path::PathBuf;
@@ -28,12 +29,39 @@ pub struct WorkspaceGitStatus {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn workspace_open_root(
+pub async fn workspace_open_root<R: Runtime>(
+    app: AppHandle<R>,
     state: State<'_, Arc<WorkspaceState>>,
+    local_state: State<'_, SharedLocalStateStore>,
     path: String,
-) -> Result<(), String> {
-    state.set_root(PathBuf::from(path)).await;
-    Ok(())
+) -> Result<WorkspaceLocalState, String> {
+    state.set_root(PathBuf::from(&path)).await;
+    let snapshot = local_state.remember_root(path).await;
+    local_state.save(&app).await.map_err(|e| e.to_string())?;
+    Ok(snapshot)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_get_state(
+    local_state: State<'_, SharedLocalStateStore>,
+) -> Result<WorkspaceLocalState, String> {
+    Ok(local_state.snapshot().await)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn workspace_import_legacy_state<R: Runtime>(
+    app: AppHandle<R>,
+    local_state: State<'_, SharedLocalStateStore>,
+    current_root: Option<String>,
+    recent_roots: Vec<String>,
+) -> Result<WorkspaceLocalState, String> {
+    let snapshot = local_state
+        .import_workspace_state(current_root, recent_roots)
+        .await;
+    local_state.save(&app).await.map_err(|e| e.to_string())?;
+    Ok(snapshot)
 }
 
 #[tauri::command]

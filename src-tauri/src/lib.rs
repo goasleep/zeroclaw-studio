@@ -16,6 +16,7 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager, RunEvent};
 use workspace::fs::WorkspaceState;
+use workspace::local_state::LocalStateStore;
 
 const MENU_FOCUS_CHAT: &str = "menu_focus_chat";
 const MENU_FOCUS_CODE: &str = "menu_focus_code";
@@ -38,6 +39,7 @@ pub fn run() {
     let tunnels = TunnelRegistry::new();
     let supervisor = Supervisor::new();
     let workspace_state = Arc::new(WorkspaceState::default());
+    let local_state = LocalStateStore::new();
     let watcher: Arc<WatcherHandle> = Arc::new(WatcherHandle::default());
     let chat_manager = commands::chat::ChatSessionManager::new();
 
@@ -105,6 +107,7 @@ pub fn run() {
         .manage(tunnels.clone())
         .manage(supervisor.clone())
         .manage(workspace_state.clone())
+        .manage(local_state.clone())
         .manage(watcher.clone())
         .manage(chat_manager.clone())
         .manage(http_client.clone())
@@ -113,10 +116,14 @@ pub fn run() {
         .setup({
             let book = book.clone();
             let supervisor = supervisor.clone();
+            let workspace_state = workspace_state.clone();
+            let local_state = local_state.clone();
             move |app| {
                 let app_handle = app.handle().clone();
                 let book_for_setup = book.clone();
                 let supervisor_for_setup = supervisor.clone();
+                let workspace_state_for_setup = workspace_state.clone();
+                let local_state_for_setup = local_state.clone();
                 install_app_menu(app.handle())?;
                 install_tray(app.handle())?;
                 // Load saved connections, then auto-onboard (first-run only)
@@ -128,6 +135,13 @@ pub fn run() {
                 //   3. if there's an active connection, run the activator
                 //      (probe → spawn local if needed → wait healthy → pair)
                 tauri::async_runtime::spawn(async move {
+                    if let Err(e) = local_state_for_setup.load(&app_handle).await {
+                        log::error!("failed to load workspace state: {e}");
+                    } else if let Some(root) = local_state_for_setup.snapshot().await.current_root {
+                        workspace_state_for_setup
+                            .set_root(std::path::PathBuf::from(root))
+                            .await;
+                    }
                     if let Err(e) = book_for_setup.load(&app_handle).await {
                         log::error!("failed to load connections: {e}");
                         return;
@@ -217,7 +231,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::runtime::runtime_status,
         commands::ssh::ssh_open_tunnel::<tauri::Wry>,
         commands::ssh::ssh_close_tunnel,
-        commands::fs::workspace_open_root,
+        commands::fs::workspace_open_root::<tauri::Wry>,
+        commands::fs::workspace_get_state,
+        commands::fs::workspace_import_legacy_state::<tauri::Wry>,
         commands::fs::workspace_get_root,
         commands::fs::workspace_list_dir,
         commands::fs::workspace_read_file,
@@ -225,6 +241,11 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::fs::workspace_watch_start::<tauri::Wry>,
         commands::fs::workspace_watch_stop,
         commands::fs::workspace_git_status,
+        commands::local_state::chat_local_get_selected_session,
+        commands::local_state::chat_local_set_selected_session::<tauri::Wry>,
+        commands::local_state::chat_local_get_transcript,
+        commands::local_state::chat_local_set_transcript::<tauri::Wry>,
+        commands::local_state::chat_local_clear_transcript::<tauri::Wry>,
     ])
 }
 

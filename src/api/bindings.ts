@@ -204,9 +204,25 @@ async sshCloseTunnel(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async workspaceOpenRoot(path: string) : Promise<Result<null, string>> {
+async workspaceOpenRoot(path: string) : Promise<Result<WorkspaceLocalState, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_open_root", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async workspaceGetState() : Promise<Result<WorkspaceLocalState, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_get_state") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async workspaceImportLegacyState(currentRoot: string | null, recentRoots: string[]) : Promise<Result<WorkspaceLocalState, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("workspace_import_legacy_state", { currentRoot, recentRoots }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -263,6 +279,46 @@ async workspaceWatchStop() : Promise<Result<null, string>> {
 async workspaceGitStatus(root: string) : Promise<Result<WorkspaceGitStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_git_status", { root }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalGetSelectedSession(mode: string, agentAlias: string) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_selected_session", { mode, agentAlias }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalSetSelectedSession(mode: string, agentAlias: string, sessionId: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_selected_session", { mode, agentAlias, sessionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalGetTranscript(mode: string, agentAlias: string, sessionId: string) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_transcript", { mode, agentAlias, sessionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalSetTranscript(mode: string, agentAlias: string, sessionId: string, transcriptJson: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_transcript", { mode, agentAlias, sessionId, transcriptJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalClearTranscript(mode: string, agentAlias: string, sessionId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_clear_transcript", { mode, agentAlias, sessionId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -379,6 +435,7 @@ export type Transport =
  */
 "tailscale"
 export type WorkspaceGitStatus = { root: string; is_repo: boolean; branch: string | null; changed_count: number; diff_stat: string | null }
+export type WorkspaceLocalState = { current_root: string | null; recent_roots: string[] }
 
 /** tauri-specta globals **/
 

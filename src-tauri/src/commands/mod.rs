@@ -5,5 +5,6 @@ pub mod connection;
 pub mod fs;
 pub mod gateway;
 pub mod gateway_client;
+pub mod local_state;
 pub mod runtime;
 pub mod ssh;

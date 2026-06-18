@@ -60,6 +60,7 @@ export type {
   SupervisorStatus,
   Transport,
   WorkspaceGitStatus,
+  WorkspaceLocalState,
 } from "./bindings";
 
 // ---- Event payloads emitted by the backend (not specta-typed) ----
@@ -162,6 +163,13 @@ export const gatewayRequest = (req: GatewayHttpRequest) =>
 export const workspaceOpenRoot = (path: string) =>
   unwrap(commands.workspaceOpenRoot(path));
 
+export const workspaceGetState = () => unwrap(commands.workspaceGetState());
+
+export const workspaceImportLegacyState = (
+  currentRoot: string | null,
+  recentRoots: string[],
+) => unwrap(commands.workspaceImportLegacyState(currentRoot, recentRoots));
+
 export const workspaceGetRoot = () => unwrap(commands.workspaceGetRoot());
 
 export const workspaceListDir = (path: string) =>
@@ -180,3 +188,43 @@ export const workspaceWatchStop = () => unwrap(commands.workspaceWatchStop());
 
 export const workspaceGitStatus = (root: string) =>
   unwrap(commands.workspaceGitStatus(root));
+
+// ---- Desktop-local chat state ----
+
+export const chatLocalGetSelectedSession = (
+  mode: string,
+  agentAlias: string,
+) => unwrap(commands.chatLocalGetSelectedSession(mode, agentAlias));
+
+export const chatLocalSetSelectedSession = (
+  mode: string,
+  agentAlias: string,
+  sessionId: string | null,
+) => unwrap(commands.chatLocalSetSelectedSession(mode, agentAlias, sessionId));
+
+export const chatLocalGetTranscript = (
+  mode: string,
+  agentAlias: string,
+  sessionId: string,
+) => unwrap(commands.chatLocalGetTranscript(mode, agentAlias, sessionId));
+
+export const chatLocalSetTranscript = (
+  mode: string,
+  agentAlias: string,
+  sessionId: string,
+  transcriptJson: string,
+) =>
+  unwrap(
+    commands.chatLocalSetTranscript(
+      mode,
+      agentAlias,
+      sessionId,
+      transcriptJson,
+    ),
+  );
+
+export const chatLocalClearTranscript = (
+  mode: string,
+  agentAlias: string,
+  sessionId: string,
+) => unwrap(commands.chatLocalClearTranscript(mode, agentAlias, sessionId));
