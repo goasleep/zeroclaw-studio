@@ -101,7 +101,7 @@ async reactivate() : Promise<Result<null, string>> {
 },
 /**
  * Non-mutating connectivity probe for a saved connection.
-	 *
+ * 
  * This only checks the connection's current URL. It never starts a managed
  * gateway and never opens an SSH tunnel; activation remains the only path that
  * owns lifecycle side effects.

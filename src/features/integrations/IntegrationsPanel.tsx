@@ -1,7 +1,11 @@
 import { DataPanel } from "@/features/_shared/DataPanel";
 import { apiIntegrations, apiChannels } from "@/api/client";
 
-export function IntegrationsPanel() {
+interface IntegrationsPanelProps {
+  onConfigure?: (section: string) => void;
+}
+
+export function IntegrationsPanel(_props: IntegrationsPanelProps = {}) {
   return (
     <div className="grid h-full grid-cols-2 gap-2 overflow-hidden">
       <div className="flex flex-col overflow-hidden border-r border-neutral-800">
