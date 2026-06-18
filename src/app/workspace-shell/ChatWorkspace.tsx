@@ -22,14 +22,14 @@ export function ChatWorkspace({
 
   if (agents.length === 0) {
     return (
-      <section className="flex min-w-0 flex-col overflow-hidden bg-neutral-950">
+      <section className="flex min-w-0 flex-col overflow-hidden bg-[#020818]/70">
         <AgentSetupWizard onAgentCreated={onAgentCreated} />
       </section>
     );
   }
 
   return (
-    <section className="flex min-w-0 flex-col overflow-hidden bg-neutral-950">
+    <section className="flex min-w-0 flex-col overflow-hidden bg-[#020818]/70">
       <div className="min-h-0 flex-1 overflow-hidden">
         {activeAgent && (
           <ChatPanel

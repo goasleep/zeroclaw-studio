@@ -38,13 +38,13 @@ export function DataPanel<T>({ load, render, empty, what = "data" }: DataPanelPr
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
+      <header className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
         <span className="text-neutral-400">Last updated when refreshed.</span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => void fetch()}
-          className="flex items-center gap-1 rounded border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-orange-500"
+          className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
           title={`Refresh ${what}`}
         >
           <RefreshCw size={10} />

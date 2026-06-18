@@ -131,8 +131,8 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
           onClick={() => setMode("url")}
           className={`flex-1 rounded border px-3 py-1.5 ${
             mode === "url"
-              ? "border-orange-500 bg-orange-500/10 text-orange-300"
-              : "border-neutral-700 text-neutral-300"
+              ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
+              : "border-white/15 text-neutral-300"
           }`}
         >
           Direct URL
@@ -142,8 +142,8 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
           onClick={() => setMode("ssh")}
           className={`flex-1 rounded border px-3 py-1.5 ${
             mode === "ssh"
-              ? "border-orange-500 bg-orange-500/10 text-orange-300"
-              : "border-neutral-700 text-neutral-300"
+              ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
+              : "border-white/15 text-neutral-300"
           }`}
         >
           SSH tunnel
@@ -155,7 +155,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+          className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
         />
       </label>
 
@@ -166,7 +166,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://homelab.tailnet.ts.net:42617"
-            className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5 font-mono text-xs"
+            className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs outline-none focus:border-cyan-400"
           />
         </label>
       ) : (
@@ -178,7 +178,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
                 value={user}
                 onChange={(e) => setUser(e.target.value)}
                 placeholder="pi"
-                className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+                className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
               />
             </label>
             <label className="flex flex-col gap-1">
@@ -187,7 +187,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
                 placeholder="homelab.local"
-                className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+                className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
               />
             </label>
           </div>
@@ -198,7 +198,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
                 placeholder="22"
-                className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+                className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
               />
             </label>
             <label className="flex flex-col gap-1">
@@ -207,7 +207,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
                 type="number"
                 value={remotePort}
                 onChange={(e) => setRemotePort(Number(e.target.value))}
-                className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+                className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
               />
             </label>
           </div>
@@ -224,7 +224,7 @@ function RemoteForm({ onCreate }: { onCreate: (c: Connection) => Promise<void> }
         type="button"
         disabled={busy}
         onClick={() => void submit()}
-        className="rounded bg-orange-500 px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+        className="rounded bg-sky-400 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
       >
         {busy && <Loader2 className="mr-1 inline animate-spin" size={14} />}
         Create connection
@@ -290,7 +290,7 @@ function LocalAttachForm({ onCreate }: { onCreate: (c: Connection) => Promise<vo
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+          className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -299,7 +299,7 @@ function LocalAttachForm({ onCreate }: { onCreate: (c: Connection) => Promise<vo
           type="number"
           value={port}
           onChange={(e) => setPort(Number(e.target.value))}
-          className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+          className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
         />
       </label>
 
@@ -308,7 +308,7 @@ function LocalAttachForm({ onCreate }: { onCreate: (c: Connection) => Promise<vo
         type="button"
         disabled={busy}
         onClick={() => void submit()}
-        className="rounded bg-orange-500 px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+        className="rounded bg-sky-400 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
       >
         Create connection
       </button>
@@ -364,10 +364,10 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
   if (binary === null) {
     return (
       <div className="flex flex-col gap-3 text-sm">
-        <div className="rounded border border-neutral-800 bg-neutral-900/60 p-3 text-xs text-neutral-300">
+        <div className="rounded border border-white/10 bg-white/[0.06] p-3 text-xs text-neutral-300">
           No <code>zeroclaw</code> binary found. Run this in your terminal:
         </div>
-        <pre className="overflow-x-auto rounded bg-neutral-950 px-3 py-2 text-[11px] text-emerald-300">
+        <pre className="overflow-x-auto rounded bg-[#020818]/90 px-3 py-2 text-[11px] text-emerald-300">
           <Terminal className="-mt-1 mr-1 inline" size={12} />
           {instructions?.command ?? "Loading…"}
         </pre>
@@ -381,7 +381,7 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
         <button
           type="button"
           onClick={() => void redetect()}
-          className="self-start rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-200 hover:border-orange-500"
+          className="self-start rounded border border-white/15 px-3 py-1.5 text-xs text-neutral-200 hover:border-cyan-400"
         >
           Detect again
         </button>
@@ -400,7 +400,7 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+          className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -409,7 +409,7 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
           type="number"
           value={port}
           onChange={(e) => setPort(Number(e.target.value))}
-          className="rounded border border-neutral-700 bg-neutral-950 px-2 py-1.5"
+          className="rounded border border-white/15 bg-[#020818]/90 px-2 py-1.5 outline-none focus:border-cyan-400"
         />
       </label>
       {err && <div className="rounded bg-red-500/10 px-3 py-2 text-xs text-red-300">{err}</div>}
@@ -421,7 +421,7 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
         type="button"
         disabled={busy}
         onClick={() => void submit()}
-        className="rounded bg-orange-500 px-4 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+        className="rounded bg-sky-400 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
       >
         Create managed connection
       </button>
@@ -452,21 +452,21 @@ export function AddConnectionDialog({ initialPath, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
-      <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#000010]/75 p-6 backdrop-blur-md">
+      <div className="zc-terminal-surface w-full max-w-lg rounded-2xl p-6 shadow-2xl">
         <header className="mb-4 flex items-center gap-2">
-          <Server size={16} className="text-orange-400" />
+          <Server size={16} className="text-cyan-300" />
           <h2 className="flex-1 text-base font-medium">{titles[path]}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+            className="rounded p-1 text-neutral-400 hover:bg-white/[0.08] hover:text-neutral-100"
           >
             <X size={16} />
           </button>
         </header>
 
-        <nav className="mb-4 flex gap-1 border-b border-neutral-800 text-xs">
+        <nav className="mb-4 flex gap-1 border-b border-white/10 text-xs">
           {(["remote", "local-attach", "local-install"] as const).map((p) => (
             <button
               key={p}
@@ -474,7 +474,7 @@ export function AddConnectionDialog({ initialPath, onClose }: Props) {
               onClick={() => setPath(p)}
               className={`-mb-px border-b-2 px-3 py-2 ${
                 path === p
-                  ? "border-orange-500 text-orange-300"
+                  ? "border-cyan-400 text-cyan-300"
                   : "border-transparent text-neutral-400 hover:text-neutral-200"
               }`}
             >

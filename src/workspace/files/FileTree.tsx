@@ -29,8 +29,8 @@ function FileNode({ entry, depth }: NodeProps) {
       <button
         type="button"
         onClick={() => toggleFile(entry.path)}
-        className={`flex w-full items-center gap-1.5 truncate py-0.5 text-left text-xs hover:bg-neutral-800/60 ${
-          isSelected ? "bg-orange-500/15 text-orange-200" : "text-neutral-300"
+        className={`flex w-full items-center gap-1.5 truncate py-0.5 text-left text-xs hover:bg-white/[0.08] ${
+          isSelected ? "bg-cyan-400/10 text-cyan-100" : "text-neutral-300"
         }`}
         style={padding}
       >
@@ -45,7 +45,7 @@ function FileNode({ entry, depth }: NodeProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-1 truncate py-0.5 text-left text-xs text-neutral-200 hover:bg-neutral-800/60"
+        className="flex w-full items-center gap-1 truncate py-0.5 text-left text-xs text-neutral-200 hover:bg-white/[0.08]"
         style={padding}
       >
         {open ? (
@@ -54,9 +54,9 @@ function FileNode({ entry, depth }: NodeProps) {
           <ChevronRight size={11} className="shrink-0 text-neutral-500" />
         )}
         {open ? (
-          <FolderOpen size={12} className="shrink-0 text-orange-400" />
+          <FolderOpen size={12} className="shrink-0 text-cyan-300" />
         ) : (
-          <Folder size={12} className="shrink-0 text-orange-400" />
+          <Folder size={12} className="shrink-0 text-cyan-300" />
         )}
         <span className="truncate">{entry.name}</span>
       </button>

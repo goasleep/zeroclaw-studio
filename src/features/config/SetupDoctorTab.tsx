@@ -102,10 +102,10 @@ export function SetupDoctorTab({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="shrink-0 border-b border-neutral-800 px-5 py-3">
+      <header className="shrink-0 border-b border-white/10 px-5 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold text-neutral-100">{title}</h2>
-          <span className="rounded bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
+          <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
             {prefix}
           </span>
         </div>
@@ -118,8 +118,8 @@ export function SetupDoctorTab({
                 onClick={() => setActiveKey(target.key)}
                 className={`rounded-md border px-2.5 py-1 text-[11px] ${
                   active.key === target.key
-                    ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
-                    : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-100"
+                    ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                    : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
                 }`}
               >
                 {target.label}
@@ -230,7 +230,7 @@ function DesktopSetupPanel({
 
   return (
     <div className="space-y-4">
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+      <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
         <div className="flex flex-wrap items-start gap-3">
           <StatusIcon overall={status.overall} />
           <div className="min-w-0 flex-1">
@@ -246,7 +246,7 @@ function DesktopSetupPanel({
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-800 px-2.5 py-1.5 text-xs text-neutral-300 hover:border-orange-500/50 hover:text-orange-300 disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300 disabled:opacity-50"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
             Refresh
@@ -261,11 +261,11 @@ function DesktopSetupPanel({
         </div>
       )}
 
-      <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-        <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+      <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+        <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
           Checks
         </h3>
-        <div className="divide-y divide-neutral-800">
+        <div className="divide-y divide-white/10">
           {status.checks.map((check) => (
             <div
               key={check.id}
@@ -284,11 +284,11 @@ function DesktopSetupPanel({
       </section>
 
       {status.actions.length > 0 && (
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-          <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+        <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+          <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
             Actions
           </h3>
-          <div className="divide-y divide-neutral-800">
+          <div className="divide-y divide-white/10">
             {status.actions.map((action) => (
               <div key={action.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-start gap-3">
@@ -305,7 +305,7 @@ function DesktopSetupPanel({
                     type="button"
                     onClick={() => void runAction(action)}
                     disabled={running !== null}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
                   >
                     {running === action.id ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -322,11 +322,11 @@ function DesktopSetupPanel({
       )}
 
       {status.config_recommendations.length > 0 && (
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-          <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+        <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+          <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
             Recommended config
           </h3>
-          <div className="divide-y divide-neutral-800">
+          <div className="divide-y divide-white/10">
             {status.config_recommendations.map((rec) => (
               <div key={rec.id} className="px-4 py-3">
                 <div className="flex flex-wrap items-start gap-3">
@@ -337,7 +337,7 @@ function DesktopSetupPanel({
                     <p className="mt-1 text-xs leading-relaxed text-neutral-500">
                       {rec.description}
                     </p>
-                    <div className="mt-2 rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-[11px] text-neutral-400">
+                    <div className="mt-2 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-[11px] text-neutral-400">
                       {rec.path} = {formatConfigValue(rec.value)}
                     </div>
                   </div>
@@ -345,7 +345,7 @@ function DesktopSetupPanel({
                     type="button"
                     onClick={() => void applyRecommendation(rec)}
                     disabled={applying !== null}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-orange-500/50 hover:text-orange-300 disabled:opacity-50"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300 disabled:opacity-50"
                   >
                     {applying === rec.id ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -385,7 +385,7 @@ function DesktopSetupPanel({
 
 function ManualSetupPanel({ capabilityId }: { capabilityId: SetupCapabilityId }) {
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+    <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <div className="flex items-start gap-3">
         <Info size={16} className="mt-0.5 shrink-0 text-sky-300" />
         <div className="min-w-0 flex-1">
@@ -513,13 +513,13 @@ function CheckBadge({ status }: { status: string }) {
         ? "bg-red-500/10 text-red-300"
         : status === "warn"
           ? "bg-amber-500/10 text-amber-300"
-          : "bg-neutral-800 text-neutral-400";
+          : "bg-white/[0.08] text-neutral-400";
   return <span className={`rounded px-1.5 py-0.5 text-[10px] ${cls}`}>{status}</span>;
 }
 
 function CommandLine({ command }: { command: string[] }) {
   return (
-    <div className="mt-2 flex min-w-0 items-start gap-2 rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-[11px] text-neutral-400">
+    <div className="mt-2 flex min-w-0 items-start gap-2 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-[11px] text-neutral-400">
       <Terminal size={12} className="mt-0.5 shrink-0 text-neutral-600" />
       <span className="min-w-0 break-words">{formatCommand(command)}</span>
     </div>

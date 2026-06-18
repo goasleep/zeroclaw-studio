@@ -54,7 +54,7 @@ export function WorkspaceSidebar({
   const online = active && health?.connection_id === active.id && health.healthy;
 
   return (
-    <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-950">
+    <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-white/10 bg-[#020818]/90">
       <WorkspaceHeader
         connectionName={active?.name ?? null}
         online={Boolean(online)}
@@ -91,14 +91,14 @@ export function WorkspaceSidebar({
         />
       </div>
 
-      <footer className="shrink-0 border-t border-neutral-800 p-2">
+      <footer className="shrink-0 border-t border-white/10 p-2">
         <button
           type="button"
           onClick={() => onPage("settings")}
           className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
             page === "settings"
-              ? "bg-orange-500/10 text-orange-200"
-              : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+              ? "bg-cyan-400/10 text-cyan-100"
+              : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
           }`}
         >
           <Settings size={14} />
@@ -117,14 +117,14 @@ function WorkspaceHeader({
   online: boolean;
 }) {
   return (
-    <header className="shrink-0 border-b border-neutral-800 p-3">
+    <header className="shrink-0 border-b border-white/10 p-3">
       <div className="flex items-center gap-2 text-xs text-neutral-500">
         <Server size={11} className="text-neutral-600" />
         <span className="min-w-0 flex-1 truncate">
           {connectionName ?? "No runtime"}
         </span>
         <span
-          className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-neutral-700"}`}
+          className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/[0.12]"}`}
         />
       </div>
     </header>
@@ -161,7 +161,7 @@ function ProjectList({
   const visibleRoots = recentRoots.slice(0, 5);
 
   return (
-    <section className="shrink-0 border-b border-neutral-800 px-3 py-3">
+    <section className="shrink-0 border-b border-white/10 px-3 py-3">
       <div className="mb-2 flex items-center gap-1">
         <h2 className="min-w-0 flex-1 text-[10px] uppercase tracking-wide text-neutral-500">
           Projects
@@ -169,7 +169,7 @@ function ProjectList({
         <button
           type="button"
           onClick={onPickRoot}
-          className="rounded p-1 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+          className="rounded p-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
           title="Open project"
         >
           <FolderOpen size={12} />
@@ -179,7 +179,7 @@ function ProjectList({
         <button
           type="button"
           onClick={onPickRoot}
-          className="w-full px-2 py-1.5 text-left text-xs text-neutral-500 hover:text-orange-300"
+          className="w-full px-2 py-1.5 text-left text-xs text-neutral-500 hover:text-cyan-300"
         >
           Open a project
         </button>
@@ -197,14 +197,14 @@ function ProjectList({
                     onClick={() => onRoot(path)}
                     className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
                       activeWorkspaceRoot === path
-                        ? "bg-neutral-900 text-neutral-100"
-                        : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                        ? "bg-white/[0.05] text-neutral-100"
+                        : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                     }`}
                     title={path}
                   >
                     <FolderOpen
                       size={13}
-                      className="shrink-0 text-orange-400"
+                      className="shrink-0 text-cyan-300"
                     />
                     <span className="min-w-0 flex-1 truncate">
                       {basename(path)}
@@ -216,7 +216,7 @@ function ProjectList({
                   <button
                     type="button"
                     onClick={() => onNewThread(path)}
-                    className="rounded p-1 text-neutral-600 opacity-0 transition hover:bg-neutral-900 hover:text-orange-300 group-hover:opacity-100"
+                    className="rounded p-1 text-neutral-600 opacity-0 transition hover:bg-white/[0.05] hover:text-cyan-300 group-hover:opacity-100"
                     title="New project chat"
                   >
                     <MessageSquarePlus size={11} />
@@ -278,7 +278,7 @@ function ThreadNav({
         <button
           type="button"
           onClick={onNewThread}
-          className="rounded p-1 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+          className="rounded p-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
           title="New chat"
         >
           <MessageSquarePlus size={12} />
@@ -286,7 +286,7 @@ function ThreadNav({
         <button
           type="button"
           onClick={onRefresh}
-          className="rounded p-1 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+          className="rounded p-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
           title="Refresh chats"
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
@@ -294,7 +294,7 @@ function ThreadNav({
       </div>
       {error && <p className="mb-2 text-[10px] text-red-300">{error}</p>}
       {threads.length === 0 && !loading ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs leading-relaxed text-neutral-500">
+        <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs leading-relaxed text-neutral-500">
           No chats yet.
         </div>
       ) : (
@@ -311,7 +311,7 @@ function ThreadNav({
           ))}
         </div>
       )}
-      <div className="mt-3 shrink-0 rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-[10px] text-neutral-500">
+      <div className="mt-3 shrink-0 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-[10px] text-neutral-500">
         Context
         <span className="ml-1 text-neutral-300">{selectedCount}</span>
       </div>
@@ -342,8 +342,8 @@ function ThreadButton({
     <div
       className={`group rounded-md border ${
         active
-          ? "border-orange-500/30 bg-neutral-800 text-neutral-100"
-          : "border-transparent text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+          ? "border-cyan-400/25 bg-white/[0.08] text-neutral-100"
+          : "border-transparent text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
       }`}
     >
       <button
@@ -354,7 +354,7 @@ function ThreadButton({
         }`}
       >
         {!compact && (
-          <MessageSquare size={13} className="shrink-0 text-orange-400" />
+          <MessageSquare size={13} className="shrink-0 text-cyan-300" />
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate">{thread.name}</span>
@@ -374,7 +374,7 @@ function ThreadButton({
             const name = window.prompt("Rename chat", thread.name);
             if (name?.trim()) onRename(name.trim());
           }}
-          className="rounded px-1 py-0.5 text-neutral-500 hover:text-orange-300"
+          className="rounded px-1 py-0.5 text-neutral-500 hover:text-cyan-300"
           title="Rename chat"
         >
           <Pencil size={10} />

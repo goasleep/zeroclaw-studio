@@ -54,8 +54,8 @@ export function ToolsPanel() {
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-        <div className="border-b border-neutral-800 p-3">
+      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+        <div className="border-b border-white/10 p-3">
           <div className="relative">
             <Search
               size={13}
@@ -66,7 +66,7 @@ export function ToolsPanel() {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Search tools..."
-              className="w-full rounded-md border border-neutral-800 bg-neutral-950 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
@@ -74,7 +74,7 @@ export function ToolsPanel() {
             <button
               type="button"
               onClick={() => void refresh()}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-neutral-900 hover:text-orange-300"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} />
               Refresh
@@ -96,7 +96,7 @@ export function ToolsPanel() {
             </div>
           )}
           {state.kind === "ok" && filtered.length === 0 && (
-            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs text-neutral-500">
+            <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No tools match your search.
             </div>
           )}
@@ -108,11 +108,11 @@ export function ToolsPanel() {
                 onClick={() => setSelected(tool.name)}
                 className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
                   selectedTool?.name === tool.name
-                    ? "bg-orange-500/10 text-orange-200"
-                    : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                    ? "bg-cyan-400/10 text-cyan-100"
+                    : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                 }`}
               >
-                <Wrench size={13} className="shrink-0 text-orange-400" />
+                <Wrench size={13} className="shrink-0 text-cyan-300" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-xs">
                     {tool.name}
@@ -161,9 +161,9 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="shrink-0 border-b border-neutral-800 px-5 py-4">
+      <header className="shrink-0 border-b border-white/10 px-5 py-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-300">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
             <Wrench size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -180,11 +180,11 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
       <div className="min-h-0 flex-1 overflow-auto p-5">
         <div className="mx-auto max-w-4xl space-y-4">
           {schemaEntries.length > 0 && (
-            <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-              <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+            <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+              <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
                 Inputs and schema
               </h3>
-              <div className="divide-y divide-neutral-800">
+              <div className="divide-y divide-white/10">
                 {schemaEntries.map(([key, value]) => (
                   <ToolField key={key} name={key} value={value} />
                 ))}
@@ -192,11 +192,11 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
             </section>
           )}
 
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-            <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+          <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+            <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
               Metadata
             </h3>
-            <div className="divide-y divide-neutral-800">
+            <div className="divide-y divide-white/10">
               {metadataEntries.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-neutral-500">
                   No additional metadata reported.
@@ -209,12 +209,12 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
             </div>
           </section>
 
-          <details className="rounded-lg border border-neutral-800 bg-neutral-900/30">
+          <details className="rounded-lg border border-white/10 bg-white/[0.035]">
             <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-neutral-100">
               <Braces size={14} className="text-neutral-500" />
               Raw payload
             </summary>
-            <pre className="overflow-x-auto border-t border-neutral-800 p-4 text-xs leading-relaxed text-neutral-400">
+            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400">
               {JSON.stringify(tool, null, 2)}
             </pre>
           </details>
@@ -232,7 +232,7 @@ function ToolField({ name, value }: { name: string; value: unknown }) {
         {isPrimitive(value) ? (
           <span className="break-words text-neutral-300">{String(value)}</span>
         ) : (
-          <pre className="max-h-80 overflow-auto rounded-md border border-neutral-800 bg-neutral-950 p-3 text-[11px] leading-relaxed text-neutral-400">
+          <pre className="max-h-80 overflow-auto rounded-md border border-white/10 bg-[#020818]/90 p-3 text-[11px] leading-relaxed text-neutral-400">
             {JSON.stringify(value, null, 2)}
           </pre>
         )}

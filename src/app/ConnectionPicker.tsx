@@ -176,9 +176,9 @@ export function ConnectionPicker({ onAdd }: Props) {
   }
 
   return (
-    <div className="relative flex h-12 items-center gap-3 border-b border-neutral-800 bg-neutral-950 px-4 text-sm shadow-sm">
+    <div className="relative z-10 flex h-12 items-center gap-3 border-b border-cyan-400/10 bg-[#020818]/80 px-4 text-sm shadow-sm backdrop-blur-xl">
       <div className="flex min-w-0 items-center gap-2">
-        <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-1.5 text-orange-300">
+        <div className="rounded-lg border border-cyan-400/25 bg-cyan-400/10 p-1.5 text-cyan-300">
           <Server size={15} />
         </div>
         <div className="hidden leading-tight sm:block">
@@ -192,18 +192,18 @@ export function ConnectionPicker({ onAdd }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex min-w-[220px] max-w-[360px] items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-left text-xs text-neutral-100 shadow-inner transition hover:border-neutral-700"
+        className="flex min-w-[220px] max-w-[360px] items-center gap-2 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-left text-xs text-slate-100 shadow-inner transition hover:border-cyan-400/40"
       >
         <span
           className={`h-2 w-2 shrink-0 rounded-full ${
-            showingActive ? "bg-emerald-400" : "bg-neutral-600"
+            showingActive ? "bg-emerald-400" : "bg-white/[0.18]"
           }`}
         />
         <span className="min-w-0 flex-1 truncate">
           {active ? active.name : "No connection"}
         </span>
         {active && (
-          <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-400">
+          <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-neutral-400">
             {transportLabel(active)}
           </span>
         )}
@@ -211,8 +211,8 @@ export function ConnectionPicker({ onAdd }: Props) {
       </button>
 
       {open && (
-        <div className="absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
-          <div className="border-b border-neutral-800 px-3 py-2 text-[10px] uppercase tracking-wide text-neutral-500">
+        <div className="zc-terminal-surface absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl">
+          <div className="border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-wide text-neutral-500">
             Runtimes
           </div>
           {connections.length === 0 ? (
@@ -226,9 +226,9 @@ export function ConnectionPicker({ onAdd }: Props) {
                   key={c.id}
                   type="button"
                   onClick={() => void choose(c.id)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-200 hover:bg-neutral-900"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-neutral-200 hover:bg-white/[0.05]"
                 >
-                  <span className="flex h-4 w-4 items-center justify-center text-orange-300">
+                  <span className="flex h-4 w-4 items-center justify-center text-cyan-300">
                     {active?.id === c.id && <Check size={12} />}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -240,7 +240,7 @@ export function ConnectionPicker({ onAdd }: Props) {
                       {probeLabel(probes[c.id])}
                     </span>
                   </span>
-                  <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
+                  <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
                     {transportLabel(c)}
                   </span>
                 </button>
@@ -253,7 +253,7 @@ export function ConnectionPicker({ onAdd }: Props) {
               setOpen(false);
               onAdd();
             }}
-            className="flex w-full items-center gap-2 border-t border-neutral-800 px-3 py-2 text-xs text-orange-300 hover:bg-orange-500/10"
+            className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-xs text-cyan-300 hover:bg-cyan-400/10"
           >
             <Plus size={12} />
             Add runtime
@@ -288,7 +288,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-xs ${
             showingActive
               ? "bg-emerald-500/10 text-emerald-300"
-              : "bg-neutral-800 text-neutral-500"
+              : "bg-white/[0.08] text-neutral-500"
           }`}
           title={active.url}
         >
@@ -298,8 +298,8 @@ export function ConnectionPicker({ onAdd }: Props) {
       )}
 
       {detailsOpen && active && (
-        <div className="absolute right-4 top-11 z-50 w-[420px] overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 shadow-2xl">
-          <div className="border-b border-neutral-800 px-3 py-2 text-xs">
+        <div className="zc-terminal-surface absolute right-4 top-11 z-50 w-[420px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl">
+          <div className="border-b border-white/10 px-3 py-2 text-xs">
             <div className="font-medium text-neutral-100">{active.name}</div>
             <div className="mt-0.5 truncate font-mono text-[10px] text-neutral-500">
               {active.url || "pending tunnel"}
@@ -347,7 +347,7 @@ export function ConnectionPicker({ onAdd }: Props) {
         <button
           type="button"
           onClick={() => void retry()}
-          className="flex items-center gap-1 rounded-lg border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:border-orange-500 hover:text-orange-300"
+          className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
           title="Re-run activation"
         >
           <RotateCw size={11} />
@@ -359,7 +359,7 @@ export function ConnectionPicker({ onAdd }: Props) {
       <button
         type="button"
         onClick={onAdd}
-        className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-200 transition hover:border-orange-500 hover:text-orange-300"
+        className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-neutral-200 transition hover:border-cyan-400 hover:text-cyan-300"
       >
         <Plus size={12} />
         Add runtime

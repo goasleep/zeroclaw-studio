@@ -17,8 +17,8 @@ export function CronPanel() {
           </thead>
           <tbody>
             {data.jobs.map((j) => (
-              <tr key={j.id} className="border-t border-neutral-800">
-                <td className="py-1.5 pr-2 font-mono text-orange-300">
+              <tr key={j.id} className="border-t border-white/10">
+                <td className="py-1.5 pr-2 font-mono text-cyan-300">
                   {String(j.name ?? j.id)}
                 </td>
                 <td className="py-1.5 pr-2 font-mono text-neutral-400">

@@ -44,14 +44,14 @@ function Shell() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+      <div className="zc-deep-space-bg flex h-full items-center justify-center text-sm text-slate-400">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col bg-neutral-950 text-neutral-100">
+    <div className="zc-deep-space-bg flex h-full flex-col text-slate-100">
       <ConnectionPicker onAdd={() => setAddPath("remote")} />
 
       <main className="flex-1 overflow-hidden">
@@ -60,7 +60,7 @@ function Shell() {
         ) : active ? (
           <WorkspaceShell />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+          <div className="flex h-full items-center justify-center text-sm text-slate-400">
             Select a connection above, or add one.
           </div>
         )}

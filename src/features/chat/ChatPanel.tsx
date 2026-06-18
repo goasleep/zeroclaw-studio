@@ -313,7 +313,7 @@ export function ChatPanel({
     <div
       className={
         variant === "center"
-          ? "rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl shadow-black/30"
+          ? "rounded-2xl border border-white/10 bg-[#020818]/90 shadow-2xl shadow-black/30"
           : ""
       }
     >
@@ -351,20 +351,20 @@ export function ChatPanel({
             className={
               variant === "center"
                 ? "min-h-20 flex-1 resize-none bg-transparent px-2 py-1 text-base text-neutral-100 outline-none placeholder:text-neutral-600"
-                : "flex-1 resize-none rounded border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+                : "flex-1 resize-none rounded border border-white/10 bg-[#020818]/90 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
             }
           />
           <div
             className={
               variant === "center"
-                ? "mt-2 flex items-center gap-2 border-t border-neutral-900 pt-2"
+                ? "mt-2 flex items-center gap-2 border-t border-white/10 pt-2"
                 : "flex items-end gap-2"
             }
           >
             <button
               type="button"
               onClick={() => void pickFiles()}
-              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+              className="rounded border border-white/10 px-2 py-2 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
               title="Add file attachment"
             >
               <FilePlus2 size={12} />
@@ -372,7 +372,7 @@ export function ChatPanel({
             <button
               type="button"
               onClick={() => void pasteClipboard()}
-              className="rounded border border-neutral-800 px-2 py-2 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+              className="rounded border border-white/10 px-2 py-2 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
               title="Paste clipboard into message"
             >
               <Clipboard size={12} />
@@ -382,7 +382,7 @@ export function ChatPanel({
                 <button
                   type="button"
                   onClick={() => setWorkspaceMenuOpen((open) => !open)}
-                  className="flex max-w-64 items-center gap-2 rounded border border-transparent px-2 py-2 text-sm text-neutral-400 hover:border-neutral-800 hover:bg-neutral-900 hover:text-neutral-200"
+                  className="flex max-w-64 items-center gap-2 rounded border border-transparent px-2 py-2 text-sm text-neutral-400 hover:border-white/10 hover:bg-white/[0.05] hover:text-neutral-200"
                   title={workspaceRoot ?? "No project"}
                 >
                   <FolderOpen size={13} />
@@ -390,14 +390,14 @@ export function ChatPanel({
                   <ChevronDown size={12} className="shrink-0" />
                 </button>
                 {workspaceMenuOpen && (
-                  <div className="absolute bottom-11 left-0 z-20 w-72 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 py-1 shadow-xl">
+                  <div className="absolute bottom-11 left-0 z-20 w-72 overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 py-1 shadow-xl">
                     <button
                       type="button"
                       onClick={() => void selectWorkspaceRoot(null)}
                       className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
                         !workspaceRoot
-                          ? "bg-neutral-900 text-neutral-100"
-                          : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                          ? "bg-white/[0.05] text-neutral-100"
+                          : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
                       }`}
                     >
                       <FolderOpen size={12} className="text-neutral-500" />
@@ -410,12 +410,12 @@ export function ChatPanel({
                         onClick={() => void selectWorkspaceRoot(path)}
                         className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
                           workspaceRoot === path
-                            ? "bg-neutral-900 text-neutral-100"
-                            : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
+                            ? "bg-white/[0.05] text-neutral-100"
+                            : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
                         }`}
                         title={path}
                       >
-                        <FolderOpen size={12} className="text-orange-400" />
+                        <FolderOpen size={12} className="text-cyan-300" />
                         <span className="min-w-0 flex-1 truncate">
                           {filenameFromPath(path)}
                         </span>
@@ -424,7 +424,7 @@ export function ChatPanel({
                     <button
                       type="button"
                       onClick={() => void pickWorkspaceRoot()}
-                      className="flex w-full items-center gap-2 border-t border-neutral-900 px-3 py-2 text-left text-xs text-orange-300 hover:bg-neutral-900"
+                      className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-xs text-cyan-300 hover:bg-white/[0.05]"
                     >
                       <FilePlus2 size={12} />
                       <span className="min-w-0 flex-1 truncate">Open project...</span>
@@ -438,7 +438,7 @@ export function ChatPanel({
               type="button"
               onClick={() => void submit()}
               disabled={sending}
-              className="flex items-center gap-1 rounded bg-orange-500 px-3 py-2 text-sm font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+              className="flex items-center gap-1 rounded bg-sky-400 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
               {variant === "footer" && "Send"}
@@ -456,23 +456,23 @@ export function ChatPanel({
       onDrop={onDrop}
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
+        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
           {isCode ? (
-            <TerminalSquare size={12} className="text-orange-400" />
+            <TerminalSquare size={12} className="text-cyan-300" />
           ) : (
-            <Sparkles size={12} className="text-orange-400" />
+            <Sparkles size={12} className="text-cyan-300" />
           )}
           <span className="min-w-0 truncate text-neutral-300">
             {currentSession?.name ?? `New ${isCode ? "code" : "chat"}`}
           </span>
-          <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
+          <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
             {agentAlias}
           </span>
           <span
             className={`ml-1 rounded px-1.5 py-0.5 text-[10px] ${
               chat.connected
                 ? "bg-emerald-500/15 text-emerald-300"
-                : "bg-neutral-800 text-neutral-500"
+                : "bg-white/[0.08] text-neutral-500"
             }`}
           >
             {chat.connected ? "ws ready" : "connecting..."}
@@ -483,12 +483,12 @@ export function ChatPanel({
                 value={cwd}
                 onChange={(e) => setCwd(e.target.value)}
                 placeholder="Remote working directory"
-                className="min-w-0 flex-1 rounded border border-neutral-800 bg-neutral-950 px-2 py-1 font-mono text-[11px] text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+                className="min-w-0 flex-1 rounded border border-white/10 bg-[#020818]/90 px-2 py-1 font-mono text-[11px] text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
               />
               <button
                 type="button"
                 onClick={() => setAppliedCwd(cwd)}
-                className="rounded border border-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
+                className="rounded border border-white/10 px-2 py-1 text-[10px] text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
               >
                 Apply
               </button>
@@ -496,7 +496,7 @@ export function ChatPanel({
                 <button
                   type="button"
                   onClick={() => void browseRemoteWorkspace()}
-                  className="rounded border border-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:border-orange-500 hover:text-orange-300"
+                  className="rounded border border-white/10 px-2 py-1 text-[10px] text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
                 >
                   Browse
                 </button>
@@ -515,7 +515,7 @@ export function ChatPanel({
           <button
             type="button"
             onClick={chat.clear}
-            className="flex items-center gap-1 text-neutral-400 hover:text-orange-300"
+            className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
             title="Clear local view"
           >
             <RotateCcw size={12} />
@@ -523,7 +523,7 @@ export function ChatPanel({
         </header>
 
         {remoteCode && remoteEntries && remoteEntries.length > 0 && (
-          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-neutral-800 px-3 py-1.5 text-[10px]">
+          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 px-3 py-1.5 text-[10px]">
             {remoteEntries
               .filter((entry) => entry.isDir)
               .slice(0, 24)
@@ -535,7 +535,7 @@ export function ChatPanel({
                     setCwd(entry.path);
                     setAppliedCwd(entry.path);
                   }}
-                  className="shrink-0 rounded border border-neutral-800 px-2 py-1 font-mono text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+                  className="shrink-0 rounded border border-white/10 px-2 py-1 font-mono text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
                   title={entry.path}
                 >
                   {entry.name}
@@ -569,7 +569,7 @@ export function ChatPanel({
         </div>
 
         {hasMessages && (
-          <footer className="border-t border-neutral-800 px-3 pb-3 pt-2">
+          <footer className="border-t border-white/10 px-3 pb-3 pt-2">
             {renderComposer("footer")}
           </footer>
         )}
@@ -592,9 +592,9 @@ function AttachmentStrip({
 }) {
   if (files.length === 0) return null;
   return (
-    <div className="mb-2 rounded border border-neutral-800 bg-neutral-950/80 p-2 text-[10px]">
+    <div className="mb-2 rounded border border-white/10 bg-[#020818]/80 p-2 text-[10px]">
       <div className="mb-1 flex items-center gap-1 text-neutral-400">
-        <Paperclip size={10} className="text-orange-400" />
+        <Paperclip size={10} className="text-cyan-300" />
         <span>
           {files.length} attachment{files.length === 1 ? "" : "s"}
         </span>
@@ -612,12 +612,12 @@ function AttachmentStrip({
         {files.map((file) => (
           <div
             key={file.path}
-            className="group flex max-w-full items-center gap-1 rounded bg-neutral-900 px-1.5 py-1 font-mono text-neutral-300"
+            className="group flex max-w-full items-center gap-1 rounded bg-white/[0.05] px-1.5 py-1 font-mono text-neutral-300"
             title={file.path}
           >
             <FileText size={10} className="shrink-0 text-neutral-500" />
             <span className="max-w-40 truncate">{file.filename}</span>
-            <span className="rounded bg-neutral-800 px-1 text-neutral-500">
+            <span className="rounded bg-white/[0.08] px-1 text-neutral-500">
               {file.embedBytes ? "bytes" : "path"}
             </span>
             <span className="text-neutral-600">{file.mime}</span>
@@ -625,7 +625,7 @@ function AttachmentStrip({
             <button
               type="button"
               onClick={() => onPreview(file.path)}
-              className="ml-0.5 text-neutral-500 opacity-0 hover:text-orange-300 group-hover:opacity-100"
+              className="ml-0.5 text-neutral-500 opacity-0 hover:text-cyan-300 group-hover:opacity-100"
               title="Preview file"
             >
               <Eye size={10} />
@@ -645,8 +645,8 @@ function AttachmentStrip({
 function GitContextSummary({ status }: { status: WorkspaceGitStatus | null }) {
   if (!status?.is_repo) return null;
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-neutral-800 bg-neutral-950/70 px-2 py-1.5 text-[10px] text-neutral-500">
-      <GitBranch size={11} className="text-orange-400" />
+    <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-white/10 bg-[#020818]/70 px-2 py-1.5 text-[10px] text-neutral-500">
+      <GitBranch size={11} className="text-cyan-300" />
       <span className="font-mono text-neutral-300">
         {status.branch ?? "detached"}
       </span>
@@ -668,17 +668,17 @@ function FilePreviewDialog({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
-      <div className="flex max-h-[82vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 shadow-2xl">
-        <header className="flex shrink-0 items-center gap-2 border-b border-neutral-800 px-3 py-2 text-xs">
-          <FileText size={13} className="text-orange-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#000010]/75 backdrop-blur-md p-6">
+      <div className="flex max-h-[82vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 shadow-2xl">
+        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2 text-xs">
+          <FileText size={13} className="text-cyan-300" />
           <span className="min-w-0 flex-1 truncate font-mono text-neutral-200">
             {preview.path}
           </span>
           <button
             type="button"
             onClick={() => void navigator.clipboard?.writeText(preview.path)}
-            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
             title="Copy path"
           >
             <Copy size={12} />
@@ -686,7 +686,7 @@ function FilePreviewDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-neutral-900 hover:text-red-300"
+            className="rounded px-1.5 py-1 text-neutral-500 hover:bg-white/[0.05] hover:text-red-300"
           >
             <X size={12} />
           </button>
@@ -725,8 +725,8 @@ function MessageRow({
       <div
         className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${
           isUser
-            ? "bg-orange-500/15 text-neutral-100"
-            : "bg-neutral-900/60 text-neutral-200"
+            ? "bg-cyan-400/10 text-neutral-100"
+            : "bg-white/[0.06] text-neutral-200"
         }`}
       >
         {message.attachments && message.attachments.length > 0 && (
@@ -734,7 +734,7 @@ function MessageRow({
             {message.attachments.map((attachment) => (
               <span
                 key={`${attachment.filename}-${attachment.mime_type}`}
-                className="rounded bg-neutral-950 px-1.5 py-0.5 font-mono"
+                className="rounded bg-[#020818]/90 px-1.5 py-0.5 font-mono"
               >
                 {attachment.filename}
                 {attachment.size !== undefined && (
@@ -753,15 +753,15 @@ function MessageRow({
               <Brain size={10} />
               thinking
             </summary>
-            <pre className="mt-1 whitespace-pre-wrap rounded bg-neutral-950/60 p-2 text-[11px] text-neutral-400">
+            <pre className="mt-1 whitespace-pre-wrap rounded bg-[#020818]/60 p-2 text-[11px] text-neutral-400">
               {message.thinking}
             </pre>
           </details>
         )}
 
         {message.toolCalls.map((t, i) => (
-          <div key={i} className="mb-2 rounded border border-neutral-800 bg-neutral-950/60 p-2 text-[11px]">
-            <div className="flex items-center gap-1.5 text-orange-300">
+          <div key={i} className="mb-2 rounded border border-white/10 bg-[#020818]/60 p-2 text-[11px]">
+            <div className="flex items-center gap-1.5 text-cyan-300">
               <Wrench size={10} />
               <span className="font-mono">{t.name}</span>
               {t.result === undefined && (
@@ -800,7 +800,7 @@ function MessageRow({
             {message.approval.preview ? (
               <DiffPreviewBlock preview={message.approval.preview} />
             ) : (
-              <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-black/40 p-2 text-[10px] text-neutral-400">
+              <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400">
                 {message.approval.arguments_summary}
               </pre>
             )}
@@ -833,7 +833,7 @@ function MessageRow({
         )}
 
         {message.content && (
-          <div className="prose prose-invert prose-sm max-w-none prose-pre:bg-neutral-950 prose-pre:text-[12px]">
+          <div className="prose prose-invert prose-sm max-w-none prose-pre:bg-[#020818]/90 prose-pre:text-[12px]">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
               {message.content}
             </ReactMarkdown>
@@ -849,7 +849,7 @@ function MessageRow({
           <p className="mt-2 text-xs text-red-300">{message.error || "error"}</p>
         )}
         {message.status === "streaming" && (
-          <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-orange-400" />
+          <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
         )}
       </div>
     </div>
@@ -864,14 +864,14 @@ function DiffPreviewBlock({
   const lines = useMemo(() => preview?.lines ?? [], [preview]);
   if (!preview) return null;
   return (
-    <div className="mb-2 overflow-hidden rounded border border-neutral-800 bg-black/40">
-      <div className="flex items-center gap-2 border-b border-neutral-800 px-2 py-1 font-mono text-[10px] text-neutral-400">
+    <div className="mb-2 overflow-hidden rounded border border-white/10 bg-[#020818]/80">
+      <div className="flex items-center gap-2 border-b border-white/10 px-2 py-1 font-mono text-[10px] text-neutral-400">
         <span className="min-w-0 flex-1 truncate">{preview.title}</span>
         {preview.path && (
           <button
             type="button"
             onClick={() => void navigator.clipboard?.writeText(preview.path ?? "")}
-            className="shrink-0 rounded px-1 py-0.5 text-neutral-500 hover:bg-neutral-900 hover:text-orange-300"
+            className="shrink-0 rounded px-1 py-0.5 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
             title="Copy path"
           >
             <Copy size={10} />
@@ -896,7 +896,7 @@ function DiffPreviewBlock({
         ))}
       </pre>
       {preview.truncated && (
-        <div className="border-t border-neutral-800 px-2 py-1 text-[10px] text-amber-300">
+        <div className="border-t border-white/10 px-2 py-1 text-[10px] text-amber-300">
           Preview truncated to 400 lines.
         </div>
       )}

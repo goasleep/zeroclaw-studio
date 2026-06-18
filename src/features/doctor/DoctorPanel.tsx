@@ -22,14 +22,14 @@ export function DoctorPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
+      <header className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
         <span className="text-neutral-400">Diagnostics</span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => void run()}
           disabled={busy}
-          className="flex items-center gap-1 rounded bg-orange-500 px-2 py-1 text-[10px] font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+          className="flex items-center gap-1 rounded bg-sky-400 px-2 py-1 text-[10px] font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
         >
           {busy ? (
             <Loader2 size={10} className="animate-spin" />
@@ -54,7 +54,7 @@ export function DoctorPanel() {
                     ? "border-red-500/40 bg-red-500/10 text-red-200"
                     : r.severity === "WARN"
                       ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                      : "border-neutral-800 bg-neutral-900/40 text-neutral-300"
+                      : "border-white/10 bg-white/[0.04] text-neutral-300"
                 }`}
               >
                 <span className="mr-2 text-[10px] uppercase">{r.severity}</span>

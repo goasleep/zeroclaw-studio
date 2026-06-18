@@ -29,13 +29,13 @@ export function LogsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-2 border-b border-neutral-800 px-3 py-1.5 text-xs">
+      <header className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
         <span className="text-neutral-400">{events.length} lines</span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => setPaused((p) => !p)}
-          className="flex items-center gap-1 rounded border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-orange-500"
+          className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
         >
           {paused ? <Play size={10} /> : <Pause size={10} />}
           {paused ? "Resume" : "Pause"}
@@ -43,7 +43,7 @@ export function LogsPanel() {
         <button
           type="button"
           onClick={() => void poll()}
-          className="flex items-center gap-1 rounded border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-orange-500"
+          className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
         >
           {busy ? (
             <Loader2 size={10} className="animate-spin" />
@@ -53,7 +53,7 @@ export function LogsPanel() {
           Refresh
         </button>
       </header>
-      <div className="flex-1 overflow-auto bg-neutral-950 px-3 py-2 font-mono text-[11px]">
+      <div className="flex-1 overflow-auto bg-[#020818]/90 px-3 py-2 font-mono text-[11px]">
         {events.length === 0 ? (
           <p className="text-neutral-500">No log lines.</p>
         ) : (

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vite/
+
+src-tauri/target/
+src-tauri/gen/schemas/
+src-tauri/WixTools/
+
+.codegraph/
+.agents/
+
+*.tsbuildinfo
+pnpm-lock.yaml
+Cargo.lock
+src/api/bindings.ts

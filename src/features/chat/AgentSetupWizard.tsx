@@ -249,8 +249,8 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
 
   if (step === "loading") {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-neutral-950">
-        <Loader2 size={20} className="animate-spin text-orange-400" />
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90">
+        <Loader2 size={20} className="animate-spin text-cyan-300" />
         <span className="ml-2 text-xs text-neutral-400">Loading setup...</span>
       </div>
     );
@@ -258,8 +258,8 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
 
   if (step === "done") {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-neutral-950 p-8">
-        <div className="max-w-sm rounded-lg border border-neutral-800 bg-neutral-900/50 p-6 text-center">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
+        <div className="max-w-sm rounded-lg border border-white/10 bg-white/[0.05]/50 p-6 text-center">
           <CheckCircle2 size={24} className="mx-auto mb-3 text-green-400" />
           <h3 className="mb-1 text-sm font-semibold text-neutral-100">
             Agent created
@@ -278,7 +278,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
 
   if (step === "error" && !qsState) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-neutral-950 p-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
         <div className="max-w-sm rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center">
           <AlertCircle size={20} className="mx-auto mb-2 text-red-400" />
           <h3 className="mb-1 text-sm font-semibold text-red-200">
@@ -291,10 +291,10 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto bg-neutral-950 p-6">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[#020818]/90 p-6">
       <div className="mx-auto max-w-5xl space-y-5">
         <header className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-orange-500/10 text-orange-300">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-300">
             <Bot size={18} />
           </div>
           <div>
@@ -373,7 +373,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 rows={8}
-                className="w-full resize-y rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 outline-none focus:border-orange-500"
+                className="w-full resize-y rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 text-xs text-neutral-100 outline-none focus:border-cyan-400"
               />
             </Field>
             {qsState && qsState.personality_files.length > 0 && (
@@ -438,7 +438,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     },
                   ])
                 }
-                className="rounded border border-neutral-800 p-1 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+                className="rounded border border-white/10 p-1 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
               >
                 <Plus size={12} />
               </button>
@@ -448,7 +448,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
               <p className="text-xs text-neutral-500">No channels will be created.</p>
             )}
             {channels.map((channel, idx) => (
-              <div key={idx} className="mb-3 rounded-md border border-neutral-800 p-3">
+              <div key={idx} className="mb-3 rounded-md border border-white/10 p-3">
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"
@@ -520,7 +520,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     },
                   ])
                 }
-                className="rounded border border-neutral-800 p-1 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+                className="rounded border border-white/10 p-1 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
               >
                 <Plus size={12} />
               </button>
@@ -530,7 +530,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
               <p className="text-xs text-neutral-500">No peer groups will be created.</p>
             )}
             {peerGroups.map((peer, idx) => (
-              <div key={idx} className="mb-3 rounded-md border border-neutral-800 p-3">
+              <div key={idx} className="mb-3 rounded-md border border-white/10 p-3">
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"
@@ -603,7 +603,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     { filename: `personality-${current.length + 1}.md`, content: "" },
                   ])
                 }
-                className="rounded border border-neutral-800 p-1 text-neutral-400 hover:border-orange-500 hover:text-orange-300"
+                className="rounded border border-white/10 p-1 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
               >
                 <Plus size={12} />
               </button>
@@ -615,7 +615,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
               </p>
             )}
             {personalityFiles.map((file, idx) => (
-              <div key={idx} className="mb-3 rounded-md border border-neutral-800 p-3">
+              <div key={idx} className="mb-3 rounded-md border border-white/10 p-3">
                 <div className="mb-2 flex justify-end">
                   <button
                     type="button"
@@ -652,7 +652,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                       )
                     }
                     rows={5}
-                    className="w-full resize-y rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-orange-500"
+                    className="w-full resize-y rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-cyan-400"
                   />
                 </Field>
               </div>
@@ -660,12 +660,12 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
           </Panel>
         </section>
 
-        <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-neutral-800 bg-neutral-950/95 py-4">
+        <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-white/10 bg-[#020818]/95 py-4">
           <button
             type="button"
             onClick={() => void handleSubmit()}
             disabled={step === "validating" || step === "applying"}
-            className="flex items-center justify-center gap-1.5 rounded-md bg-orange-500 px-4 py-2 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 rounded-md bg-sky-400 px-4 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
           >
             {step === "validating" || step === "applying" ? (
               <>
@@ -692,7 +692,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+    <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-medium text-neutral-100">{title}</h3>
         {action}
@@ -736,7 +736,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 outline-none focus:border-orange-500"
+        className="w-full appearance-none rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 text-xs text-neutral-100 outline-none focus:border-cyan-400"
       >
         {children}
       </select>
@@ -765,7 +765,7 @@ function Input({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+      className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
     />
   );
 }

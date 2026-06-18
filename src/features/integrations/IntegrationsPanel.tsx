@@ -93,8 +93,8 @@ export function IntegrationsPanel({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[360px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-        <header className="shrink-0 border-b border-neutral-800 p-3">
+      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+        <header className="shrink-0 border-b border-white/10 p-3">
           <div className="relative">
             <Search
               size={13}
@@ -105,14 +105,14 @@ export function IntegrationsPanel({
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Search integrations..."
-              className="w-full rounded-md border border-neutral-800 bg-neutral-950 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-orange-500"
+              className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300"
             >
               {categories.map((value) => (
                 <option key={value} value={value}>
@@ -123,7 +123,7 @@ export function IntegrationsPanel({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-300 outline-none focus:border-orange-500"
+              className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300"
             >
               {statuses.map((value) => (
                 <option key={value} value={value}>
@@ -137,7 +137,7 @@ export function IntegrationsPanel({
             <button
               type="button"
               onClick={() => void refresh()}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-neutral-900 hover:text-orange-300"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} />
               Refresh
@@ -159,7 +159,7 @@ export function IntegrationsPanel({
             </div>
           )}
           {state.kind === "ready" && filtered.length === 0 && (
-            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs text-neutral-500">
+            <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No integrations match your filters.
             </div>
           )}
@@ -178,8 +178,8 @@ export function IntegrationsPanel({
                       onClick={() => setSelected(item.name)}
                       className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
                         selectedItem?.name === item.name
-                          ? "bg-orange-500/10 text-orange-200"
-                          : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                          ? "bg-cyan-400/10 text-cyan-100"
+                          : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                       }`}
                     >
                       <CategoryIcon category={item.category} />
@@ -192,7 +192,7 @@ export function IntegrationsPanel({
                         </span>
                       </span>
                       {aliases.length > 0 && (
-                        <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
+                        <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
                           {aliases.length}
                         </span>
                       )}
@@ -248,9 +248,9 @@ function IntegrationDetail({
 
   return (
     <div className="flex h-full flex-col">
-      <header className="shrink-0 border-b border-neutral-800 px-5 py-4">
+      <header className="shrink-0 border-b border-white/10 px-5 py-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-300">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
             <CategoryIcon category={item.category} size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -259,7 +259,7 @@ function IntegrationDetail({
                 {item.name}
               </h2>
               <StatusBadge status={item.status} />
-              <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
+              <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
                 {categoryLabel(item.category)}
               </span>
             </div>
@@ -273,7 +273,7 @@ function IntegrationDetail({
             <button
               type="button"
               onClick={() => onConfigure(configSection)}
-              className="flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400"
+              className="flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300"
             >
               Configure
               <ChevronRight size={12} />
@@ -284,8 +284,8 @@ function IntegrationDetail({
 
       <div className="min-h-0 flex-1 overflow-auto p-5">
         <div className="mx-auto max-w-4xl space-y-4">
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-            <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+          <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+            <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
               Gateway catalog
             </h3>
             <dl className="grid gap-3 p-4 text-xs sm:grid-cols-2">
@@ -297,8 +297,8 @@ function IntegrationDetail({
           </section>
 
           {item.category === "Chat" && (
-            <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-              <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+            <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+              <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
                 Channels
               </h3>
               {aliases.length === 0 ? (
@@ -306,7 +306,7 @@ function IntegrationDetail({
                   No configured aliases reported for this channel type.
                 </p>
               ) : (
-                <div className="divide-y divide-neutral-800">
+                <div className="divide-y divide-white/10">
                   {aliases.map((channel, index) => (
                     <ChannelRow key={`${channel.name}-${index}`} channel={channel} />
                   ))}
@@ -315,11 +315,11 @@ function IntegrationDetail({
             </section>
           )}
 
-          <details className="rounded-lg border border-neutral-800 bg-neutral-900/30">
+          <details className="rounded-lg border border-white/10 bg-white/[0.035]">
             <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-neutral-100">
               Raw integration payload
             </summary>
-            <pre className="overflow-x-auto border-t border-neutral-800 p-4 text-xs leading-relaxed text-neutral-400">
+            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400">
               {JSON.stringify(item, null, 2)}
             </pre>
           </details>
@@ -364,7 +364,7 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
         {label}
       </dt>
-      <dd className="truncate rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-neutral-300">
+      <dd className="truncate rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-neutral-300">
         {value}
       </dd>
     </div>
@@ -378,11 +378,11 @@ function CategoryIcon({
   category?: string;
   size?: number;
 }) {
-  if (category === "Chat") return <Bot size={size} className="shrink-0 text-orange-400" />;
+  if (category === "Chat") return <Bot size={size} className="shrink-0 text-cyan-300" />;
   if (category === "AiModel") {
     return <CheckCircle2 size={size} className="shrink-0 text-emerald-400" />;
   }
-  return <PlugZap size={size} className="shrink-0 text-orange-400" />;
+  return <PlugZap size={size} className="shrink-0 text-cyan-300" />;
 }
 
 function StatusBadge({ status }: { status?: string }) {
@@ -393,7 +393,7 @@ function StatusBadge({ status }: { status?: string }) {
       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
         active
           ? "bg-emerald-500/10 text-emerald-300"
-          : "bg-neutral-900 text-neutral-500"
+          : "bg-white/[0.05] text-neutral-500"
       }`}
     >
       {label}

@@ -11,9 +11,9 @@ export function DevicesPanel() {
           {data.devices.map((d) => (
             <li
               key={d.id}
-              className="flex items-center justify-between rounded border border-neutral-800 bg-neutral-900/40 p-2"
+              className="flex items-center justify-between rounded border border-white/10 bg-white/[0.04] p-2"
             >
-              <span className="font-mono text-orange-300">{d.name ?? "(unnamed)"}</span>
+              <span className="font-mono text-cyan-300">{d.name ?? "(unnamed)"}</span>
               <span className="font-mono text-neutral-500">{d.id}</span>
             </li>
           ))}

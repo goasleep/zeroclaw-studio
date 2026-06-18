@@ -180,7 +180,7 @@ export function WorkspaceShell() {
   }, [addFiles, focusComposer, pickProject, openSettings]);
 
   return (
-    <div className="h-full min-h-0 overflow-hidden bg-neutral-950 text-neutral-100">
+    <div className="h-full min-h-0 overflow-hidden text-slate-100">
       {page === "chat" || page === "code" ? (
         <div className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden">
           <WorkspaceSidebar

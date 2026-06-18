@@ -112,8 +112,8 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-        <div className="border-b border-neutral-800 p-3">
+      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+        <div className="border-b border-white/10 p-3">
           <div className="relative">
             <Search
               size={13}
@@ -124,7 +124,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Search sections..."
-              className="w-full rounded-md border border-neutral-800 bg-neutral-950 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
@@ -132,7 +132,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
             <button
               type="button"
               onClick={() => void loadSections()}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-neutral-900 hover:text-orange-300"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} />
               Refresh
@@ -159,8 +159,8 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
                       onClick={() => chooseSection(section)}
                       className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
                         mode === "sections" && activeKey === section.key
-                          ? "bg-orange-500/10 text-orange-200"
-                          : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                          ? "bg-cyan-400/10 text-cyan-100"
+                          : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                       }`}
                     >
                       <SectionStateDot section={section} />
@@ -180,7 +180,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
             ))}
         </div>
 
-        <div className="shrink-0 border-t border-neutral-800 p-2">
+        <div className="shrink-0 border-t border-white/10 p-2">
           <button
             type="button"
             onClick={() => {
@@ -189,8 +189,8 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
             }}
             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
               mode === "advanced"
-                ? "bg-orange-500/10 text-orange-200"
-                : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                ? "bg-cyan-400/10 text-cyan-100"
+                : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
             }`}
           >
             <Code2 size={13} />
@@ -341,8 +341,8 @@ function PickerSection({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-neutral-800 bg-neutral-950">
-        <header className="shrink-0 border-b border-neutral-800 p-3">
+      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+        <header className="shrink-0 border-b border-white/10 p-3">
           <h2 className="truncate text-sm font-semibold text-neutral-100">
             {section.label}
           </h2>
@@ -356,14 +356,14 @@ function PickerSection({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filter choices..."
-            className="mt-3 w-full rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+            className="mt-3 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
           />
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {loading && <LoadingInline label="Loading picker..." />}
           {error && <ErrorBox message={error} />}
           {!loading && !error && filtered.length === 0 && (
-            <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/30 p-3 text-xs text-neutral-500">
+            <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No choices match this filter.
             </div>
           )}
@@ -375,8 +375,8 @@ function PickerSection({
                 onClick={() => setSelectedItem(item)}
                 className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
                   selectedItem?.key === item.key
-                    ? "bg-orange-500/10 text-orange-200"
-                    : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                    ? "bg-cyan-400/10 text-cyan-100"
+                    : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                 }`}
               >
                 <span className="min-w-0 flex-1">
@@ -551,14 +551,14 @@ function TypedAliasPanel({
         {loading ? (
           <LoadingInline label="Loading aliases..." />
         ) : (
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900/30">
-            <div className="border-b border-neutral-800 px-4 py-3">
+          <section className="rounded-lg border border-white/10 bg-white/[0.035]">
+            <div className="border-b border-white/10 px-4 py-3">
               <h3 className="text-sm font-medium text-neutral-100">Aliases</h3>
               <p className="mt-1 text-xs text-neutral-500">
                 Existing aliases under <span className="font-mono">{prefix}</span>.
               </p>
             </div>
-            <div className="divide-y divide-neutral-800">
+            <div className="divide-y divide-white/10">
               {aliases.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-neutral-500">
                   No aliases configured yet.
@@ -569,7 +569,7 @@ function TypedAliasPanel({
                     key={name}
                     type="button"
                     onClick={() => void openAlias(name)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                   >
                     <span className="font-mono">{name}</span>
                     <ChevronRight size={13} />
@@ -634,7 +634,7 @@ function OneTierAliasPanel({
         <button
           type="button"
           onClick={() => void openAlias(item.key)}
-          className="flex w-full items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-900/30 px-4 py-3 text-left text-sm text-neutral-200 hover:border-orange-500/50 hover:text-orange-200"
+          className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-left text-sm text-neutral-200 hover:border-cyan-400/50 hover:text-cyan-100"
         >
           <span>
             <span className="block font-medium">Open configured entry</span>
@@ -672,7 +672,7 @@ function BackendPanel({
         <button
           type="button"
           onClick={() => onSelect()}
-          className="inline-flex items-center gap-2 rounded-md bg-orange-500 px-3 py-2 text-xs font-medium text-neutral-950 hover:bg-orange-400"
+          className="inline-flex items-center gap-2 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300"
         >
           <Check size={13} />
           Select and edit fields
@@ -754,7 +754,7 @@ function ConfigFieldForm({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="shrink-0 border-b border-neutral-800 px-5 py-4">
+      <header className="shrink-0 border-b border-white/10 px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -762,7 +762,7 @@ function ConfigFieldForm({
                 <button
                   type="button"
                   onClick={onBack}
-                  className="rounded-md border border-neutral-800 px-2 py-1 text-[11px] text-neutral-400 hover:border-orange-500/50 hover:text-orange-300"
+                  className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
                 >
                   Back
                 </button>
@@ -770,7 +770,7 @@ function ConfigFieldForm({
               <h2 className="truncate text-sm font-semibold text-neutral-100">
                 {target.title}
               </h2>
-              <span className="rounded bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
+              <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
                 {target.prefix}
               </span>
             </div>
@@ -785,7 +785,7 @@ function ConfigFieldForm({
               type="button"
               onClick={() => void save()}
               disabled={dirtyEntries.length === 0 || saving}
-              className="flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving ? (
                 <Loader2 size={12} className="animate-spin" />
@@ -805,8 +805,8 @@ function ConfigFieldForm({
               onClick={() => setActiveTab("fields")}
               className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] ${
                 activeTab === "fields"
-                  ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
-                  : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-100"
+                  ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                  : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
               }`}
             >
               <Code2 size={12} />
@@ -817,8 +817,8 @@ function ConfigFieldForm({
               onClick={() => setActiveTab("setup")}
               className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] ${
                 activeTab === "setup"
-                  ? "border-orange-500/40 bg-orange-500/10 text-orange-200"
-                  : "border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-100"
+                  ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                  : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
               }`}
             >
               <Wrench size={12} />
@@ -849,12 +849,12 @@ function ConfigFieldForm({
               {tabs.map(({ label, fields }) => (
                 <section
                   key={label}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/30"
+                  className="rounded-lg border border-white/10 bg-white/[0.035]"
                 >
-                  <h3 className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-100">
+                  <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
                     {label}
                   </h3>
-                  <div className="divide-y divide-neutral-800">
+                  <div className="divide-y divide-white/10">
                     {fields.map((entry) => (
                       <FieldRow
                         key={entry.path}
@@ -934,7 +934,7 @@ function FieldInput({
         className={`w-fit rounded-full border px-3 py-1.5 text-xs font-medium ${
           value === "true"
             ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-            : "border-neutral-800 bg-neutral-950 text-neutral-400"
+            : "border-white/10 bg-[#020818]/90 text-neutral-400"
         }`}
       >
         {value === "true" ? "true" : "false"}
@@ -947,7 +947,7 @@ function FieldInput({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full max-w-xl rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-orange-500"
+        className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-cyan-400"
       >
         <option value="">unset</option>
         {entry.enum_variants.map((variant) => (
@@ -965,7 +965,7 @@ function FieldInput({
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full max-w-xl rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-orange-500"
+        className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-cyan-400"
       />
     );
   }
@@ -977,7 +977,7 @@ function FieldInput({
         onChange={(e) => onChange(e.target.value)}
         rows={5}
         spellCheck={false}
-        className="w-full resize-y rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-orange-500"
+        className="w-full resize-y rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-cyan-400"
       />
     );
   }
@@ -989,7 +989,7 @@ function FieldInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={entry.populated ? "Secret is set. Type to replace." : "Enter secret value"}
-        className="w-full max-w-xl rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+        className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
       />
     );
   }
@@ -1000,14 +1000,14 @@ function FieldInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       rows={4}
-      className="w-full resize-y rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-orange-500"
+      className="w-full resize-y rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-cyan-400"
     />
   ) : (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full max-w-xl rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-orange-500"
+      className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-cyan-400"
     />
   );
 }
@@ -1163,14 +1163,14 @@ function AdvancedConfigEditor() {
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-neutral-800">
-        <div className="border-b border-neutral-800 p-3">
+      <aside className="flex min-w-0 flex-col border-r border-white/10">
+        <div className="border-b border-white/10 p-3">
           <input
             type="search"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Search raw paths..."
-            className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+            className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
           />
           <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-neutral-500">
             {reloadStatus && <Badge label={`reload ${reloadStatus}`} />}
@@ -1187,8 +1187,8 @@ function AdvancedConfigEditor() {
               onClick={() => void open(entry)}
               className={`mb-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
                 selected?.path === entry.path
-                  ? "bg-orange-500/10 text-orange-200"
-                  : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                  ? "bg-cyan-400/10 text-cyan-100"
+                  : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
               }`}
             >
               <span className="min-w-0 flex-1">
@@ -1212,7 +1212,7 @@ function AdvancedConfigEditor() {
                 title="Select a raw path"
                 body="Advanced mode edits one property at a time through /api/config/prop."
               />
-              <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+              <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
                 <h3 className="mb-3 text-sm font-medium text-neutral-100">
                   Map key tools
                 </h3>
@@ -1221,18 +1221,18 @@ function AdvancedConfigEditor() {
                     value={mapPath}
                     onChange={(e) => setMapPath(e.target.value)}
                     placeholder="map path, e.g. model_providers.openai"
-                    className="rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+                    className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
                   />
                   <input
                     value={mapKey}
                     onChange={(e) => setMapKey(e.target.value)}
                     placeholder="alias"
-                    className="rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+                    className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
                   />
                   <select
                     value={templateKey}
                     onChange={(e) => setTemplateKey(e.target.value)}
-                    className="rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-100 outline-none focus:border-orange-500"
+                    className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none focus:border-cyan-400"
                   >
                     <option value="">no template</option>
                     {(templates ?? []).map((template, idx) => {
@@ -1247,14 +1247,14 @@ function AdvancedConfigEditor() {
                   <button
                     type="button"
                     onClick={() => void createMapKey()}
-                    className="rounded bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400"
+                    className="rounded bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300"
                   >
                     Create
                   </button>
                   <button
                     type="button"
                     onClick={() => void deleteMapKey()}
-                    className="rounded border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-red-500/50 hover:text-red-300"
+                    className="rounded border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-red-500/50 hover:text-red-300"
                   >
                     Delete
                   </button>
@@ -1265,7 +1265,7 @@ function AdvancedConfigEditor() {
                   </p>
                 )}
               </section>
-              <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+              <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
                 <h3 className="text-sm font-medium text-neutral-100">Skills</h3>
                 <p className="mt-2 text-xs text-neutral-500">
                   {skillsAvailable
@@ -1277,7 +1277,7 @@ function AdvancedConfigEditor() {
           </div>
         ) : (
           <div className="flex h-full flex-col">
-            <header className="flex shrink-0 items-start gap-3 border-b border-neutral-800 px-5 py-4">
+            <header className="flex shrink-0 items-start gap-3 border-b border-white/10 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <h2 className="truncate font-mono text-sm text-neutral-100">
                   {selected.path}
@@ -1290,7 +1290,7 @@ function AdvancedConfigEditor() {
                 type="button"
                 onClick={() => void reveal()}
                 disabled={!selected.is_secret}
-                className="flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-orange-500/50 hover:text-orange-300 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Eye size={12} />
                 Reveal
@@ -1299,7 +1299,7 @@ function AdvancedConfigEditor() {
                 type="button"
                 onClick={() => void save()}
                 disabled={draft === seed || saving}
-                className="flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-1.5 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
                 Save
@@ -1322,7 +1322,7 @@ function AdvancedConfigEditor() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 spellCheck={false}
-                className="h-[520px] w-full resize-none rounded-md border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-orange-500"
+                className="h-[520px] w-full resize-none rounded-md border border-white/10 bg-[#020818]/90 p-3 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-cyan-400"
               />
             </div>
           </div>
@@ -1346,7 +1346,7 @@ function AliasCreator({
   onSubmit: () => void;
 }) {
   return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+    <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <h3 className="text-sm font-medium text-neutral-100">{label}</h3>
       <div className="mt-3 flex gap-2">
         <input
@@ -1354,13 +1354,13 @@ function AliasCreator({
           value={alias}
           onChange={(e) => onAlias(e.target.value)}
           placeholder="default"
-          className="min-w-0 flex-1 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-orange-500"
+          className="min-w-0 flex-1 rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
         />
         <button
           type="button"
           onClick={onSubmit}
           disabled={busy}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-3 py-2 text-xs font-medium text-neutral-950 hover:bg-orange-400 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
         >
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
           Open
@@ -1383,7 +1383,7 @@ function SectionHeader({
     <header>
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-semibold text-neutral-100">{title}</h2>
-        <span className="rounded bg-neutral-900 px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
+        <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
           {code}
         </span>
       </div>
@@ -1442,7 +1442,7 @@ function Badge({ label }: { label: string }) {
           ? "bg-emerald-500/10 text-emerald-300"
           : warn
             ? "bg-amber-500/10 text-amber-300"
-            : "bg-neutral-900 text-neutral-500"
+            : "bg-white/[0.05] text-neutral-500"
       }`}
     >
       {label}
@@ -1455,7 +1455,7 @@ function SectionStateDot({ section }: { section: ConfigSectionInfo }) {
     ? "bg-emerald-400"
     : section.completed
       ? "bg-amber-400"
-      : "bg-neutral-700";
+      : "bg-white/[0.12]";
   return <span className={`h-2 w-2 shrink-0 rounded-full ${color}`} />;
 }
 

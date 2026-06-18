@@ -38,14 +38,14 @@ export function SettingsPage({
   const current = SETTINGS_SECTIONS.find((s) => s.id === section);
 
   return (
-    <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-neutral-950">
+    <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-[#020818]/90">
       <SettingsNav
         section={section}
         onSection={onSection}
         onBackToChat={onBackToChat}
       />
-      <main className="flex min-w-0 flex-col overflow-hidden border-l border-neutral-800">
-        <header className="flex h-16 shrink-0 flex-col justify-center border-b border-neutral-800 px-8">
+      <main className="flex min-w-0 flex-col overflow-hidden border-l border-white/10">
+        <header className="flex h-16 shrink-0 flex-col justify-center border-b border-white/10 px-8">
           <h1 className="truncate text-lg font-semibold text-neutral-100">
             {current?.label ?? "Settings"}
           </h1>
@@ -95,12 +95,12 @@ function SettingsNav({
   ];
 
   return (
-    <aside className="flex min-h-0 flex-col bg-neutral-950">
-      <header className="shrink-0 border-b border-neutral-800 p-3">
+    <aside className="flex min-h-0 flex-col bg-[#020818]/90">
+      <header className="shrink-0 border-b border-white/10 p-3">
         <button
           type="button"
           onClick={onBackToChat}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-neutral-100"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-400 transition hover:bg-white/[0.05] hover:text-neutral-100"
         >
           <Home size={14} />
           <span className="min-w-0 flex-1 truncate">Back to app</span>
@@ -122,8 +122,8 @@ function SettingsNav({
                     onClick={() => onSection(id)}
                     className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition ${
                       section === id
-                        ? "bg-orange-500/10 text-orange-200"
-                        : "text-neutral-300 hover:bg-neutral-900 hover:text-neutral-100"
+                        ? "bg-cyan-400/10 text-cyan-100"
+                        : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                     }`}
                   >
                     <Icon size={14} className="shrink-0" />
@@ -163,7 +163,7 @@ function AppSettings() {
   return (
     <div className="h-full overflow-auto p-5 text-sm">
       <div className="mx-auto max-w-3xl space-y-4">
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+        <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
           <h2 className="mb-3 text-sm font-medium text-neutral-100">
             Connection
           </h2>
@@ -180,7 +180,7 @@ function AppSettings() {
           )}
         </section>
 
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+        <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
           <h2 className="mb-3 text-sm font-medium text-neutral-100">
             Workspace
           </h2>
@@ -195,7 +195,7 @@ function AppSettings() {
           </dl>
         </section>
 
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900/30 p-4">
+        <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
           <h2 className="mb-2 text-sm font-medium text-neutral-100">
             Local Preferences
           </h2>
@@ -213,10 +213,10 @@ function AppSettings() {
                   }))
                 }
                 onBlur={(e) => void updatePreference("shortcut", e.target.value)}
-                className="w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-neutral-200 outline-none focus:border-orange-500"
+                className="w-full rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-neutral-200"
               />
             </label>
-            <label className="flex items-center justify-between gap-3 rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5">
+            <label className="flex items-center justify-between gap-3 rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5">
               <span>
                 <span className="block text-neutral-300">Notifications</span>
                 <span className="text-[10px] text-neutral-500">
@@ -231,7 +231,7 @@ function AppSettings() {
                 }
               />
             </label>
-            <label className="flex items-center justify-between gap-3 rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5">
+            <label className="flex items-center justify-between gap-3 rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5">
               <span>
                 <span className="block text-neutral-300">Tray / menu bar</span>
                 <span className="text-[10px] text-neutral-500">
@@ -266,7 +266,7 @@ function InfoItem({
       <dt className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">
         {label}
       </dt>
-      <dd className="truncate rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 font-mono text-neutral-300">
+      <dd className="truncate rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-neutral-300">
         {value}
       </dd>
     </div>

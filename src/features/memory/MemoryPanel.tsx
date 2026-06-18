@@ -11,9 +11,9 @@ export function MemoryPanel() {
           {data.entries.map((e) => (
             <li
               key={e.key}
-              className="rounded border border-neutral-800 bg-neutral-900/40 p-2"
+              className="rounded border border-white/10 bg-white/[0.04] p-2"
             >
-              <div className="font-mono text-orange-300">{e.key}</div>
+              <div className="font-mono text-cyan-300">{e.key}</div>
               <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-300">
                 {typeof e.value === "string"
                   ? e.value

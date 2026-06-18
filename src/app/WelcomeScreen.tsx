@@ -37,15 +37,15 @@ const cards = [
 
 export function WelcomeScreen({ onChoose }: Props) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-8 bg-neutral-950 px-8 py-12 text-neutral-100">
+    <div className="flex h-full flex-col items-center justify-center gap-8 px-8 py-12 text-slate-100">
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="rounded-xl bg-orange-500/10 p-3 text-orange-400">
+        <div className="zc-glow-border rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-300">
           <Cable size={28} />
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">
           Welcome to ZeroClaw Workspace
         </h1>
-        <p className="max-w-lg text-sm text-neutral-400">
+        <p className="max-w-lg text-sm text-slate-400">
           Pick how you want to reach a ZeroClaw gateway. You can have any number
           of connections — local, remote, or both. Local install is optional.
         </p>
@@ -57,14 +57,14 @@ export function WelcomeScreen({ onChoose }: Props) {
             key={id}
             type="button"
             onClick={() => onChoose(id)}
-            className="group flex flex-col gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 text-left transition hover:border-orange-500/60 hover:bg-neutral-900/80"
+            className="zc-panel group flex flex-col gap-3 rounded-2xl p-5 text-left transition hover:border-cyan-400/50 hover:bg-white/[0.07]"
           >
-            <div className="rounded-lg bg-neutral-800 p-2 text-orange-400 group-hover:bg-orange-500/10">
+            <div className="rounded-lg bg-white/[0.08] p-2 text-cyan-300 group-hover:bg-cyan-400/10">
               <Icon size={20} />
             </div>
-            <h2 className="text-base font-medium text-neutral-100">{title}</h2>
-            <p className="text-xs leading-relaxed text-neutral-400">{body}</p>
-            <span className="mt-auto text-xs font-medium uppercase tracking-wide text-orange-400 opacity-0 group-hover:opacity-100">
+            <h2 className="text-base font-medium text-slate-100">{title}</h2>
+            <p className="text-xs leading-relaxed text-slate-400">{body}</p>
+            <span className="mt-auto text-xs font-medium uppercase tracking-wide text-cyan-300 opacity-0 group-hover:opacity-100">
               {cta} →
             </span>
           </button>
