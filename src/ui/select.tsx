@@ -1,4 +1,5 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
+import { useLingui } from "@lingui/react/macro";
 import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -11,7 +12,7 @@ export function Select({
   value,
   options,
   onValueChange,
-  placeholder = "Select",
+  placeholder,
   className = "",
 }: {
   value: string;
@@ -20,12 +21,14 @@ export function Select({
   placeholder?: string;
   className?: string;
 }) {
+  const { t } = useLingui();
+
   return (
     <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
       <SelectPrimitive.Trigger
         className={`inline-flex min-w-0 items-center justify-between gap-2 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300 outline-none transition hover:border-white/20 focus:border-cyan-400 ${className}`}
       >
-        <SelectPrimitive.Value placeholder={placeholder} />
+        <SelectPrimitive.Value placeholder={placeholder ?? t`Select`} />
         <SelectPrimitive.Icon asChild>
           <ChevronDown size={13} className="shrink-0 text-neutral-500" />
         </SelectPrimitive.Icon>

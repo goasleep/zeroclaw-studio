@@ -1,4 +1,5 @@
 import { Home } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
@@ -10,14 +11,18 @@ import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { LogsPanel } from "@/features/logs/LogsPanel";
 import { MemoryPanel } from "@/features/memory/MemoryPanel";
 import { SetupCenterPanel } from "@/features/setup/SetupCenterPanel";
+import { setAppLocale } from "@/i18n/i18n";
+import { Select } from "@/ui/select";
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
   savePreference,
   type AppPreferences,
 } from "@/workspace/preferences/preferences";
-import { SETTINGS_SECTIONS } from "./settings-sections";
+import { SETTINGS_SECTIONS, type SettingsGroup } from "./settings-sections";
 import type { SettingsSection } from "./types";
+
+const SETTINGS_GROUPS: SettingsGroup[] = ["App", "Gateway", "Capabilities", "Operations"];
 
 interface SettingsPageProps {
   section: SettingsSection;
@@ -143,12 +148,20 @@ function SettingsNav({
   onSection: (section: SettingsSection) => void;
   onBackToChat: () => void;
 }) {
-  const groups: Array<"App" | "Gateway" | "Capabilities" | "Operations"> = [
-    "App",
-    "Gateway",
-    "Capabilities",
-    "Operations",
-  ];
+  const { t } = useLingui();
+
+  function groupLabel(group: SettingsGroup) {
+    switch (group) {
+      case "App":
+        return t`App`;
+      case "Gateway":
+        return t`Gateway`;
+      case "Capabilities":
+        return t`Capabilities`;
+      case "Operations":
+        return t`Operations`;
+    }
+  }
 
   return (
     <aside className="flex min-h-0 flex-col bg-[#020818]/90">
@@ -159,14 +172,18 @@ function SettingsNav({
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-400 transition hover:bg-white/[0.05] hover:text-neutral-100"
         >
           <Home size={14} />
-          <span className="min-w-0 flex-1 truncate">Back to app</span>
+          <span className="min-w-0 flex-1 truncate">
+            <Trans>Back to app</Trans>
+          </span>
         </button>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3 zc-scrollbar">
-        {groups.map((group) => (
+        {SETTINGS_GROUPS.map((group) => (
           <section key={group} className="mb-5">
-            <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">{group}</h2>
+            <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
+              {groupLabel(group)}
+            </h2>
             <div className="space-y-1">
               {SETTINGS_SECTIONS.filter((s) => s.group === group).map(
                 ({ id, label, icon: Icon }) => (
@@ -181,7 +198,7 @@ function SettingsNav({
                     }`}
                   >
                     <Icon size={14} className="shrink-0" />
-                    <span className="min-w-0 flex-1 truncate">{label}</span>
+                    <span className="min-w-0 flex-1 truncate">{t(label)}</span>
                   </button>
                 ),
               )}
@@ -194,6 +211,7 @@ function SettingsNav({
 }
 
 function AppSettings() {
+  const { t } = useLingui();
   const { active, connections, health, activation } = useConnections();
   const { root, selectedFiles } = useWorkspace();
   const [preferences, setPreferences] = useState<AppPreferences>(DEFAULT_PREFERENCES);
@@ -211,42 +229,69 @@ function AppSettings() {
   ) {
     setPreferences((prev) => ({ ...prev, [key]: value }));
     await savePreference(key, value);
+    if (key === "language") {
+      await setAppLocale(value as AppPreferences["language"]);
+    }
   }
 
   return (
     <div className="h-full overflow-auto p-5 text-sm zc-scrollbar">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-3 text-sm font-medium text-neutral-100">Connection</h2>
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">
+            <Trans>Connection</Trans>
+          </h2>
           {active ? (
             <dl className="grid gap-3 text-xs sm:grid-cols-2">
-              <InfoItem label="Name" value={active.name} />
-              <InfoItem label="Status" value={online ? "Online" : "Offline"} />
-              <InfoItem label="Transport" value={active.transport} />
-              <InfoItem label="Lifecycle" value={active.lifecycle} />
-              <InfoItem label="URL" value={active.url || "pending tunnel"} wide />
+              <InfoItem label={t`Name`} value={active.name} />
+              <InfoItem label={t`Status`} value={online ? t`Online` : t`Offline`} />
+              <InfoItem label={t`Transport`} value={active.transport} />
+              <InfoItem label={t`Lifecycle`} value={active.lifecycle} />
+              <InfoItem label={t`URL`} value={active.url || t`pending tunnel`} wide />
             </dl>
           ) : (
-            <p className="text-xs text-neutral-500">No active connection.</p>
+            <p className="text-xs text-neutral-500">
+              <Trans>No active connection.</Trans>
+            </p>
           )}
         </section>
 
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-3 text-sm font-medium text-neutral-100">Workspace</h2>
+          <h2 className="mb-3 text-sm font-medium text-neutral-100">
+            <Trans>Workspace</Trans>
+          </h2>
           <dl className="grid gap-3 text-xs sm:grid-cols-2">
-            <InfoItem label="Folder" value={root ?? "No folder open"} wide />
-            <InfoItem label="Chat attachments" value={String(selectedFiles.length)} />
-            <InfoItem label="Saved runtimes" value={String(connections.length)} />
-            <InfoItem label="Activation" value={activation ? activation.type : "idle"} />
+            <InfoItem label={t`Folder`} value={root ?? t`No folder open`} wide />
+            <InfoItem label={t`Chat attachments`} value={String(selectedFiles.length)} />
+            <InfoItem label={t`Saved runtimes`} value={String(connections.length)} />
+            <InfoItem label={t`Activation`} value={activation ? activation.type : t`idle`} />
           </dl>
         </section>
 
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-          <h2 className="mb-2 text-sm font-medium text-neutral-100">Local Preferences</h2>
+          <h2 className="mb-2 text-sm font-medium text-neutral-100">
+            <Trans>Local Preferences</Trans>
+          </h2>
           <div className="space-y-3 text-xs">
             <label className="block">
               <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
-                Global shortcut
+                <Trans>Language</Trans>
+              </span>
+              <Select
+                value={preferences.language}
+                options={[
+                  { value: "en", label: "English" },
+                  { value: "zh-CN", label: "中文" },
+                ]}
+                onValueChange={(value) =>
+                  void updatePreference("language", value as AppPreferences["language"])
+                }
+                className="w-full"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                <Trans>Global shortcut</Trans>
               </span>
               <input
                 value={preferences.shortcut}
@@ -262,9 +307,11 @@ function AppSettings() {
             </label>
             <label className="flex items-center justify-between gap-3 rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5">
               <span>
-                <span className="block text-neutral-300">Notifications</span>
+                <span className="block text-neutral-300">
+                  <Trans>Notifications</Trans>
+                </span>
                 <span className="text-[10px] text-neutral-500">
-                  Notify on hidden-window approvals and completed turns.
+                  <Trans>Notify on hidden-window approvals and completed turns.</Trans>
                 </span>
               </span>
               <input
@@ -275,9 +322,11 @@ function AppSettings() {
             </label>
             <label className="flex items-center justify-between gap-3 rounded border border-white/10 bg-[#020818]/90 px-2 py-1.5">
               <span>
-                <span className="block text-neutral-300">Tray / menu bar</span>
+                <span className="block text-neutral-300">
+                  <Trans>Tray / menu bar</Trans>
+                </span>
                 <span className="text-[10px] text-neutral-500">
-                  Tray is available in this build; preference is stored locally.
+                  <Trans>Tray is available in this build; preference is stored locally.</Trans>
                 </span>
               </span>
               <input
@@ -286,7 +335,7 @@ function AppSettings() {
                 onChange={(e) => void updatePreference("tray", e.target.checked)}
               />
             </label>
-            <InfoItem label="Deep link scheme" value="zeroclaw:// registered" />
+            <InfoItem label={t`Deep link scheme`} value={t`zeroclaw:// registered`} />
           </div>
         </section>
       </div>

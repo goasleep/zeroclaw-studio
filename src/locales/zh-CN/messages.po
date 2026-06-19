@@ -1,0 +1,555 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-06-19 21:26+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh-CN\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. placeholder {0}: detail.tool
+#: src/workspace/notifications/useNotifications.ts:45
+msgid "{0} is waiting for approval."
+msgstr "{0} 正在等待批准。"
+
+#. placeholder {0}: thread.message_count
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:336
+msgid "{0} message"
+msgstr "{0} 条消息"
+
+#. placeholder {0}: thread.message_count
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:337
+msgid "{0} messages"
+msgstr "{0} 条消息"
+
+#. placeholder {0}: detail.agent
+#: src/workspace/notifications/useNotifications.ts:51
+msgid "{0} responded."
+msgstr "{0} 已回复。"
+
+#. placeholder {0}: r.results.length
+#: src/app/ConnectionPicker.tsx:158
+msgid "{0} result"
+msgstr "{0} 项结果"
+
+#. placeholder {0}: r.results.length
+#: src/app/ConnectionPicker.tsx:159
+msgid "{0} results"
+msgstr "{0} 项结果"
+
+#: src/app/workspace-shell/SettingsPage.tsx:267
+msgid "Activation"
+msgstr "激活"
+
+#: src/app/WelcomeScreen.tsx:36
+msgid "Add remote"
+msgstr "添加远程"
+
+#: src/app/ConnectionPicker.tsx:276
+#: src/app/ConnectionPicker.tsx:375
+msgid "Add runtime"
+msgstr "添加运行时"
+
+#: src/app/workspace-shell/settings-sections.ts:33
+msgid "Agents"
+msgstr "代理"
+
+#: src/app/workspace-shell/settings-sections.ts:29
+#: src/app/workspace-shell/SettingsPage.tsx:156
+msgid "App"
+msgstr "应用"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:305
+msgid "Attachments"
+msgstr "附件"
+
+#: src/app/workspace-shell/SettingsPage.tsx:176
+msgid "Back to app"
+msgstr "返回应用"
+
+#: src/app/workspace-shell/SettingsPage.tsx:160
+msgid "Capabilities"
+msgstr "能力"
+
+#: src/app/workspace-shell/settings-sections.ts:35
+msgid "Channels"
+msgstr "渠道"
+
+#: src/app/workspace-shell/SettingsPage.tsx:265
+msgid "Chat attachments"
+msgstr "聊天附件"
+
+#: src/app/ConnectionPicker.tsx:328
+msgid "Checking connection..."
+msgstr "正在检查连接..."
+
+#: src/app/ConnectionPicker.tsx:64
+msgid "Checking gateway…"
+msgstr "正在检查网关…"
+
+#: src/app/AddConnectionDialog.tsx:449
+#: src/app/WelcomeScreen.tsx:34
+msgid "Connect to a remote zeroclaw"
+msgstr "连接到远程 zeroclaw"
+
+#: src/app/AddConnectionDialog.tsx:450
+#: src/app/WelcomeScreen.tsx:39
+msgid "Connect to local zeroclaw"
+msgstr "连接到本地 zeroclaw"
+
+#: src/app/workspace-shell/SettingsPage.tsx:242
+msgid "Connection"
+msgstr "连接"
+
+#: src/app/AddConnectionDialog.tsx:156
+#: src/app/AddConnectionDialog.tsx:288
+#: src/app/AddConnectionDialog.tsx:399
+msgid "Connection name"
+msgstr "连接名称"
+
+#: src/app/AddConnectionDialog.tsx:230
+#: src/app/AddConnectionDialog.tsx:312
+msgid "Create connection"
+msgstr "创建连接"
+
+#: src/app/AddConnectionDialog.tsx:425
+msgid "Create managed connection"
+msgstr "创建托管连接"
+
+#: src/app/workspace-shell/settings-sections.ts:39
+msgid "Cron"
+msgstr "定时任务"
+
+#: src/app/workspace-shell/SettingsPage.tsx:338
+msgid "Deep link scheme"
+msgstr "深度链接协议"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:372
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:426
+msgid "Delete session"
+msgstr "删除会话"
+
+#. placeholder {0}: thread.name
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:423
+msgid "Delete session \"{0}\"?"
+msgstr "删除会话“{0}”？"
+
+#: src/app/AddConnectionDialog.tsx:386
+msgid "Detect again"
+msgstr "重新检测"
+
+#: src/app/WelcomeScreen.tsx:41
+msgid "Detect local"
+msgstr "检测本地"
+
+#: src/app/workspace-shell/settings-sections.ts:42
+msgid "Devices"
+msgstr "设备"
+
+#: src/app/AddConnectionDialog.tsx:140
+msgid "Direct URL"
+msgstr "直接 URL"
+
+#: src/app/ConnectionPicker.tsx:155
+#: src/app/workspace-shell/settings-sections.ts:41
+msgid "Doctor"
+msgstr "诊断"
+
+#: src/app/workspace-shell/SettingsPage.tsx:264
+msgid "Folder"
+msgstr "文件夹"
+
+#: src/app/AddConnectionDialog.tsx:395
+msgid "Found"
+msgstr "已找到"
+
+#: src/app/workspace-shell/SettingsPage.tsx:158
+msgid "Gateway"
+msgstr "网关"
+
+#: src/app/ConnectionPicker.tsx:144
+msgid "Gateway health"
+msgstr "网关健康状态"
+
+#: src/app/workspace-shell/settings-sections.ts:31
+msgid "Gateway Overview"
+msgstr "网关概览"
+
+#: src/app/AddConnectionDialog.tsx:296
+#: src/app/AddConnectionDialog.tsx:407
+msgid "Gateway port"
+msgstr "网关端口"
+
+#: src/app/AddConnectionDialog.tsx:166
+msgid "Gateway URL"
+msgstr "网关 URL"
+
+#: src/app/ConnectionPicker.tsx:147
+msgid "Gateway version"
+msgstr "网关版本"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:266
+msgid "General Sessions"
+msgstr "通用会话"
+
+#: src/app/workspace-shell/SettingsPage.tsx:294
+msgid "Global shortcut"
+msgstr "全局快捷键"
+
+#: src/app/workspace-shell/SettingsPage.tsx:267
+msgid "idle"
+msgstr "空闲"
+
+#: src/app/AddConnectionDialog.tsx:485
+msgid "Install + manage"
+msgstr "安装并管理"
+
+#: src/app/WelcomeScreen.tsx:46
+msgid "Install locally"
+msgstr "本地安装"
+
+#: src/app/WelcomeScreen.tsx:45
+msgid "Install the upstream zeroclaw binary on this machine and let the workspace manage it for you."
+msgstr "在这台机器上安装上游 zeroclaw 二进制文件，并让工作区替你管理。"
+
+#: src/app/workspace-shell/settings-sections.ts:38
+msgid "Integrations"
+msgstr "集成"
+
+#: src/app/workspace-shell/SettingsPage.tsx:278
+msgid "Language"
+msgstr "语言"
+
+#: src/app/workspace-shell/SettingsPage.tsx:249
+msgid "Lifecycle"
+msgstr "生命周期"
+
+#: src/app/AddConnectionDialog.tsx:372
+#: src/app/App.tsx:94
+msgid "Loading…"
+msgstr "加载中…"
+
+#: src/app/ConnectionPicker.tsx:49
+msgid "Local"
+msgstr "本地"
+
+#: src/app/AddConnectionDialog.tsx:484
+#: src/app/ConnectionPicker.tsx:49
+msgid "Local attach"
+msgstr "附加本地"
+
+#: src/app/workspace-shell/SettingsPage.tsx:273
+msgid "Local Preferences"
+msgstr "本地偏好设置"
+
+#: src/app/workspace-shell/settings-sections.ts:40
+msgid "Logs"
+msgstr "日志"
+
+#: src/app/AddConnectionDialog.tsx:359
+msgid "Looking for an installed zeroclaw…"
+msgstr "正在查找已安装的 zeroclaw…"
+
+#: src/app/WelcomeScreen.tsx:35
+msgid "Manage a homelab, cloud VM, or Raspberry Pi. Works with direct URL, SSH tunnel, or Tailscale. No local install required."
+msgstr "管理家庭实验室、云虚拟机或 Raspberry Pi。支持直接 URL、SSH 隧道或 Tailscale。无需本地安装。"
+
+#: src/app/ConnectionPicker.tsx:150
+msgid "Managed runtime"
+msgstr "托管运行时"
+
+#: src/app/workspace-shell/settings-sections.ts:36
+msgid "Memory"
+msgstr "记忆"
+
+#: src/app/workspace-shell/settings-sections.ts:32
+msgid "Models & Providers"
+msgstr "模型和提供商"
+
+#: src/app/workspace-shell/SettingsPage.tsx:246
+msgid "Name"
+msgstr "名称"
+
+#: src/app/ConnectionPicker.tsx:74
+msgid "Needs manual pairing"
+msgstr "需要手动配对"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:272
+msgid "New general session"
+msgstr "新建通用会话"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:209
+msgid "New project session"
+msgstr "新建项目会话"
+
+#: src/app/workspace-shell/SettingsPage.tsx:254
+msgid "No active connection."
+msgstr "没有活动连接。"
+
+#: src/app/ConnectionPicker.tsx:218
+msgid "No connection"
+msgstr "无连接"
+
+#: src/app/workspace-shell/SettingsPage.tsx:264
+msgid "No folder open"
+msgstr "未打开文件夹"
+
+#: src/app/AddConnectionDialog.tsx:275
+msgid "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
+msgstr "当前端口 {DEFAULT_PORT} 上没有运行中的网关。没关系，如果本地已安装 zeroclaw 二进制文件，保存此连接后工作区会自动启动它。"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:288
+msgid "No general sessions yet."
+msgstr "还没有通用会话。"
+
+#: src/app/ConnectionPicker.tsx:72
+msgid "No local zeroclaw installed"
+msgstr "未安装本地 zeroclaw"
+
+#: src/app/ConnectionPicker.tsx:237
+msgid "No saved connections yet."
+msgstr "还没有保存的连接。"
+
+#: src/app/AddConnectionDialog.tsx:368
+msgid "No zeroclaw binary found. Run this in your terminal:"
+msgstr "未找到 zeroclaw 二进制文件。请在终端运行："
+
+#: src/app/ConnectionPicker.tsx:172
+msgid "none"
+msgstr "无"
+
+#: src/app/workspace-shell/SettingsPage.tsx:311
+msgid "Notifications"
+msgstr "通知"
+
+#: src/app/workspace-shell/SettingsPage.tsx:314
+msgid "Notify on hidden-window approvals and completed turns."
+msgstr "窗口隐藏时，对批准请求和已完成的轮次发送通知。"
+
+#: src/app/ConnectionPicker.tsx:309
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Offline"
+msgstr "离线"
+
+#: src/app/ConnectionPicker.tsx:309
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Online"
+msgstr "在线"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:169
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:180
+msgid "Open project"
+msgstr "打开项目"
+
+#: src/app/workspace-shell/SettingsPage.tsx:162
+msgid "Operations"
+msgstr "运维"
+
+#: src/app/AddConnectionDialog.tsx:283
+msgid "Pairing is disabled — no auth needed."
+msgstr "配对已禁用，无需认证。"
+
+#: src/app/AddConnectionDialog.tsx:282
+msgid "Pairing is required — workspace will auto-pair after you save."
+msgstr "需要配对，保存后工作区会自动配对。"
+
+#: src/app/ConnectionPicker.tsx:70
+msgid "Pairing…"
+msgstr "正在配对…"
+
+#: src/app/ConnectionPicker.tsx:254
+#: src/app/ConnectionPicker.tsx:321
+#: src/app/workspace-shell/SettingsPage.tsx:250
+msgid "pending tunnel"
+msgstr "隧道待建立"
+
+#: src/app/WelcomeScreen.tsx:60
+msgid "Pick how you want to reach a ZeroClaw gateway. You can have any number of connections — local, remote, or both. Local install is optional."
+msgstr "选择你希望如何访问 ZeroClaw 网关。你可以创建任意数量的本地或远程连接，也可以两者都用。本地安装是可选的。"
+
+#: src/app/ConnectionPicker.tsx:83
+msgid "probe pending"
+msgstr "探测等待中"
+
+#: src/app/AddConnectionDialog.tsx:270
+msgid "Probing localhost:{DEFAULT_PORT}…"
+msgstr "正在探测 localhost:{DEFAULT_PORT}…"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:163
+msgid "Project"
+msgstr "项目"
+
+#: src/app/ConnectionPicker.tsx:361
+msgid "Re-run activation"
+msgstr "重新运行激活"
+
+#: src/app/ConnectionPicker.tsx:88
+msgid "reachable{latency}"
+msgstr "可访问{latency}"
+
+#: src/app/ConnectionPicker.tsx:171
+msgid "Recent log error"
+msgstr "最近的日志错误"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:280
+msgid "Refresh sessions"
+msgstr "刷新会话"
+
+#: src/app/AddConnectionDialog.tsx:482
+#: src/app/ConnectionPicker.tsx:51
+msgid "Remote"
+msgstr "远程"
+
+#: src/app/AddConnectionDialog.tsx:207
+msgid "Remote gateway port"
+msgstr "远程网关端口"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:360
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:364
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:412
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:416
+msgid "Rename session"
+msgstr "重命名会话"
+
+#: src/app/ConnectionPicker.tsx:364
+msgid "Retry"
+msgstr "重试"
+
+#: src/app/workspace-shell/settings-sections.ts:34
+msgid "Runtime & Safety"
+msgstr "运行时和安全"
+
+#: src/app/ConnectionPicker.tsx:233
+msgid "Runtimes"
+msgstr "运行时"
+
+#: src/app/workspace-shell/SettingsPage.tsx:266
+msgid "Saved runtimes"
+msgstr "已保存运行时"
+
+#: src/ui/select.tsx:31
+msgid "Select"
+msgstr "选择"
+
+#: src/app/App.tsx:110
+msgid "Select a connection above, or add one."
+msgstr "请选择上方连接，或添加一个新连接。"
+
+#: src/app/AddConnectionDialog.tsx:451
+#: src/app/WelcomeScreen.tsx:44
+msgid "Set up a new local zeroclaw"
+msgstr "设置新的本地 zeroclaw"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:102
+msgid "Settings"
+msgstr "设置"
+
+#: src/app/workspace-shell/settings-sections.ts:30
+msgid "Setup Center"
+msgstr "设置中心"
+
+#: src/app/ConnectionPicker.tsx:53
+msgid "SSH"
+msgstr "SSH"
+
+#: src/app/AddConnectionDialog.tsx:187
+msgid "SSH host"
+msgstr "SSH 主机"
+
+#: src/app/AddConnectionDialog.tsx:198
+msgid "SSH port (optional)"
+msgstr "SSH 端口（可选）"
+
+#: src/app/AddConnectionDialog.tsx:151
+msgid "SSH tunnel"
+msgstr "SSH 隧道"
+
+#: src/app/AddConnectionDialog.tsx:178
+msgid "SSH user"
+msgstr "SSH 用户"
+
+#: src/app/ConnectionPicker.tsx:66
+msgid "Starting gateway…"
+msgstr "正在启动网关…"
+
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Status"
+msgstr "状态"
+
+#: src/app/ConnectionPicker.tsx:55
+msgid "Tailscale"
+msgstr "Tailscale"
+
+#: src/app/workspace-shell/settings-sections.ts:37
+msgid "Tools & Skills"
+msgstr "工具和技能"
+
+#: src/app/workspace-shell/SettingsPage.tsx:248
+msgid "Transport"
+msgstr "传输"
+
+#: src/app/workspace-shell/SettingsPage.tsx:326
+msgid "Tray / menu bar"
+msgstr "托盘 / 菜单栏"
+
+#: src/app/workspace-shell/SettingsPage.tsx:329
+msgid "Tray is available in this build; preference is stored locally."
+msgstr "此构建支持托盘；偏好设置会保存在本地。"
+
+#: src/app/ConnectionPicker.tsx:85
+msgid "Tunnel inactive / activate to probe"
+msgstr "隧道未激活 / 激活后探测"
+
+#: src/app/ConnectionPicker.tsx:147
+msgid "unknown"
+msgstr "未知"
+
+#: src/app/workspace-shell/SettingsPage.tsx:250
+msgid "URL"
+msgstr "URL"
+
+#: src/app/WelcomeScreen.tsx:40
+msgid "Use a zeroclaw binary that's already installed and (optionally) running on this machine. Auto-detected from PATH."
+msgstr "使用这台机器上已安装并可选运行中的 zeroclaw 二进制文件。会从 PATH 自动检测。"
+
+#: src/app/AddConnectionDialog.tsx:217
+msgid "Uses your local ssh, ssh-agent, and ~/.ssh/config. The workspace opens an ssh -L port forward."
+msgstr "使用本地 ssh、ssh-agent 和 ~/.ssh/config。工作区会打开一个 ssh -L 端口转发。"
+
+#: src/app/ConnectionPicker.tsx:68
+msgid "Waiting for health…"
+msgstr "正在等待健康检查…"
+
+#: src/app/WelcomeScreen.tsx:57
+msgid "Welcome to ZeroClaw Workspace"
+msgstr "欢迎使用 ZeroClaw Workspace"
+
+#: src/app/workspace-shell/SettingsPage.tsx:261
+msgid "Workspace"
+msgstr "工作区"
+
+#: src/app/ConnectionPicker.tsx:204
+msgid "Workspace runtime"
+msgstr "工作区运行时"
+
+#: src/app/AddConnectionDialog.tsx:417
+msgid "Workspace will spawn zeroclaw gateway --port {port} when this connection is active, and shut it down when the workspace exits."
+msgstr "此连接激活时，工作区会启动 zeroclaw gateway --port {port}，并在工作区退出时关闭它。"
+
+#: src/workspace/notifications/useNotifications.ts:44
+msgid "ZeroClaw approval needed"
+msgstr "ZeroClaw 需要批准"
+
+#: src/workspace/notifications/useNotifications.ts:51
+msgid "ZeroClaw turn finished"
+msgstr "ZeroClaw 轮次已完成"
+
+#: src/app/workspace-shell/SettingsPage.tsx:338
+msgid "zeroclaw:// registered"
+msgstr "zeroclaw:// 已注册"

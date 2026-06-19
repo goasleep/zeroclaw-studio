@@ -13,6 +13,9 @@
     "desktop:dev": "tauri dev",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{html,json,js,ts}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{html,json,js,ts}\"",
+    "i18n:extract": "lingui extract",
+    "i18n:compile": "lingui compile",
+    "i18n:check": "lingui extract --clean --overwrite && lingui compile",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
@@ -25,6 +28,8 @@
   },
   "dependencies": {
     "@codemirror/lang-markdown": "~6.5.0",
+    "@lingui/core": "^6.4.0",
+    "@lingui/react": "^6.4.0",
     "@radix-ui/react-dialog": "^1.1.17",
     "@radix-ui/react-popover": "^1.1.17",
     "@radix-ui/react-scroll-area": "^1.2.12",
@@ -52,6 +57,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lingui/babel-plugin-lingui-macro": "^6.4.0",
+    "@lingui/cli": "^6.4.0",
+    "@lingui/vite-plugin": "^6.4.0",
     "@tailwindcss/vite": "~4.3.0",
     "@tauri-apps/cli": "~2.11.2",
     "@types/node": "^25.9.2",
