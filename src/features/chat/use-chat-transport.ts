@@ -1,0 +1,115 @@
+import { useEffect, useRef, useState, type Dispatch } from "react";
+import { ChatClient, type ChatFrame, type ChatMode } from "@/api/ws-chat";
+import type { ChatAction } from "./chat-reducer";
+
+export function useChatTransport({
+  agentAlias,
+  mode,
+  workspaceRoot,
+  workspaceDir,
+  connectionSeed,
+  dispatch,
+  loadSelected,
+  saveSelected,
+  assignWorkspace,
+  hydrateSession,
+  refreshSessions,
+  setSessionError,
+}: {
+  agentAlias: string;
+  mode: ChatMode;
+  workspaceRoot: string | null;
+  workspaceDir: string | null;
+  connectionSeed: number;
+  dispatch: Dispatch<ChatAction>;
+  loadSelected: () => Promise<string | null>;
+  saveSelected: (sessionId: string | null) => Promise<void>;
+  assignWorkspace: (sessionId: string) => Promise<void>;
+  hydrateSession: (sessionId: string, messageCount?: number) => Promise<void>;
+  refreshSessions: () => Promise<void>;
+  setSessionError: (error: string | null) => void;
+}) {
+  const [connected, setConnected] = useState(false);
+  const clientRef = useRef<ChatClient | null>(null);
+
+  useEffect(() => {
+    if (!agentAlias) return;
+    let cancelled = false;
+    let client: ChatClient | null = null;
+    dispatch({ type: "select-session", sessionId: null });
+    setConnected(false);
+
+    function handleFrame(frame: ChatFrame) {
+      dispatch({ type: "frame", frame });
+      if (frame.type === "session_start") {
+        void saveSelected(frame.session_id);
+        void assignWorkspace(frame.session_id);
+        void hydrateSession(frame.session_id, frame.message_count);
+        void refreshSessions();
+      }
+      if (frame.type === "approval_request") {
+        window.dispatchEvent(
+          new CustomEvent("zeroclaw://approval-request", {
+            detail: { tool: frame.tool },
+          }),
+        );
+      }
+      if (frame.type === "done") {
+        window.dispatchEvent(
+          new CustomEvent("zeroclaw://chat-done", {
+            detail: { agent: agentAlias },
+          }),
+        );
+        void refreshSessions();
+      }
+    }
+
+    async function startClient() {
+      const storedSessionId = await loadSelected().catch(() => null);
+      if (cancelled) return;
+      dispatch({ type: "select-session", sessionId: storedSessionId });
+      if (storedSessionId && workspaceRoot) {
+        void assignWorkspace(storedSessionId);
+      }
+
+      client = new ChatClient({
+        agentAlias,
+        mode,
+        workspaceDir,
+        sessionId: storedSessionId ?? undefined,
+        onFrame: handleFrame,
+        onOpen: () => setConnected(true),
+        onClose: () => setConnected(false),
+      });
+      clientRef.current = client;
+      void client.start().catch((e) => {
+        setConnected(false);
+        setSessionError(e instanceof Error ? e.message : String(e));
+      });
+    }
+
+    void startClient();
+    return () => {
+      cancelled = true;
+      client?.close();
+      if (clientRef.current === client) {
+        clientRef.current = null;
+      }
+    };
+  }, [
+    agentAlias,
+    mode,
+    workspaceRoot,
+    workspaceDir,
+    connectionSeed,
+    dispatch,
+    loadSelected,
+    saveSelected,
+    assignWorkspace,
+    hydrateSession,
+    refreshSessions,
+    setSessionError,
+  ]);
+
+  return { connected, clientRef };
+}
