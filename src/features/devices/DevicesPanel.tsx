@@ -1,10 +1,12 @@
 import { DataPanel } from "@/features/_shared/DataPanel";
 import { apiDevices } from "@/api/tools";
+import { queryKeys } from "@/api/query";
 
 export function DevicesPanel() {
   return (
     <DataPanel
       what="devices"
+      queryKey={queryKeys.gateway.devices}
       load={apiDevices}
       render={(data) => (
         <ul className="space-y-1 text-xs">

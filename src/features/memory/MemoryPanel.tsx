@@ -27,6 +27,13 @@ import {
   type PickerItem,
 } from "@/api/config";
 import { ApiError } from "@/api/base";
+import {
+  configDraftError,
+  defaultDraft,
+  parseConfigDraft,
+} from "@/features/config/config-value-schema";
+import { Select } from "@/ui/select";
+import { Switch } from "@/ui/switch";
 
 type LoadState =
   | { kind: "loading" }
@@ -48,6 +55,8 @@ type MemoryUsage = {
   alias: string | null;
   populated: boolean;
 };
+
+const EMPTY_CHOICES: PickerItem[] = [];
 
 type BackendSummary = {
   choiceKey: string;
@@ -159,7 +168,7 @@ export function MemoryPanel() {
     void refresh();
   }, [refresh]);
 
-  const choices = state.kind === "ready" ? state.choices : [];
+  const choices = state.kind === "ready" ? state.choices : EMPTY_CHOICES;
   const overview = useMemo(
     () =>
       state.kind === "ready"
@@ -683,6 +692,7 @@ function MemoryFieldForm({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
 
   const load = useCallback(async () => {
@@ -695,6 +705,7 @@ function MemoryFieldForm({
       setEntries(data.entries);
       setSeed(nextSeed);
       setDraft(nextSeed);
+      setValidationErrors({});
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -713,13 +724,26 @@ function MemoryFieldForm({
     if (dirtyEntries.length === 0) return;
     setSaving(true);
     setError(null);
+    setValidationErrors({});
     setSaved(false);
     try {
-      const ops: PatchOp[] = dirtyEntries.map((entry) => ({
-        op: entry.populated || entry.is_secret ? "replace" : "add",
-        path: dottedToPointer(entry.path),
-        value: parseDraft(entry, draft[entry.path] ?? ""),
-      }));
+      const errors: Record<string, string> = {};
+      const ops: PatchOp[] = [];
+      for (const entry of dirtyEntries) {
+        try {
+          ops.push({
+            op: entry.populated || entry.is_secret ? "replace" : "add",
+            path: dottedToPointer(entry.path),
+            value: parseConfigDraft(entry, draft[entry.path] ?? "").value,
+          });
+        } catch (e) {
+          errors[entry.path] = configDraftError(e) ?? errorMessage(e);
+        }
+      }
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
       await apiConfigPatch(ops);
       setSaved(true);
       await load();
@@ -800,6 +824,7 @@ function MemoryFieldForm({
                       entry={entry}
                       value={draft[entry.path] ?? ""}
                       dirty={draft[entry.path] !== seed[entry.path]}
+                      error={validationErrors[entry.path]}
                       onChange={(value) =>
                         setDraft((current) => ({
                           ...current,
@@ -862,11 +887,13 @@ function FieldRow({
   entry,
   value,
   dirty,
+  error,
   onChange,
 }: {
   entry: ConfigListEntry;
   value: string;
   dirty: boolean;
+  error?: string;
   onChange: (value: string) => void;
 }) {
   const label = leafLabel(entry.path);
@@ -886,7 +913,10 @@ function FieldRow({
           {entry.category && <span>{entry.category}</span>}
         </div>
       </div>
-      <FieldInput entry={entry} value={value} onChange={onChange} />
+      <div className="min-w-0">
+        <FieldInput entry={entry} value={value} onChange={onChange} />
+        {error && <p className="mt-1 text-[11px] text-red-300">{error}</p>}
+      </div>
     </div>
   );
 }
@@ -902,36 +932,25 @@ function FieldInput({
 }) {
   if (entry.kind === "bool") {
     return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={value === "true"}
-        onClick={() => onChange(value === "true" ? "false" : "true")}
-        className={`w-fit rounded-full border px-3 py-1.5 text-xs font-medium ${
-          value === "true"
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-            : "border-white/10 bg-[#020818]/90 text-neutral-400"
-        }`}
-      >
-        {value === "true" ? "true" : "false"}
-      </button>
+      <Switch
+        checked={value === "true"}
+        onCheckedChange={(checked) => onChange(checked ? "true" : "false")}
+        label={value === "true" ? "true" : "false"}
+      />
     );
   }
 
   if (entry.kind === "enum" && entry.enum_variants?.length) {
     return (
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-cyan-400"
-      >
-        <option value="">unset</option>
-        {entry.enum_variants.map((variant) => (
-          <option key={variant} value={variant}>
-            {variant}
-          </option>
-        ))}
-      </select>
+      <Select
+        value={value || "__unset__"}
+        onValueChange={(next) => onChange(next === "__unset__" ? "" : next)}
+        options={[
+          { value: "__unset__", label: "unset" },
+          ...entry.enum_variants.map((variant) => ({ value: variant, label: variant })),
+        ]}
+        className="w-full max-w-xl"
+      />
     );
   }
 
@@ -1430,55 +1449,6 @@ function aliasesFromEntries(entries: ConfigListEntry[], prefix: string) {
     if (alias) aliases.add(alias);
   }
   return Array.from(aliases).sort();
-}
-
-function defaultDraft(entry: ConfigListEntry) {
-  if (entry.is_secret) return "";
-  const value = entry.value;
-  if (value == null || value === "<unset>") {
-    if (entry.kind === "string-array" || entry.kind === "object-array") return "[]";
-    return "";
-  }
-  if (typeof value === "string") return value;
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (Array.isArray(value)) return JSON.stringify(value, null, 2);
-  return String(value);
-}
-
-function parseDraft(entry: ConfigListEntry, value: string): unknown {
-  if (entry.kind === "bool") return value === "true";
-  if (entry.kind === "integer" || entry.kind === "float") {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : value;
-  }
-  if (entry.kind === "string-array") return parseStringArray(value);
-  if (entry.kind === "object-array") {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      return [];
-    }
-  }
-  return value;
-}
-
-function parseStringArray(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return [];
-  if (trimmed.startsWith("[")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) return parsed.map(String);
-    } catch {
-      // Fall through to newline/comma parsing.
-    }
-  }
-  return value
-    .split(/[\n,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 function dottedToPointer(path: string) {

@@ -40,6 +40,7 @@ import {
   type WorkspaceGitStatus,
 } from "@/api/tauri";
 import { readClipboardText } from "@/workspace/clipboard/clipboard";
+import { Dialog } from "@/ui/dialog";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
 
 interface ContextAttachmentDraft {
@@ -685,8 +686,8 @@ function FilePreviewDialog({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#000010]/75 backdrop-blur-md p-6">
-      <div className="flex max-h-[82vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 shadow-2xl">
+    <Dialog open title={preview.path} onOpenChange={(open) => !open && onClose()}>
+      <div className="flex max-h-[82vh] w-full flex-col overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 shadow-2xl">
         <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2 text-xs">
           <FileText size={13} className="text-cyan-300" />
           <span className="min-w-0 flex-1 truncate font-mono text-neutral-200">{preview.path}</span>
@@ -721,7 +722,7 @@ function FilePreviewDialog({
           )}
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 

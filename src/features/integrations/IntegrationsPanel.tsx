@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
   CheckCircle2,
@@ -9,47 +10,30 @@ import {
   Search,
   TriangleAlert,
 } from "lucide-react";
+import { queryKeys } from "@/api/query";
 import { apiChannels, apiIntegrations, type ChannelInfo, type IntegrationInfo } from "@/api/tools";
-
-type LoadState =
-  | { kind: "loading" }
-  | { kind: "ready"; integrations: IntegrationInfo[]; channels: ChannelInfo[] }
-  | { kind: "error"; message: string };
+import { Select } from "@/ui/select";
 
 const CATEGORY_ORDER = ["Chat", "AiModel", "ToolsAutomation", "Platform"];
+const EMPTY_INTEGRATIONS: IntegrationInfo[] = [];
+const EMPTY_CHANNELS: ChannelInfo[] = [];
 
 export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: string) => void }) {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const integrationsQuery = useQuery({
+    queryKey: queryKeys.gateway.integrations,
+    queryFn: apiIntegrations,
+  });
+  const channelsQuery = useQuery({
+    queryKey: queryKeys.gateway.channels,
+    queryFn: apiChannels,
+  });
   const [filter, setFilter] = useState("");
   const [category, setCategory] = useState("All");
   const [status, setStatus] = useState("All");
   const [selected, setSelected] = useState<string | null>(null);
 
-  async function refresh() {
-    setState({ kind: "loading" });
-    try {
-      const [integrations, channels] = await Promise.all([apiIntegrations(), apiChannels()]);
-      setState({
-        kind: "ready",
-        integrations: integrations.integrations,
-        channels: channels.channels,
-      });
-      setSelected((current) =>
-        current && integrations.integrations.some((item) => item.name === current)
-          ? current
-          : (integrations.integrations[0]?.name ?? null),
-      );
-    } catch (e) {
-      setState({ kind: "error", message: e instanceof Error ? e.message : String(e) });
-    }
-  }
-
-  useEffect(() => {
-    void refresh();
-  }, []);
-
-  const integrations = state.kind === "ready" ? state.integrations : [];
-  const channels = state.kind === "ready" ? state.channels : [];
+  const integrations = integrationsQuery.data?.integrations ?? EMPTY_INTEGRATIONS;
+  const channels = channelsQuery.data?.channels ?? EMPTY_CHANNELS;
   const categories = useMemo(
     () => ["All", ...orderedUnique(integrations.map((i) => i.category ?? "Other"))],
     [integrations],
@@ -78,6 +62,14 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
   }, [category, channels, filter, integrations, status]);
   const grouped = useMemo(() => groupIntegrations(filtered), [filtered]);
   const selectedItem = integrations.find((item) => item.name === selected) ?? filtered[0] ?? null;
+  const loading = integrationsQuery.isLoading || channelsQuery.isLoading;
+  const error = integrationsQuery.error ?? channelsQuery.error;
+  const fetching = integrationsQuery.isFetching || channelsQuery.isFetching;
+
+  function refresh() {
+    void integrationsQuery.refetch();
+    void channelsQuery.refetch();
+  }
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[360px_minmax(0,1fr)] overflow-hidden">
@@ -97,56 +89,46 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
             />
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <select
+            <Select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300"
-            >
-              {categories.map((value) => (
-                <option key={value} value={value}>
-                  {categoryLabel(value)}
-                </option>
-              ))}
-            </select>
-            <select
+              onValueChange={setCategory}
+              options={categories.map((value) => ({ value, label: categoryLabel(value) }))}
+              className="w-full"
+            />
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300"
-            >
-              {statuses.map((value) => (
-                <option key={value} value={value}>
-                  {statusLabel(value)}
-                </option>
-              ))}
-            </select>
+              onValueChange={setStatus}
+              options={statuses.map((value) => ({ value, label: statusLabel(value) }))}
+              className="w-full"
+            />
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
             <span>{filtered.length} integrations</span>
             <button
               type="button"
-              onClick={() => void refresh()}
+              onClick={refresh}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
-              <RefreshCw size={11} />
+              <RefreshCw size={11} className={fetching ? "animate-spin" : ""} />
               Refresh
             </button>
           </div>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
-          {state.kind === "loading" && (
+          {loading && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
               Loading integrations...
             </div>
           )}
-          {state.kind === "error" && (
+          {error && (
             <div className="m-1 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
               <TriangleAlert size={14} className="mt-0.5 shrink-0" />
-              <pre className="whitespace-pre-wrap font-mono">{state.message}</pre>
+              <pre className="whitespace-pre-wrap font-mono">{String(error)}</pre>
             </div>
           )}
-          {state.kind === "ready" && filtered.length === 0 && (
+          {!loading && !error && filtered.length === 0 && (
             <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No integrations match your filters.
             </div>

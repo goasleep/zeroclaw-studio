@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Braces,
   ChevronRight,
@@ -8,44 +9,29 @@ import {
   TriangleAlert,
   Wrench,
 } from "lucide-react";
+import { queryKeys } from "@/api/query";
 import { apiTools } from "@/api/tools";
 
 type ToolInfo = { name: string; [k: string]: unknown };
-type LoadState =
-  | { kind: "loading" }
-  | { kind: "ok"; tools: ToolInfo[] }
-  | { kind: "err"; message: string };
+const EMPTY_TOOLS: ToolInfo[] = [];
 
 export function ToolsPanel() {
-  const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const toolsQuery = useQuery({
+    queryKey: queryKeys.gateway.tools,
+    queryFn: apiTools,
+  });
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-
-  async function refresh() {
-    setState({ kind: "loading" });
-    try {
-      const data = await apiTools();
-      setState({ kind: "ok", tools: data.tools });
-      setSelected((current) =>
-        current && data.tools.some((t) => t.name === current)
-          ? current
-          : (data.tools[0]?.name ?? null),
-      );
-    } catch (e) {
-      setState({ kind: "err", message: String(e) });
-    }
-  }
-
-  useEffect(() => {
-    void refresh();
-  }, []);
-
-  const tools = state.kind === "ok" ? state.tools : [];
+  const tools = toolsQuery.data?.tools ?? EMPTY_TOOLS;
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return q ? tools.filter((tool) => JSON.stringify(tool).toLowerCase().includes(q)) : tools;
   }, [filter, tools]);
-  const selectedTool = tools.find((tool) => tool.name === selected) ?? filtered[0] ?? null;
+  const selectedTool =
+    tools.find((tool) => tool.name === selected) ??
+    tools.find((tool) => tool.name === tools[0]?.name) ??
+    filtered[0] ??
+    null;
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
@@ -68,29 +54,29 @@ export function ToolsPanel() {
             <span>{filtered.length} tools</span>
             <button
               type="button"
-              onClick={() => void refresh()}
+              onClick={() => void toolsQuery.refetch()}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
-              <RefreshCw size={11} />
+              <RefreshCw size={11} className={toolsQuery.isFetching ? "animate-spin" : ""} />
               Refresh
             </button>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
-          {state.kind === "loading" && (
+          {toolsQuery.isLoading && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
               Loading tools...
             </div>
           )}
-          {state.kind === "err" && (
+          {toolsQuery.isError && (
             <div className="m-1 flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
               <TriangleAlert size={14} className="mt-0.5 shrink-0" />
-              <pre className="whitespace-pre-wrap font-mono">{state.message}</pre>
+              <pre className="whitespace-pre-wrap font-mono">{String(toolsQuery.error)}</pre>
             </div>
           )}
-          {state.kind === "ok" && filtered.length === 0 && (
+          {toolsQuery.isSuccess && filtered.length === 0 && (
             <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No tools match your search.
             </div>
