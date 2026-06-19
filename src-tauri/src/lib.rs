@@ -1,5 +1,6 @@
 //! ZeroClaw Workspace — application library.
 
+pub mod chat;
 pub mod commands;
 pub mod connection;
 pub mod gateway;
@@ -41,7 +42,7 @@ pub fn run() {
     let workspace_state = Arc::new(WorkspaceState::default());
     let local_state = LocalStateStore::new();
     let watcher: Arc<WatcherHandle> = Arc::new(WatcherHandle::default());
-    let chat_manager = commands::chat::ChatSessionManager::new();
+    let chat_manager = chat::ChatSessionManager::new();
 
     // App-wide HTTP client. `reqwest::Client` is cheap to clone (the
     // connection pool is reference-counted) and reusing one keeps HTTP
@@ -212,6 +213,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::chat::chat_connect::<tauri::Wry>,
         commands::chat::chat_send,
         commands::chat::chat_disconnect,
+        commands::chat::chat_capabilities,
         commands::chat::prepare_chat_attachments,
         commands::connection::list_connections,
         commands::connection::get_active_connection,

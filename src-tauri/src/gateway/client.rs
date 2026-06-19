@@ -7,6 +7,8 @@
 
 use anyhow::{Context, Result};
 
+use super::diagnostics::health_url;
+
 /// Default per-request timeout for callers that build their own client.
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
@@ -53,21 +55,18 @@ impl GatewayClient {
     }
 
     pub async fn get_health(&self) -> Result<bool> {
-        match self
-            .client
-            .get(format!("{}/health", self.base_url))
-            .send()
-            .await
-        {
+        let url = health_url(&self.base_url).context("bad health url")?;
+        match self.client.get(url).send().await {
             Ok(resp) => Ok(resp.status().is_success()),
             Err(_) => Ok(false),
         }
     }
 
     pub async fn requires_pairing(&self) -> Result<bool> {
+        let url = health_url(&self.base_url).context("bad health url")?;
         let resp = self
             .client
-            .get(format!("{}/health", self.base_url))
+            .get(url)
             .send()
             .await
             .context("health request failed")?;

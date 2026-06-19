@@ -3,9 +3,10 @@
 use crate::connection::activator;
 use crate::connection::store::SharedConnectionBook;
 use crate::connection::{Connection, Transport};
+use crate::gateway::diagnostics;
 use crate::runtime::supervisor::SharedSupervisor;
 use serde::Serialize;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Runtime, State};
 use uuid::Uuid;
 
@@ -137,66 +138,14 @@ pub async fn connection_probe(
         ));
     }
 
-    let url = match health_url(&conn.url) {
-        Ok(url) => url,
-        Err(e) => {
-            return Ok(probe_result(
-                id,
-                false,
-                None,
-                "bad_url",
-                Some(e.to_string()),
-            ));
-        }
-    };
-
-    let started = Instant::now();
-    let request = client.get(url).timeout(Duration::from_secs(3));
-    match request.send().await {
-        Ok(resp) => {
-            let status_code = resp.status();
-            let latency_ms = started.elapsed().as_millis().min(u128::from(u64::MAX)) as u64;
-            if status_code.is_success() {
-                Ok(probe_result(id, true, Some(latency_ms), "ok", None))
-            } else {
-                Ok(probe_result(
-                    id,
-                    false,
-                    Some(latency_ms),
-                    &format!("http_{}", status_code.as_u16()),
-                    Some(format!("health returned HTTP {status_code}")),
-                ))
-            }
-        }
-        Err(e) => {
-            let latency_ms = started.elapsed().as_millis().min(u128::from(u64::MAX)) as u64;
-            let status = classify_probe_error(&e);
-            Ok(probe_result(
-                id,
-                false,
-                Some(latency_ms),
-                status,
-                Some(e.to_string()),
-            ))
-        }
-    }
-}
-
-fn health_url(base: &str) -> Result<url::Url, url::ParseError> {
-    let mut url = url::Url::parse(base)?;
-    url.set_path("/health");
-    url.set_query(None);
-    Ok(url)
-}
-
-fn classify_probe_error(err: &reqwest::Error) -> &'static str {
-    if err.is_timeout() {
-        "timeout"
-    } else if err.is_connect() {
-        "unreachable"
-    } else {
-        "error"
-    }
+    let probe = diagnostics::probe_health(&client, &conn.url, Duration::from_secs(3)).await;
+    Ok(probe_result(
+        id,
+        probe.reachable,
+        probe.latency_ms,
+        &probe.status,
+        probe.error,
+    ))
 }
 
 fn probe_result(
@@ -227,12 +176,6 @@ fn checked_at_now() -> String {
 #[cfg(test)]
 mod diagnostics_tests {
     use super::*;
-
-    #[test]
-    fn health_url_rewrites_path_and_query() {
-        let url = health_url("http://127.0.0.1:42617/api/status?x=1").unwrap();
-        assert_eq!(url.as_str(), "http://127.0.0.1:42617/health");
-    }
 
     #[test]
     fn probe_result_serializes_checked_at() {

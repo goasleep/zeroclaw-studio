@@ -39,6 +39,9 @@ async chatDisconnect(req: ChatCloseRequest) : Promise<Result<null, ChatError>> {
     else return { status: "error", error: e  as any };
 }
 },
+async chatCapabilities() : Promise<ChatCapabilities> {
+    return await TAURI_INVOKE("chat_capabilities");
+},
 async prepareChatAttachments(req: PrepareChatAttachmentsRequest) : Promise<Result<ChatFileEntry[], ChatError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("prepare_chat_attachments", { req }) };
@@ -383,6 +386,7 @@ export type AuthMode =
  * User supplied a token directly.
  */
 "token"
+export type ChatCapabilities = { max_attachment_bytes: number }
 export type ChatCloseRequest = { session_id: string }
 export type ChatConnectRequest = { url: string; agent_alias: string; session_id: string | null; token: string; mode: ChatMode | null; workspace_dir: string | null }
 export type ChatError = { message: string }
