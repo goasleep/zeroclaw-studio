@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { lingui } from "@lingui/vite-plugin";
 import path from "node:path";
@@ -9,7 +9,25 @@ import path from "node:path";
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
-  plugins: [lingui(), react(), tailwindcss()],
+  plugins: [
+    react({
+      plugins: [
+        [
+          "@lingui/swc-plugin",
+          {
+            runtimeModules: {
+              i18n: ["@lingui/core", "i18n"],
+              Trans: ["@lingui/react", "Trans"],
+              useLingui: ["@lingui/react", "useLingui"],
+            },
+            descriptorFields: "auto",
+          },
+        ],
+      ],
+    }),
+    lingui(),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
