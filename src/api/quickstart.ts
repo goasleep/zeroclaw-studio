@@ -19,18 +19,24 @@ export interface QuickstartState {
     display_name: string;
     local: boolean;
   }>;
-  risk_presets: Array<{
-    key: string;
-    label: string;
-    description: string;
-  }>;
-  runtime_presets: Array<{
-    key: string;
-    label: string;
-    description: string;
-  }>;
+  risk_presets: QuickstartPreset[];
+  runtime_presets: QuickstartPreset[];
   memory_kinds: string[];
   personality_files: string[];
+}
+
+export interface QuickstartPreset {
+  preset_name?: string;
+  key?: string;
+  label: string;
+  help?: string;
+  description?: string;
+}
+
+export interface NormalizedQuickstartPreset {
+  key: string;
+  label: string;
+  description: string;
 }
 
 export interface FieldDescriptor {
@@ -142,3 +148,11 @@ export const apiQuickstartDismiss = (req: {
     method: "POST",
     body: JSON.stringify(req),
   });
+
+export function normalizeQuickstartPreset(preset: QuickstartPreset): NormalizedQuickstartPreset {
+  return {
+    key: preset.preset_name ?? preset.key ?? "",
+    label: preset.label,
+    description: preset.help ?? preset.description ?? "",
+  };
+}
