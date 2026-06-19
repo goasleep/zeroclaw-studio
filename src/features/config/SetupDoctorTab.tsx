@@ -9,7 +9,7 @@ import {
   Settings2,
   Terminal,
 } from "lucide-react";
-import { apiConfigProp, apiConfigPutProp } from "@/api/client";
+import { apiConfigProp, apiConfigPutProp } from "@/api/config";
 import {
   setupGetStatus,
   setupRunAction,
@@ -383,14 +383,10 @@ function ManualSetupPanel({ capabilityId }: { capabilityId: SetupCapabilityId })
             {CAPABILITY_LABELS[capabilityId]} setup
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-            Local checks and one-click actions are available in the desktop app. In a browser
-            session, use these manual commands and return to this tab in ZeroClaw Workspace.
+            Local checks, one-click actions, and remediation commands are provided by the desktop
+            backend. Open this tab in ZeroClaw Workspace to view the current backend-provided setup
+            status for this capability.
           </p>
-          <div className="mt-3 space-y-2">
-            {manualCommands(capabilityId).map((command) => (
-              <CommandLine key={command.join(" ")} command={command} />
-            ))}
-          </div>
         </div>
       </div>
     </section>
@@ -436,42 +432,6 @@ function preferredTarget(targets: SetupTarget[], capabilityId: SetupCapabilityId
 
 function isTauriRuntime() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-}
-
-function manualCommands(capabilityId: SetupCapabilityId): string[][] {
-  switch (capabilityId) {
-    case "browser_agent_browser":
-      return [
-        ["node", "--version"],
-        ["npm", "--version"],
-        ["npm", "install", "-g", "agent-browser"],
-        ["agent-browser", "install"],
-      ];
-    case "python_skills":
-      return [
-        ["python3", "--version"],
-        ["python", "--version"],
-      ];
-    case "docker_runtime":
-      return [
-        ["docker", "--version"],
-        ["docker", "info"],
-        ["docker", "pull", "alpine:3.20"],
-      ];
-    case "sandbox_backend":
-      return [
-        ["bwrap", "--version"],
-        ["firejail", "--version"],
-        ["docker", "--version"],
-        ["sandbox-exec", "-h"],
-      ];
-    case "mcp_stdio":
-      return [
-        ["node", "--version"],
-        ["npx", "--version"],
-        ["python3", "--version"],
-      ];
-  }
 }
 
 function StatusIcon({ overall }: { overall: SetupOverallStatus }) {
