@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
 import {
   Activity,
   Boxes,
@@ -152,6 +154,97 @@ const CONFIG_CATEGORIES: Record<ConfigCategoryId, ConfigCategory> = {
   },
 };
 
+type LinguiI18n = ReturnType<typeof useLingui>["i18n"];
+
+function configCategoryLabel(id: ConfigCategoryId, i18n: LinguiI18n) {
+  switch (id) {
+    case "models-providers":
+      return i18n._(msg`Model Connections`);
+    case "agents":
+      return i18n._(msg`Agents`);
+    case "runtime-safety":
+      return i18n._(msg`Runtime & Safety`);
+    case "channels":
+      return i18n._(msg`Channels`);
+    case "tools-skills":
+      return i18n._(msg`Tools & Skills`);
+  }
+}
+
+function configCategoryDescription(id: ConfigCategoryId, i18n: LinguiI18n) {
+  switch (id) {
+    case "models-providers":
+      return i18n._(
+        msg`Connect a model service, add credentials, and make it available to agents.`,
+      );
+    case "agents":
+      return i18n._(msg`Configure agent identities, prompts, default profiles, and peer groups.`);
+    case "runtime-safety":
+      return i18n._(
+        msg`Manage risk profiles, runtime tuning, sandbox settings, and command policy.`,
+      );
+    case "channels":
+      return i18n._(msg`Configure chat channels, webhooks, tokens, aliases, and agent routing.`);
+    case "tools-skills":
+      return i18n._(msg`Add capabilities, connect tools, and check setup.`);
+  }
+}
+
+function configCategoryEmptyTitle(id: ConfigCategoryId, i18n: LinguiI18n) {
+  switch (id) {
+    case "models-providers":
+      return i18n._(msg`No model provider sections`);
+    case "agents":
+      return i18n._(msg`No agent sections`);
+    case "runtime-safety":
+      return i18n._(msg`No runtime or safety sections`);
+    case "channels":
+      return i18n._(msg`No channel sections`);
+    case "tools-skills":
+      return i18n._(msg`No tools or skills sections`);
+  }
+}
+
+function configCategoryEmptyBody(id: ConfigCategoryId, i18n: LinguiI18n) {
+  switch (id) {
+    case "models-providers":
+      return i18n._(msg`This gateway did not report provider config sections.`);
+    case "agents":
+      return i18n._(msg`This gateway did not report agent or peer group config sections.`);
+    case "runtime-safety":
+      return i18n._(msg`This gateway did not report risk profile or runtime profile sections.`);
+    case "channels":
+      return i18n._(msg`This gateway did not report channel config sections.`);
+    case "tools-skills":
+      return i18n._(msg`This gateway did not report tools, skills, bundles, or MCP sections.`);
+  }
+}
+
+function configGroupLabel(group: string, i18n: LinguiI18n) {
+  switch (group) {
+    case "Foundation":
+      return i18n._(msg`Foundation`);
+    case "Agent":
+      return i18n._(msg`Agent`);
+    case "Multi-agent":
+      return i18n._(msg`Multi-agent`);
+    case "Tools":
+      return i18n._(msg`Tools`);
+    case "Integrations":
+      return i18n._(msg`Integrations`);
+    case "Network":
+      return i18n._(msg`Network`);
+    case "Storage":
+      return i18n._(msg`Storage`);
+    case "Operations":
+      return i18n._(msg`Operations`);
+    case "Other":
+      return i18n._(msg`Other`);
+    default:
+      return group;
+  }
+}
+
 const OVERVIEW_CARDS: Array<
   | { kind: "category"; categoryId: ConfigCategoryId }
   | {
@@ -207,6 +300,7 @@ export function ConfigPanel({
   categoryId?: ConfigCategoryId | null;
   onNavigate?: (section: string) => void;
 }) {
+  const { t, i18n } = useLingui();
   const category = categoryId ? CONFIG_CATEGORIES[categoryId] : null;
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [mode, setMode] = useState<PanelMode>(
@@ -342,9 +436,9 @@ export function ConfigPanel({
               <ShieldCheck size={15} />
             </div>
             <span className="min-w-0 flex-1">
-              <span className="block text-xs font-medium">Gateway overview</span>
+              <span className="block text-xs font-medium">{t`Gateway overview`}</span>
               <span className="mt-0.5 block text-[10px] text-neutral-500">
-                {sectionStats.ready} ready / {sections.length} sections
+                {t`${sectionStats.ready} ready / ${sections.length} sections`}
               </span>
             </span>
           </button>
@@ -357,15 +451,15 @@ export function ConfigPanel({
               type="search"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search sections..."
+              placeholder={t`Search sections...`}
               className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1 rounded-md border border-white/10 bg-white/[0.025] p-1">
             {[
-              { key: "all", label: "All" },
-              { key: "needs", label: "Needs" },
-              { key: "ready", label: "Ready" },
+              { key: "all", label: t`All` },
+              { key: "needs", label: t`Needs` },
+              { key: "ready", label: t`Ready` },
             ].map((item) => (
               <button
                 key={item.key}
@@ -383,7 +477,7 @@ export function ConfigPanel({
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
             <span>
-              {filteredGroups.reduce((sum, group) => sum + group.items.length, 0)} sections
+              {t`${filteredGroups.reduce((sum, group) => sum + group.items.length, 0)} sections`}
             </span>
             <button
               type="button"
@@ -391,19 +485,19 @@ export function ConfigPanel({
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} />
-              Refresh
+              {t`Refresh`}
             </button>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
-          {state.kind === "loading" && <LoadingInline label="Loading config sections..." />}
+          {state.kind === "loading" && <LoadingInline label={t`Loading config sections...`} />}
           {state.kind === "error" && <ErrorBox message={state.message} />}
           {state.kind === "ready" &&
             filteredGroups.map(({ group, items }) => (
               <section key={group} className="mb-4">
                 <h3 className="mb-1 px-1 text-[10px] uppercase tracking-wide text-neutral-500">
-                  {group}
+                  {configGroupLabel(group, i18n)}
                 </h3>
                 <div className="space-y-1">
                   {items.map((section) => (
@@ -447,7 +541,7 @@ export function ConfigPanel({
             }`}
           >
             <Code2 size={13} />
-            <span className="min-w-0 flex-1 truncate">Advanced raw paths</span>
+            <span className="min-w-0 flex-1 truncate">{t`Advanced raw paths`}</span>
           </button>
         </div>
       </aside>
@@ -514,6 +608,7 @@ function ConfigCategoryWorkspace({
   onAdvanced: () => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const Icon = category.icon;
   const stats = getSectionStats(sections);
   const orderedSections = orderSectionsForCategory(sections, category);
@@ -532,13 +627,13 @@ function ConfigCategoryWorkspace({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="truncate text-lg font-semibold text-neutral-100">
-                  {category.label}
+                  {configCategoryLabel(category.id, i18n)}
                 </h2>
-                <Badge label={`${stats.ready} ready`} />
-                <Badge label={`${sections.length} sections`} />
+                <Badge label={t`${stats.ready} ready`} />
+                <Badge label={t`${sections.length} sections`} />
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
-                {category.description}
+                {configCategoryDescription(category.id, i18n)}
               </p>
             </div>
           </div>
@@ -549,7 +644,7 @@ function ConfigCategoryWorkspace({
               className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
             >
               <RefreshCw size={12} />
-              Refresh
+              {t`Refresh`}
             </button>
             <button
               type="button"
@@ -568,7 +663,7 @@ function ConfigCategoryWorkspace({
               }`}
             >
               <Code2 size={12} />
-              Advanced
+              {t`Advanced`}
             </button>
           </div>
         </div>
@@ -586,7 +681,7 @@ function ConfigCategoryWorkspace({
                 }`}
               >
                 <Layers3 size={12} />
-                <span>Overview</span>
+                <span>{t`Overview`}</span>
               </button>
             )}
             {orderedSections.map((section) => (
@@ -610,7 +705,7 @@ function ConfigCategoryWorkspace({
 
       <main className="min-h-0 flex-1 overflow-hidden">
         {state.kind === "loading" ? (
-          <LoadingInline label={`Loading ${category.label.toLowerCase()}...`} />
+          <LoadingInline label={t`Loading ${configCategoryLabel(category.id, i18n)}...`} />
         ) : state.kind === "error" ? (
           <div className="p-5">
             <ErrorBox message={state.message} />
@@ -627,8 +722,8 @@ function ConfigCategoryWorkspace({
         ) : sections.length === 0 ? (
           <EmptyState
             icon={<IconNode icon={category.icon} size={28} />}
-            title={category.emptyTitle}
-            body={category.emptyBody}
+            title={configCategoryEmptyTitle(category.id, i18n)}
+            body={configCategoryEmptyBody(category.id, i18n)}
           />
         ) : (
           <SectionExplorer
@@ -655,6 +750,7 @@ function ToolsSkillsBeginnerHome({
   onTarget: (target: FormTarget | null) => void;
   onAdvanced: () => void;
 }) {
+  const { t } = useLingui();
   const skills = sectionByRoot(sections, "skills");
   const bundles = sectionByRoot(sections, "skill_bundles");
   const mcp = sectionByRoot(sections, "mcp");
@@ -690,18 +786,18 @@ function ToolsSkillsBeginnerHome({
       <div className="mx-auto max-w-6xl space-y-5 px-6 py-5">
         <section className="grid gap-3 md:grid-cols-3">
           <BeginnerStatusItem
-            label="Skills"
-            detail={skills?.ready ? "Ready to use" : "Review setup"}
+            label={t`Skills`}
+            detail={skills?.ready ? t`Ready to use` : t`Review setup`}
             state={statusState(skills)}
           />
           <BeginnerStatusItem
-            label="Skill bundles"
-            detail={bundles?.completed ? "Available to manage" : "Not configured yet"}
+            label={t`Skill bundles`}
+            detail={bundles?.completed ? t`Available to manage` : t`Not configured yet`}
             state={statusState(bundles)}
           />
           <BeginnerStatusItem
-            label="MCP servers"
-            detail={mcp?.ready ? "Connected" : "Needs setup"}
+            label={t`MCP servers`}
+            detail={mcp?.ready ? t`Connected` : t`Needs setup`}
             state={statusState(mcp)}
           />
         </section>
@@ -709,30 +805,30 @@ function ToolsSkillsBeginnerHome({
         <section className="grid gap-3 xl:grid-cols-3">
           <BeginnerCapabilityCard
             icon={Sparkles}
-            title="Skills"
-            description="Use guided workflows for PDF, images, docs, code tasks, and other repeatable work."
+            title={t`Skills`}
+            description={t`Use guided workflows for PDF, images, docs, code tasks, and other repeatable work.`}
             section={skills}
-            primaryLabel="Manage skills"
+            primaryLabel={t`Manage skills`}
             onPrimary={() => openSection(skills)}
-            secondaryLabel="Check setup"
+            secondaryLabel={t`Check setup`}
             onSecondary={() => openSetup(skills)}
           />
           <BeginnerCapabilityCard
             icon={Boxes}
-            title="Skill Bundles"
-            description="Install or enable groups of skills from trusted sources."
+            title={t`Skill Bundles`}
+            description={t`Install or enable groups of skills from trusted sources.`}
             section={bundles}
-            primaryLabel="Browse bundles"
+            primaryLabel={t`Browse bundles`}
             onPrimary={() => openSection(bundles)}
           />
           <BeginnerCapabilityCard
             icon={Network}
-            title="MCP Servers"
-            description="Connect external tools and local services so agents can use them safely."
+            title={t`MCP Servers`}
+            description={t`Connect external tools and local services so agents can use them safely.`}
             section={mcp}
-            primaryLabel="Add server"
+            primaryLabel={t`Add server`}
             onPrimary={() => openSection(mcp)}
-            secondaryLabel="Run doctor"
+            secondaryLabel={t`Run doctor`}
             onSecondary={() => openSection(mcp)}
           />
         </section>
@@ -740,44 +836,44 @@ function ToolsSkillsBeginnerHome({
         <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.035]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-100">Recommended next steps</h3>
+              <h3 className="text-sm font-semibold text-neutral-100">{t`Recommended next steps`}</h3>
               <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                Start here if you are setting up tools and skills for the first time.
+                {t`Start here if you are setting up tools and skills for the first time.`}
               </p>
             </div>
-            <Badge label={`${readyCount} ready`} />
+            <Badge label={t`${readyCount} ready`} />
           </div>
           <div className="divide-y divide-white/10">
             <NextStepRow
               number="1"
-              title="Enable Skills"
-              detail="Turn on the skills system before managing or installing skills."
+              title={t`Enable Skills`}
+              detail={t`Turn on the skills system before managing or installing skills.`}
               state={skills?.ready ? "ready" : skills?.completed ? "needs" : "neutral"}
-              actionLabel="Review skills"
+              actionLabel={t`Review skills`}
               onAction={() => openSection(skills)}
             />
             <NextStepRow
               number="2"
-              title="Choose skills folder"
-              detail="Pick where local skill markdown and community bundles should live."
+              title={t`Choose skills folder`}
+              detail={t`Pick where local skill markdown and community bundles should live.`}
               state={skills?.completed ? "ready" : "neutral"}
-              actionLabel="Open fields"
+              actionLabel={t`Open fields`}
               onAction={() => openSection(skills)}
             />
             <NextStepRow
               number="3"
-              title="Check Python support"
-              detail="Run the local setup check used by Python-backed skills."
+              title={t`Check Python support`}
+              detail={t`Run the local setup check used by Python-backed skills.`}
               state={skills?.ready ? "ready" : "needs"}
-              actionLabel="Check now"
+              actionLabel={t`Check now`}
               onAction={() => openSetup(skills)}
             />
             <NextStepRow
               number="4"
-              title="Add your first MCP server"
-              detail="Create a server entry when you want agents to use an external tool."
+              title={t`Add your first MCP server`}
+              detail={t`Create a server entry when you want agents to use an external tool.`}
               state={mcp?.ready ? "ready" : "neutral"}
-              actionLabel="Add server"
+              actionLabel={t`Add server`}
               onAction={() => openSection(mcp)}
             />
           </div>
@@ -787,11 +883,11 @@ function ToolsSkillsBeginnerHome({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-semibold text-neutral-100">Advanced fields</h3>
-                <Badge label="raw config" />
+                <h3 className="text-sm font-semibold text-neutral-100">{t`Advanced fields`}</h3>
+                <Badge label={t`raw config`} />
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
-                Use this when you know the exact config path you want to inspect or edit.
+                {t`Use this when you know the exact config path you want to inspect or edit.`}
               </p>
               {rawPreview.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
@@ -812,7 +908,7 @@ function ToolsSkillsBeginnerHome({
               className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
             >
               <Code2 size={12} />
-              Advanced
+              {t`Advanced`}
             </button>
           </div>
         </section>
@@ -945,7 +1041,8 @@ function NextStepRow({
 }
 
 function TaskBadge({ state }: { state: TaskState }) {
-  const label = state === "ready" ? "ready" : state === "needs" ? "needs setup" : "next";
+  const { t } = useLingui();
+  const label = state === "ready" ? t`ready` : state === "needs" ? t`needs setup` : t`next`;
   const tone =
     state === "ready"
       ? "bg-emerald-500/10 text-emerald-300"
@@ -972,7 +1069,8 @@ function ConfigOverview({
   onNavigate?: (section: string) => void;
   onAdvanced: () => void;
 }) {
-  const areaCards = OVERVIEW_CARDS.map((card) => overviewCardFor(card, sections));
+  const { t, i18n } = useLingui();
+  const areaCards = OVERVIEW_CARDS.map((card) => overviewCardFor(card, sections, i18n));
   const needsAttention = sections
     .filter((section) => !section.ready)
     .sort(
@@ -988,12 +1086,11 @@ function ConfigOverview({
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold text-neutral-100">Gateway control center</h2>
-              <Badge label={`${sections.length} sections`} />
+              <h2 className="text-lg font-semibold text-neutral-100">{t`Gateway control center`}</h2>
+              <Badge label={t`${sections.length} sections`} />
             </div>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-neutral-500">
-              Configure providers, runtime behavior, agents, tools, storage, and network settings
-              from focused entry points.
+              {t`Configure providers, runtime behavior, agents, tools, storage, and network settings from focused entry points.`}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -1003,7 +1100,7 @@ function ConfigOverview({
               className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
             >
               <RefreshCw size={12} />
-              Refresh
+              {t`Refresh`}
             </button>
             <button
               type="button"
@@ -1011,43 +1108,43 @@ function ConfigOverview({
               className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
             >
               <Code2 size={12} />
-              Raw paths
+              {t`Raw paths`}
             </button>
           </div>
         </header>
 
-        {state.kind === "loading" && <LoadingInline label="Loading config sections..." />}
+        {state.kind === "loading" && <LoadingInline label={t`Loading config sections...`} />}
         {state.kind === "error" && <ErrorBox message={state.message} />}
 
         <div className="grid gap-3 md:grid-cols-3">
           <StatCard
             icon={ShieldCheck}
-            label="Ready"
+            label={t`Ready`}
             value={String(stats.ready)}
-            detail={`${stats.completed} configured`}
+            detail={t`${stats.completed} configured`}
             tone="emerald"
           />
           <StatCard
             icon={TriangleAlert}
-            label="Needs setup"
+            label={t`Needs setup`}
             value={String(stats.needs)}
-            detail={`${stats.empty} untouched`}
+            detail={t`${stats.empty} untouched`}
             tone="amber"
           />
           <StatCard
             icon={Layers3}
-            label="Areas"
+            label={t`Areas`}
             value={String(groups.length)}
-            detail={`${stats.quickstart} quickstart`}
+            detail={t`${stats.quickstart} quickstart`}
             tone="cyan"
           />
         </div>
 
         <section>
           <div className="mb-2 flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-neutral-100">Configuration entry points</h3>
+            <h3 className="text-sm font-semibold text-neutral-100">{t`Configuration entry points`}</h3>
             <span className="text-[10px] uppercase tracking-wide text-neutral-600">
-              Common workflows
+              {t`Common workflows`}
             </span>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
@@ -1063,7 +1160,7 @@ function ConfigOverview({
 
         {needsAttention.length > 0 && (
           <section>
-            <h3 className="mb-2 text-sm font-semibold text-neutral-100">Needs attention</h3>
+            <h3 className="mb-2 text-sm font-semibold text-neutral-100">{t`Needs attention`}</h3>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {needsAttention.map((section) => (
                 <button
@@ -1092,7 +1189,7 @@ function ConfigOverview({
         )}
 
         <section>
-          <h3 className="mb-2 text-sm font-semibold text-neutral-100">Configuration areas</h3>
+          <h3 className="mb-2 text-sm font-semibold text-neutral-100">{t`Configuration areas`}</h3>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {groups.map(({ group, items }) => (
               <GroupCard key={group} group={group} sections={items} onChoose={onChoose} />
@@ -1147,11 +1244,12 @@ interface OverviewCardView {
 }
 
 function OverviewEntryCard({ card, onClick }: { card: OverviewCardView; onClick: () => void }) {
+  const { t } = useLingui();
   const Icon = card.icon;
   const detail =
     card.sections.length > 0
-      ? `${card.stats.ready} ready / ${card.sections.length} sections`
-      : "Open console";
+      ? t`${card.stats.ready} ready / ${card.sections.length} sections`
+      : t`Open console`;
   return (
     <button
       type="button"
@@ -1162,7 +1260,7 @@ function OverviewEntryCard({ card, onClick }: { card: OverviewCardView; onClick:
         <span className="flex h-9 w-9 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
           <Icon size={16} />
         </span>
-        <Badge label={card.stats.needs === 0 && card.sections.length > 0 ? "ready" : "open"} />
+        <Badge label={card.stats.needs === 0 && card.sections.length > 0 ? t`ready` : t`open`} />
       </span>
       <span className="mt-3 block text-sm font-semibold text-neutral-100">{card.label}</span>
       <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500">
@@ -1188,14 +1286,15 @@ function overviewCardFor(
         icon: LucideIcon;
       },
   sections: ConfigSectionInfo[],
+  i18n: LinguiI18n,
 ): OverviewCardView {
   if (card.kind === "category") {
     const category = CONFIG_CATEGORIES[card.categoryId];
     const related = sections.filter((section) => sectionMatchesCategory(section, category));
     return {
       target: category.id,
-      label: category.label,
-      description: category.description,
+      label: configCategoryLabel(category.id, i18n),
+      description: configCategoryDescription(category.id, i18n),
       sections: related,
       stats: getSectionStats(related),
       icon: category.icon,
@@ -1205,8 +1304,11 @@ function overviewCardFor(
   const related = sections.filter((section) => sectionMatchesKeys(section, card.sectionKeys));
   return {
     target: card.target,
-    label: card.label,
-    description: card.description,
+    label: card.target === "memory" ? i18n._(msg`Memory`) : i18n._(msg`Integrations`),
+    description:
+      card.target === "memory"
+        ? i18n._(msg`Configure memory backends and choose active memory per agent or profile.`)
+        : i18n._(msg`Browse integration status and jump into the right gateway configuration.`),
     sections: related,
     stats: getSectionStats(related),
     icon: card.icon,
@@ -1226,6 +1328,7 @@ function GroupCard({
   sections: ConfigSectionInfo[];
   onChoose: (section: ConfigSectionInfo) => void;
 }) {
+  const { t, i18n } = useLingui();
   const Icon = iconForGroup(group);
   const ready = sections.filter((section) => section.ready).length;
   const preview = [...sections].sort((a, b) => Number(b.ready) - Number(a.ready)).slice(0, 4);
@@ -1236,9 +1339,11 @@ function GroupCard({
           <Icon size={15} />
         </span>
         <div className="min-w-0 flex-1">
-          <h4 className="truncate text-sm font-semibold text-neutral-100">{group}</h4>
+          <h4 className="truncate text-sm font-semibold text-neutral-100">
+            {configGroupLabel(group, i18n)}
+          </h4>
           <p className="mt-0.5 text-[10px] text-neutral-500">
-            {ready} ready / {sections.length} sections
+            {t`${ready} ready / ${sections.length} sections`}
           </p>
         </div>
       </div>
@@ -1278,12 +1383,13 @@ function SectionExplorer({
   onTarget: (target: FormTarget | null) => void;
   onSaved: () => void;
 }) {
+  const { t } = useLingui();
   if (!section) {
     return (
       <EmptyState
         icon={<Code2 size={28} />}
-        title="Select a config section"
-        body="Choose a section to inspect its picker, aliases, and editable fields."
+        title={t`Select a config section`}
+        body={t`Choose a section to inspect its picker, aliases, and editable fields.`}
       />
     );
   }
@@ -1325,6 +1431,7 @@ function PickerSection({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { t } = useLingui();
   const [items, setItems] = useState<PickerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1350,7 +1457,7 @@ function PickerSection({
         setInlineTarget({
           prefix: result.fields_prefix,
           title: item.label || item.key,
-          subtitle: result.created ? `Created new ${entryNoun(section)}` : undefined,
+          subtitle: result.created ? t`Created new ${entryNoun(section)}` : undefined,
         });
       } catch (e) {
         setSelectedItem(null);
@@ -1360,7 +1467,7 @@ function PickerSection({
         setOpeningKey(null);
       }
     },
-    [section],
+    [section, t],
   );
 
   const openBackendItem = useCallback(
@@ -1372,14 +1479,14 @@ function PickerSection({
         onTarget({
           prefix: result.fields_prefix,
           title: item.label || item.key,
-          subtitle: result.created ? `Created ${entryNoun(section)} from picker` : undefined,
+          subtitle: result.created ? t`Created ${entryNoun(section)} from picker` : undefined,
         });
       } catch (e) {
         setSelectedItem(null);
         setError(errorMessage(e));
       }
     },
-    [onSaved, onTarget, section],
+    [onSaved, onTarget, section, t],
   );
 
   useEffect(() => {
@@ -1473,7 +1580,7 @@ function PickerSection({
       setInlineTarget({
         prefix: result.fields_prefix,
         title: clean,
-        subtitle: result.created ? `Created new ${entryNoun(section)}` : section.help,
+        subtitle: result.created ? t`Created new ${entryNoun(section)}` : section.help,
       });
       setNewItemName("");
       setShowCreateItem(false);
@@ -1547,7 +1654,7 @@ function PickerSection({
               disabled={loading || selectableItems.length === 0}
               className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="">Select {pickerSelectionOption(section)}</option>
+              <option value="">{t`Select ${pickerSelectionOption(section)}`}</option>
               {selectableItems.map((item) => (
                 <option key={item.key} value={item.key}>
                   {item.badge ? `${item.label} (${item.badge})` : item.label}
@@ -1558,7 +1665,7 @@ function PickerSection({
 
           <label className="block min-w-0">
             <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
-              Filter
+              {t`Filter`}
             </span>
             <div className="relative">
               <Search
@@ -1569,7 +1676,7 @@ function PickerSection({
                 type="search"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
-                placeholder={`Filter ${pickerSelectionOption(section)}s...`}
+                placeholder={t`Filter ${pickerSelectionOption(section)}s...`}
                 className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
               />
             </div>
@@ -1611,7 +1718,7 @@ function PickerSection({
         )}
         {!loading && !error && filtered.length === 0 && (
           <div className="mt-3 rounded-md border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
-            No {pickerSelectionOption(section)}s match this filter.
+            {t`No ${pickerSelectionOption(section)}s match this filter.`}
           </div>
         )}
       </header>
@@ -1619,7 +1726,7 @@ function PickerSection({
       <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         {selectedItem ? (
           oneTier ? (
-            <LoadingInline label={`Opening ${entryNoun(section)}...`} />
+            <LoadingInline label={t`Opening ${entryNoun(section)}...`} />
           ) : typed ? (
             <TypedAliasPanel
               section={section}
@@ -1628,19 +1735,19 @@ function PickerSection({
               onSaved={onSaved}
             />
           ) : (
-            <LoadingInline label="Opening fields..." />
+            <LoadingInline label={t`Opening fields...`} />
           )
         ) : oneTier ? (
           <EmptyState
             icon={<Plus size={28} />}
-            title={`Create or select ${entryNoun(section)}`}
-            body={`Add a ${entryNoun(section)} or open an existing one.`}
+            title={t`Create or select ${entryNoun(section)}`}
+            body={t`Add a ${entryNoun(section)} or open an existing one.`}
           />
         ) : (
           <EmptyState
             icon={<Plus size={28} />}
-            title="Pick a choice"
-            body="Choose an option above to create, choose, or inspect its config fields."
+            title={t`Pick a choice`}
+            body={t`Choose an option above to create, choose, or inspect its config fields.`}
           />
         )}
       </div>

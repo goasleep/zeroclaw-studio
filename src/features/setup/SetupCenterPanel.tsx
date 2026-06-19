@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
 import { Boxes, Container, Globe2, PackageCheck, ShieldCheck, TerminalSquare } from "lucide-react";
 import { SetupDoctorTab } from "@/features/config/SetupDoctorTab";
 import type { SetupCapabilityId } from "@/api/tauri";
@@ -64,10 +66,12 @@ const SETUP_ITEMS: SetupItem[] = [
 ];
 
 export function SetupCenterPanel() {
+  const { t, i18n } = useLingui();
   const [selectedId, setSelectedId] = useState<SetupItemId>("browser");
   const [riskAlias, setRiskAlias] = useState("default");
   const [mcpAlias, setMcpAlias] = useState("default");
   const selected = SETUP_ITEMS.find((item) => item.id === selectedId) ?? SETUP_ITEMS[0];
+  const copy = setupCopy(i18n);
 
   const target = useMemo(() => {
     if (selected.id === "sandbox") {
@@ -91,10 +95,10 @@ export function SetupCenterPanel() {
         <header className="shrink-0 border-b border-white/10 p-4">
           <div className="flex items-center gap-2">
             <PackageCheck size={16} className="text-cyan-300" />
-            <h2 className="text-sm font-semibold text-neutral-100">Setup Center</h2>
+            <h2 className="text-sm font-semibold text-neutral-100">{t`Setup Center`}</h2>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-neutral-500">
-            Install, configure, and verify local capabilities without opening raw config first.
+            {t`Install, configure, and verify local capabilities without opening raw config first.`}
           </p>
         </header>
 
@@ -115,12 +119,14 @@ export function SetupCenterPanel() {
                 >
                   <Icon size={15} className="mt-0.5 shrink-0" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium">{item.label}</span>
+                    <span className="block truncate text-xs font-medium">
+                      {copy[item.id].label}
+                    </span>
                     <span className="mt-1 block font-mono text-[10px] text-neutral-500">
                       {item.code}
                     </span>
                     <span className="mt-1 block text-[11px] leading-relaxed text-neutral-500">
-                      {item.description}
+                      {copy[item.id].description}
                     </span>
                   </span>
                 </button>
@@ -132,7 +138,7 @@ export function SetupCenterPanel() {
         {(selectedId === "sandbox" || selectedId === "mcp") && (
           <div className="shrink-0 border-t border-white/10 p-3">
             <label className="block text-[10px] uppercase tracking-wide text-neutral-500">
-              {selectedId === "sandbox" ? "Risk profile alias" : "MCP server alias"}
+              {selectedId === "sandbox" ? t`Risk profile alias` : t`MCP server alias`}
             </label>
             <input
               value={selectedId === "sandbox" ? riskAlias : mcpAlias}
@@ -151,7 +157,7 @@ export function SetupCenterPanel() {
         <SetupDoctorTab
           key={target.prefix}
           prefix={target.prefix}
-          title={target.label}
+          title={copy[target.id].label}
           preferredCapabilityId={target.capabilityId}
           onConfigSaved={() => undefined}
         />
@@ -162,4 +168,31 @@ export function SetupCenterPanel() {
 
 function cleanAlias(value: string) {
   return value.trim().replace(/[^A-Za-z0-9_-]/g, "");
+}
+
+type LinguiI18n = ReturnType<typeof useLingui>["i18n"];
+
+function setupCopy(i18n: LinguiI18n) {
+  return {
+    browser: {
+      label: i18n._(msg`Browser agent-browser`),
+      description: i18n._(msg`Install and verify agent-browser plus Chrome for Testing.`),
+    },
+    python: {
+      label: i18n._(msg`Python Skills`),
+      description: i18n._(msg`Detect Python and prepare risk-profile command allowlists.`),
+    },
+    docker: {
+      label: i18n._(msg`Docker Runtime`),
+      description: i18n._(msg`Check Docker CLI, daemon reachability, and image pulls.`),
+    },
+    sandbox: {
+      label: i18n._(msg`Sandbox Backend`),
+      description: i18n._(msg`Detect sandbox backends and enable auto sandbox config.`),
+    },
+    mcp: {
+      label: i18n._(msg`MCP stdio Doctor`),
+      description: i18n._(msg`Doctor a stdio MCP server command and transport.`),
+    },
+  } satisfies Record<SetupItemId, { label: string; description: string }>;
 }

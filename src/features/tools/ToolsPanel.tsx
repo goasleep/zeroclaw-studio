@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLingui } from "@lingui/react/macro";
 import {
   Braces,
   ChevronRight,
@@ -16,6 +17,7 @@ type ToolInfo = { name: string; [k: string]: unknown };
 const EMPTY_TOOLS: ToolInfo[] = [];
 
 export function ToolsPanel() {
+  const { t } = useLingui();
   const toolsQuery = useQuery({
     queryKey: queryKeys.gateway.tools,
     queryFn: apiTools,
@@ -46,19 +48,19 @@ export function ToolsPanel() {
               type="search"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search tools..."
+              placeholder={t`Search tools...`}
               className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
-            <span>{filtered.length} tools</span>
+            <span>{t`${filtered.length} tools`}</span>
             <button
               type="button"
               onClick={() => void toolsQuery.refetch()}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} className={toolsQuery.isFetching ? "animate-spin" : ""} />
-              Refresh
+              {t`Refresh`}
             </button>
           </div>
         </div>
@@ -67,7 +69,7 @@ export function ToolsPanel() {
           {toolsQuery.isLoading && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
-              Loading tools...
+              {t`Loading tools...`}
             </div>
           )}
           {toolsQuery.isError && (
@@ -78,7 +80,7 @@ export function ToolsPanel() {
           )}
           {toolsQuery.isSuccess && filtered.length === 0 && (
             <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
-              No tools match your search.
+              {t`No tools match your search.`}
             </div>
           )}
           <div className="space-y-1">
@@ -97,7 +99,7 @@ export function ToolsPanel() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-xs">{tool.name}</span>
                   <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
-                    {toolDescription(tool)}
+                    {toolDescription(tool, t`Gateway tool`)}
                   </span>
                 </span>
                 <ChevronRight size={12} className="shrink-0" />
@@ -115,14 +117,15 @@ export function ToolsPanel() {
 }
 
 function ToolDetail({ tool }: { tool: ToolInfo | null }) {
+  const { t } = useLingui();
   if (!tool) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
           <Wrench size={28} className="mx-auto mb-3 text-neutral-600" />
-          <h2 className="text-sm font-medium text-neutral-200">Select a tool</h2>
+          <h2 className="text-sm font-medium text-neutral-200">{t`Select a tool`}</h2>
           <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
-            Choose a tool to inspect its metadata, schema, and available fields.
+            {t`Choose a tool to inspect its metadata, schema, and available fields.`}
           </p>
         </div>
       </div>
@@ -130,7 +133,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
   }
 
   const entries = Object.entries(tool).filter(([key]) => key !== "name");
-  const description = toolDescription(tool);
+  const description = toolDescription(tool, t`Gateway tool`);
   const schemaEntries = entries.filter(([key]) => /schema|param|input|arg/i.test(key));
   const metadataEntries = entries.filter(
     ([key]) => !schemaEntries.some(([schemaKey]) => schemaKey === key),
@@ -157,7 +160,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
           {schemaEntries.length > 0 && (
             <section className="rounded-lg border border-white/10 bg-white/[0.035]">
               <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-                Inputs and schema
+                {t`Inputs and schema`}
               </h3>
               <div className="divide-y divide-white/10">
                 {schemaEntries.map(([key, value]) => (
@@ -169,12 +172,12 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
 
           <section className="rounded-lg border border-white/10 bg-white/[0.035]">
             <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-              Metadata
+              {t`Metadata`}
             </h3>
             <div className="divide-y divide-white/10">
               {metadataEntries.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-neutral-500">
-                  No additional metadata reported.
+                  {t`No additional metadata reported.`}
                 </p>
               ) : (
                 metadataEntries.map(([key, value]) => (
@@ -187,7 +190,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
           <details className="rounded-lg border border-white/10 bg-white/[0.035]">
             <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium text-neutral-100">
               <Braces size={14} className="text-neutral-500" />
-              Raw payload
+              {t`Raw payload`}
             </summary>
             <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400 zc-scrollbar">
               {JSON.stringify(tool, null, 2)}
@@ -216,9 +219,9 @@ function ToolField({ name, value }: { name: string; value: unknown }) {
   );
 }
 
-function toolDescription(tool: ToolInfo) {
+function toolDescription(tool: ToolInfo, fallback: string) {
   const description = tool.description ?? tool.summary ?? tool.help ?? tool.title ?? tool.kind;
-  return typeof description === "string" && description.trim() ? description : "Gateway tool";
+  return typeof description === "string" && description.trim() ? description : fallback;
 }
 
 function isPrimitive(value: unknown) {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
 import {
   Check,
   ChevronRight,
@@ -122,6 +124,7 @@ const MEMORY_BACKEND_META: Record<string, { label: string; body: string; icon: R
 };
 
 export function MemoryPanel() {
+  const { t } = useLingui();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [selectedUsagePath, setSelectedUsagePath] = useState<string | null>(null);
@@ -140,7 +143,7 @@ export function MemoryPanel() {
       if (!section) {
         setState({
           kind: "error",
-          message: "The gateway did not report a memory config section.",
+          message: t`The gateway did not report a memory config section.`,
         });
         return;
       }
@@ -170,7 +173,7 @@ export function MemoryPanel() {
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e) });
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -215,7 +218,7 @@ export function MemoryPanel() {
   if (state.kind === "loading") {
     return (
       <div className="flex h-full items-center justify-center bg-[#020818]/90">
-        <LoadingInline label="Loading memory config..." />
+        <LoadingInline label={t`Loading memory config...`} />
       </div>
     );
   }
@@ -283,7 +286,7 @@ export function MemoryPanel() {
               className="flex w-fit items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
             >
               <RefreshCw size={11} />
-              Refresh
+              {t`Refresh`}
             </button>
           </div>
         </section>
@@ -322,8 +325,8 @@ export function MemoryPanel() {
             <div className="min-h-[420px] rounded-lg border border-white/10 bg-white/[0.02]">
               <EmptyState
                 icon={<Database size={28} />}
-                title="Choose a memory option"
-                body="Pick where this workspace should save memories."
+                title={t`Choose a memory option`}
+                body={t`Pick where this workspace should save memories.`}
               />
             </div>
           )}
@@ -346,17 +349,18 @@ function MemoryStatusPanel({
   onUsageSelected: (path: string) => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agentPickerOpen, setAgentPickerOpen] = useState(false);
   const enabled = isUsageMemoryEnabled(selectedUsage);
-  const current = currentMemoryLabel(selectedUsage, choices);
+  const current = currentMemoryLabel(selectedUsage, choices, i18n);
   const hasMultipleAgents = overview.usages.length > 1;
 
   async function toggleMemory(nextEnabled: boolean) {
     if (saving || nextEnabled === enabled) return;
     if (!selectedUsage) {
-      setError("No agent memory setting is available yet.");
+      setError(t`No agent memory setting is available yet.`);
       return;
     }
     const choice = nextEnabled
@@ -383,10 +387,10 @@ function MemoryStatusPanel({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-neutral-500">
               <UserRound size={11} className="text-cyan-300" />
-              Agent
+              {t`Agent`}
             </div>
             <div className="mt-1 truncate text-sm font-semibold text-neutral-100">
-              {selectedUsage?.label ?? "No agent selected"}
+              {selectedUsage?.label ?? t`No agent selected`}
             </div>
           </div>
           {hasMultipleAgents && (
@@ -395,7 +399,7 @@ function MemoryStatusPanel({
               onClick={() => setAgentPickerOpen(true)}
               className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-[11px] text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-100"
             >
-              Change
+              {t`Change`}
             </button>
           )}
         </div>
@@ -404,7 +408,7 @@ function MemoryStatusPanel({
       <div className="min-w-[260px] flex-[1.2] rounded-md border border-white/10 bg-[#020818]/70 px-3 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-neutral-500">Memory</div>
+            <div className="text-[10px] uppercase tracking-wide text-neutral-500">{t`Memory`}</div>
             <div className="mt-1 truncate text-sm font-semibold text-neutral-100">
               {current.title}
             </div>
@@ -412,7 +416,7 @@ function MemoryStatusPanel({
           <Switch
             checked={enabled}
             onCheckedChange={(checked) => void toggleMemory(checked)}
-            label={saving ? "Saving" : enabled ? "On" : "Off"}
+            label={saving ? t`Saving` : enabled ? t`On` : t`Off`}
           />
         </div>
       </div>
@@ -449,6 +453,7 @@ function AgentPickerDialog({
   onOpenChange: (open: boolean) => void;
   onSelect: (usage: MemoryUsage) => void;
 }) {
+  const { t } = useLingui();
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -468,14 +473,14 @@ function AgentPickerDialog({
   return (
     <Dialog
       open={open}
-      title="Choose agent"
+      title={t`Choose agent`}
       onOpenChange={onOpenChange}
       className="max-w-xl rounded-xl border border-white/10 bg-[#061126] shadow-2xl shadow-black/50"
     >
       <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-sm font-semibold text-neutral-100">Choose agent</h2>
+        <h2 className="text-sm font-semibold text-neutral-100">{t`Choose agent`}</h2>
         <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-          Memory changes will apply only to the selected agent.
+          {t`Memory changes will apply only to the selected agent.`}
         </p>
         <div className="relative mt-4">
           <Search
@@ -485,7 +490,7 @@ function AgentPickerDialog({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search agents..."
+            placeholder={t`Search agents...`}
             className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-9 pr-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
           />
         </div>
@@ -494,7 +499,7 @@ function AgentPickerDialog({
       <div className="max-h-[420px] overflow-y-auto p-2 zc-scrollbar">
         {filteredUsages.length === 0 ? (
           <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.025] p-4 text-center text-xs text-neutral-500">
-            No agents match this search.
+            {t`No agents match this search.`}
           </div>
         ) : (
           <div className="space-y-1">
@@ -553,6 +558,7 @@ function MemoryHomePanel({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const selectedChoice = choices.find((choice) => choice.key === selectedKey) ?? choices[0] ?? null;
@@ -562,7 +568,7 @@ function MemoryHomePanel({
     const summary = overview.summaries[choice.key];
     const alias =
       section.shape === "one_tier_alias_map" ? "" : defaultAliasFor(choice, summary, selectedUsage);
-    const meta = memoryMeta(choice);
+    const meta = memoryMeta(choice, i18n);
     setPendingKey(choice.key);
     setError(null);
     try {
@@ -576,8 +582,10 @@ function MemoryHomePanel({
             : await apiConfigSelectItem(section.key, choice.key);
       onTarget({
         prefix: result.fields_prefix,
-        title: friendlyMemoryTitle(choice),
-        subtitle: result.created ? `Set up ${meta.label} memory.` : friendlyMemoryBody(choice),
+        title: friendlyMemoryTitle(choice, i18n),
+        subtitle: result.created
+          ? t`Set up ${meta.label} memory.`
+          : friendlyMemoryBody(choice, i18n),
         choice,
         activateOnSave:
           activateOnSave && selectedUsage
@@ -597,7 +605,7 @@ function MemoryHomePanel({
 
   async function applyChoice(choice: PickerItem) {
     if (!selectedUsage) {
-      setError("No agent memory setting is available yet.");
+      setError(t`No agent memory setting is available yet.`);
       return;
     }
     setPendingKey(choice.key);
@@ -616,7 +624,7 @@ function MemoryHomePanel({
     <div className="min-w-0">
       <div className="max-w-5xl space-y-5">
         <header>
-          <h2 className="text-base font-semibold text-neutral-100">Memory options</h2>
+          <h2 className="text-base font-semibold text-neutral-100">{t`Memory options`}</h2>
         </header>
 
         {error && <ErrorBox message={error} />}
@@ -633,7 +641,7 @@ function MemoryHomePanel({
                 selected={choice.key === selectedKey}
                 pending={pendingKey === choice.key}
                 canSwitch={Boolean(selectedUsage)}
-                agentLabel={selectedUsage?.label ?? "this agent"}
+                agentLabel={selectedUsage?.label ?? t`this agent`}
                 onSelect={() => onSelected(choice.key)}
                 onUse={() => void applyChoice(choice)}
                 onConfigure={() => void openChoiceFields(choice, status !== "active")}
@@ -645,7 +653,7 @@ function MemoryHomePanel({
         {selectedChoice && (
           <details className="rounded-lg border border-white/10 bg-white/[0.025]">
             <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-neutral-300 hover:text-cyan-100">
-              Advanced backend setup
+              {t`Advanced backend setup`}
             </summary>
             <div className="border-t border-white/10">
               <BackendSetup
@@ -684,20 +692,21 @@ function MemoryChoiceCard({
   onUse: () => void;
   onConfigure: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const active = status === "active";
   const configured = status === "configured";
   const offChoice = choice.key === "none";
   const actionLabel = active
     ? offChoice
-      ? "Memory is off"
-      : "Edit settings"
+      ? t`Memory is off`
+      : t`Edit settings`
     : configured || offChoice
       ? offChoice
-        ? "Turn off memory"
-        : `Use for ${agentLabel}`
+        ? t`Turn off memory`
+        : t`Use for ${agentLabel}`
       : canSwitch
-        ? "Set up and use"
-        : "Set up";
+        ? t`Set up and use`
+        : t`Set up`;
 
   return (
     <section
@@ -711,18 +720,18 @@ function MemoryChoiceCard({
     >
       <button type="button" onClick={onSelect} className="flex w-full gap-3 text-left">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
-          {memoryMeta(choice).icon}
+          {memoryMeta(choice, i18n).icon}
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-semibold text-neutral-100">
-              {friendlyMemoryTitle(choice)}
+              {friendlyMemoryTitle(choice, i18n)}
             </span>
-            {choice.key === "sqlite" && <Badge label="recommended" />}
+            {choice.key === "sqlite" && <Badge label={t`recommended`} />}
             <BackendStateBadge status={status} />
           </span>
           <span className="mt-1.5 line-clamp-2 block text-xs leading-relaxed text-neutral-500">
-            {friendlyMemoryBody(choice)}
+            {friendlyMemoryBody(choice, i18n)}
           </span>
         </span>
       </button>
@@ -753,7 +762,7 @@ function MemoryChoiceCard({
             className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {pending ? <Loader2 size={12} className="animate-spin" /> : <ChevronRight size={12} />}
-            Edit settings
+            {t`Edit settings`}
           </button>
         )}
       </div>
@@ -826,13 +835,14 @@ function TypedBackendSetup({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const prefix = `${section.key}.${choice.key}`;
   const [aliases, setAliases] = useState<string[]>([]);
   const [alias, setAlias] = useState("default");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const meta = memoryMeta(choice);
+  const meta = memoryMeta(choice, i18n);
 
   const loadAliases = useCallback(async () => {
     setLoading(true);
@@ -863,7 +873,7 @@ function TypedBackendSetup({
       onTarget({
         prefix: result.fields_prefix,
         title: `${meta.label} / ${clean}`,
-        subtitle: result.created ? "Created memory backend alias" : choice.description,
+        subtitle: result.created ? t`Created memory backend alias` : choice.description,
         choice,
       });
     } catch (e) {
@@ -880,14 +890,14 @@ function TypedBackendSetup({
         {error && <ErrorBox message={error} />}
         <section className="rounded-lg border border-white/10 bg-white/[0.035]">
           <div className="border-b border-white/10 px-4 py-3">
-            <h3 className="text-sm font-medium text-neutral-100">Aliases</h3>
+            <h3 className="text-sm font-medium text-neutral-100">{t`Aliases`}</h3>
             <p className="mt-1 font-mono text-[10px] text-neutral-500">{prefix}</p>
           </div>
           <div className="divide-y divide-white/10">
             {loading ? (
-              <LoadingInline label="Loading aliases..." />
+              <LoadingInline label={t`Loading aliases...`} />
             ) : aliases.length === 0 ? (
-              <p className="px-4 py-3 text-xs text-neutral-500">No aliases configured.</p>
+              <p className="px-4 py-3 text-xs text-neutral-500">{t`No aliases configured.`}</p>
             ) : (
               aliases.map((name) => (
                 <button
@@ -897,7 +907,7 @@ function TypedBackendSetup({
                   className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                 >
                   <span className="font-mono">{name}</span>
-                  {summary?.activeAliases.includes(name) && <Badge label="active" />}
+                  {summary?.activeAliases.includes(name) && <Badge label={t`active`} />}
                   <ChevronRight size={13} />
                 </button>
               ))
@@ -907,7 +917,7 @@ function TypedBackendSetup({
         <AliasCreator
           alias={alias}
           busy={busy}
-          label="Create or open alias"
+          label={t`Create or open alias`}
           onAlias={setAlias}
           onSubmit={() => void openAlias(alias)}
         />
@@ -929,10 +939,11 @@ function OneTierBackendSetup({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const [alias, setAlias] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const meta = memoryMeta(choice);
+  const meta = memoryMeta(choice, i18n);
 
   async function openAlias(name: string) {
     const clean = name.trim();
@@ -945,7 +956,7 @@ function OneTierBackendSetup({
       onTarget({
         prefix: result.fields_prefix,
         title: clean,
-        subtitle: result.created ? "Created memory backend entry" : meta.body,
+        subtitle: result.created ? t`Created memory backend entry` : meta.body,
         choice,
       });
     } catch (e) {
@@ -966,7 +977,7 @@ function OneTierBackendSetup({
           className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-left text-sm text-neutral-200 hover:border-cyan-400/50 hover:text-cyan-100"
         >
           <span>
-            <span className="block font-medium">Open configured entry</span>
+            <span className="block font-medium">{t`Open configured entry`}</span>
             <span className="mt-1 block font-mono text-xs text-neutral-500">
               {section.key}.{choice.key}
             </span>
@@ -976,7 +987,7 @@ function OneTierBackendSetup({
         <AliasCreator
           alias={alias}
           busy={busy}
-          label="Create another entry"
+          label={t`Create another entry`}
           onAlias={setAlias}
           onSubmit={() => void openAlias(alias)}
         />
@@ -998,9 +1009,10 @@ function BackendOpenPanel({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const meta = memoryMeta(choice);
+  const meta = memoryMeta(choice, i18n);
 
   async function openBackend() {
     setBusy(true);
@@ -1011,7 +1023,7 @@ function BackendOpenPanel({
       onTarget({
         prefix: result.fields_prefix,
         title: meta.label,
-        subtitle: result.created ? "Created memory backend config" : meta.body,
+        subtitle: result.created ? t`Created memory backend config` : meta.body,
         choice,
       });
     } catch (e) {
@@ -1033,7 +1045,7 @@ function BackendOpenPanel({
           className="inline-flex items-center gap-2 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? <Loader2 size={12} className="animate-spin" /> : <ChevronRight size={13} />}
-          Open fields
+          {t`Open fields`}
         </button>
       </div>
     </div>
@@ -1041,7 +1053,8 @@ function BackendOpenPanel({
 }
 
 function BackendHeader({ choice, summary }: { choice: PickerItem; summary?: BackendSummary }) {
-  const meta = memoryMeta(choice);
+  const { t, i18n } = useLingui();
+  const meta = memoryMeta(choice, i18n);
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <div className="flex items-start gap-3">
@@ -1062,7 +1075,7 @@ function BackendHeader({ choice, summary }: { choice: PickerItem; summary?: Back
           </p>
           {summary && summary.activeUsages.length > 0 && (
             <div className="mt-3 rounded-md border border-emerald-400/20 bg-emerald-400/10 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-emerald-300">Used by</div>
+              <div className="text-[10px] uppercase tracking-wide text-emerald-300">{t`Used by`}</div>
               <div className="mt-2 space-y-1">
                 {summary.activeUsages.map((usage) => (
                   <div
@@ -1091,6 +1104,7 @@ function MemoryFieldForm({
   onBack?: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useLingui();
   const [entries, setEntries] = useState<ConfigListEntry[]>([]);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [seed, setSeed] = useState<Record<string, string>>({});
@@ -1183,7 +1197,7 @@ function MemoryFieldForm({
                   onClick={onBack}
                   className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
                 >
-                  Back
+                  {t`Back`}
                 </button>
               )}
               <h2 className="truncate text-sm font-semibold text-neutral-100">{target.title}</h2>
@@ -1210,19 +1224,19 @@ function MemoryFieldForm({
             ) : (
               <Save size={12} />
             )}
-            {saved ? "Saved" : "Save"}
+            {saved ? t`Saved` : t`Save`}
           </button>
         </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
-        {loading && <LoadingInline label="Loading fields..." />}
+        {loading && <LoadingInline label={t`Loading fields...`} />}
         {error && <ErrorBox message={error} />}
         {!loading && !error && entries.length === 0 && (
           <EmptyState
             icon={<Code2 size={28} />}
-            title="No editable memory fields"
-            body="The gateway did not report editable fields for this memory target."
+            title={t`No editable memory fields`}
+            body={t`The gateway did not report editable fields for this memory target.`}
           />
         )}
         {!loading && entries.length > 0 && (
@@ -1271,10 +1285,11 @@ function AliasCreator({
   onAlias: (value: string) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useLingui();
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <label className="block text-xs font-medium text-neutral-300" htmlFor="memory-alias">
-        Alias
+        {t`Alias`}
       </label>
       <div className="mt-2 flex gap-2">
         <input
@@ -1345,6 +1360,7 @@ function FieldInput({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const { t } = useLingui();
   if (entry.kind === "bool") {
     return (
       <Switch
@@ -1361,7 +1377,7 @@ function FieldInput({
         value={value || "__unset__"}
         onValueChange={(next) => onChange(next === "__unset__" ? "" : next)}
         options={[
-          { value: "__unset__", label: "unset" },
+          { value: "__unset__", label: t`unset` },
           ...entry.enum_variants.map((variant) => ({ value: variant, label: variant })),
         ]}
         className="w-full max-w-xl"
@@ -1398,7 +1414,7 @@ function FieldInput({
         type="password"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={entry.populated ? "Secret is set. Type to replace." : "Enter secret value"}
+        placeholder={entry.populated ? t`Secret is set. Type to replace.` : t`Enter secret value`}
         className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
       />
     );
@@ -1464,8 +1480,10 @@ function LoadingInline({ label }: { label: string }) {
 }
 
 function Badge({ label }: { label: string }) {
+  const { i18n } = useLingui();
   const good = ["active", "configured", "created", "ready"].includes(label);
   const warn = label === "needs setup" || label === "env" || label === "partial";
+  const display = memoryBadgeLabel(label, i18n);
   return (
     <span
       className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
@@ -1476,18 +1494,48 @@ function Badge({ label }: { label: string }) {
             : "bg-white/[0.05] text-neutral-500"
       }`}
     >
-      {label}
+      {display}
     </span>
   );
 }
 
-function memoryMeta(choice: PickerItem) {
+function memoryBadgeLabel(label: string, i18n: LinguiI18n) {
+  switch (label) {
+    case "active":
+      return i18n._(msg`active`);
+    case "configured":
+      return i18n._(msg`configured`);
+    case "created":
+      return i18n._(msg`created`);
+    case "ready":
+      return i18n._(msg`ready`);
+    case "needs setup":
+      return i18n._(msg`needs setup`);
+    case "partial":
+      return i18n._(msg`partial`);
+    case "available":
+      return i18n._(msg`available`);
+    case "edited":
+      return i18n._(msg`edited`);
+    case "secret":
+      return i18n._(msg`secret`);
+    case "env":
+      return i18n._(msg`env`);
+    default:
+      return label;
+  }
+}
+
+type LinguiI18n = ReturnType<typeof useLingui>["i18n"];
+
+function memoryMeta(choice: PickerItem, i18n: LinguiI18n) {
   const fallback = {
     label: choice.label || choice.key,
-    body: choice.description || "Memory backend",
+    body: choice.description || i18n._(msg`Memory backend`),
     icon: <Database size={15} />,
   };
-  const meta = MEMORY_BACKEND_META[choice.key] ?? fallback;
+  const meta =
+    translatedMemoryBackendMeta(choice.key, i18n) ?? MEMORY_BACKEND_META[choice.key] ?? fallback;
   return {
     label: choice.label || meta.label,
     body: choice.description || meta.body,
@@ -1495,57 +1543,105 @@ function memoryMeta(choice: PickerItem) {
   };
 }
 
-function friendlyMemoryTitle(choice: PickerItem) {
-  if (choice.key === "none") return "Memory off";
-  if (choice.key === "sqlite") return "Local memory";
-  if (choice.key === "lucid") return "Lucid sync";
-  if (choice.key === "markdown") return "Markdown files";
-  if (choice.key === "postgres") return "Remote database";
-  if (choice.key === "qdrant") return "Vector memory";
-  return memoryMeta(choice).label;
+function translatedMemoryBackendMeta(key: string, i18n: LinguiI18n) {
+  switch (key) {
+    case "none":
+      return {
+        label: i18n._(msg`No memory`),
+        body: i18n._(msg`Disable persistent memory for stateless agents.`),
+        icon: <Database size={15} />,
+      };
+    case "sqlite":
+      return {
+        label: i18n._(msg`SQLite`),
+        body: i18n._(msg`Local single-file memory for a workstation runtime.`),
+        icon: <HardDrive size={15} />,
+      };
+    case "postgres":
+      return {
+        label: i18n._(msg`Postgres`),
+        body: i18n._(msg`Shared relational memory for server runtimes.`),
+        icon: <Server size={15} />,
+      };
+    case "qdrant":
+      return {
+        label: i18n._(msg`Qdrant`),
+        body: i18n._(msg`Vector memory for semantic retrieval.`),
+        icon: <Layers3 size={15} />,
+      };
+    case "markdown":
+      return {
+        label: i18n._(msg`Markdown`),
+        body: i18n._(msg`Readable file-backed memory.`),
+        icon: <Code2 size={15} />,
+      };
+    case "lucid":
+      return {
+        label: i18n._(msg`Lucid`),
+        body: i18n._(msg`Structured graph-oriented memory.`),
+        icon: <KeyRound size={15} />,
+      };
+    default:
+      return null;
+  }
 }
 
-function friendlyMemoryBody(choice: PickerItem) {
-  if (choice.key === "none") return "Do not keep persistent memory for this workspace.";
+function friendlyMemoryTitle(choice: PickerItem, i18n: LinguiI18n) {
+  if (choice.key === "none") return i18n._(msg`Memory off`);
+  if (choice.key === "sqlite") return i18n._(msg`Local memory`);
+  if (choice.key === "lucid") return i18n._(msg`Lucid sync`);
+  if (choice.key === "markdown") return i18n._(msg`Markdown files`);
+  if (choice.key === "postgres") return i18n._(msg`Remote database`);
+  if (choice.key === "qdrant") return i18n._(msg`Vector memory`);
+  return memoryMeta(choice, i18n).label;
+}
+
+function friendlyMemoryBody(choice: PickerItem, i18n: LinguiI18n) {
+  if (choice.key === "none") return i18n._(msg`Do not keep persistent memory for this workspace.`);
   if (choice.key === "sqlite")
-    return "Recommended. Saves memory on this device and works out of the box.";
+    return i18n._(msg`Recommended. Saves memory on this device and works out of the box.`);
   if (choice.key === "lucid")
-    return "Syncs with the local lucid-memory CLI for structured, graph-oriented memory.";
-  if (choice.key === "markdown") return "Stores memory in readable files that are easy to inspect.";
-  if (choice.key === "postgres") return "Uses a shared database for deployed or team runtimes.";
-  if (choice.key === "qdrant") return "Uses vector search for semantic memory retrieval.";
-  return memoryMeta(choice).body;
+    return i18n._(
+      msg`Syncs with the local lucid-memory CLI for structured, graph-oriented memory.`,
+    );
+  if (choice.key === "markdown")
+    return i18n._(msg`Stores memory in readable files that are easy to inspect.`);
+  if (choice.key === "postgres")
+    return i18n._(msg`Uses a shared database for deployed or team runtimes.`);
+  if (choice.key === "qdrant")
+    return i18n._(msg`Uses vector search for semantic memory retrieval.`);
+  return memoryMeta(choice, i18n).body;
 }
 
-function currentMemoryLabel(usage: MemoryUsage | null, choices: PickerItem[]) {
+function currentMemoryLabel(usage: MemoryUsage | null, choices: PickerItem[], i18n: LinguiI18n) {
   if (!usage) {
     return {
-      title: "Memory is not selected",
-      body: "Choose an agent to see its memory setting.",
+      title: i18n._(msg`Memory is not selected`),
+      body: i18n._(msg`Choose an agent to see its memory setting.`),
     };
   }
 
   if (!usage.backendKey) {
     return {
-      title: "Memory is not selected",
-      body: `Choose where memories are saved for ${usage.label}.`,
+      title: i18n._(msg`Memory is not selected`),
+      body: i18n._(msg`Choose where memories are saved for ${usage.label}.`),
     };
   }
 
   if (usage.backendKey === "none") {
     return {
-      title: "Memory is off",
-      body: `${usage.label} will not save persistent memory.`,
+      title: i18n._(msg`Memory is off`),
+      body: i18n._(msg`${usage.label} will not save persistent memory.`),
     };
   }
 
   const key = usage.backendKey;
   const choice = choices.find((item) => item.key === key);
   return {
-    title: choice ? friendlyMemoryTitle(choice) : key,
+    title: choice ? friendlyMemoryTitle(choice, i18n) : key,
     body: usage.alias
-      ? `${usage.label} is using ${key}.${usage.alias}.`
-      : `${usage.label} is using this memory option.`,
+      ? i18n._(msg`${usage.label} is using ${key}.${usage.alias}.`)
+      : i18n._(msg`${usage.label} is using this memory option.`),
   };
 }
 

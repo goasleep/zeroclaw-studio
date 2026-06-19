@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
 import {
   Bot,
   CheckCircle2,
@@ -19,6 +21,7 @@ const EMPTY_INTEGRATIONS: IntegrationInfo[] = [];
 const EMPTY_CHANNELS: ChannelInfo[] = [];
 
 export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: string) => void }) {
+  const { t, i18n } = useLingui();
   const integrationsQuery = useQuery({
     queryKey: queryKeys.gateway.integrations,
     queryFn: apiIntegrations,
@@ -84,7 +87,7 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
               type="search"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search integrations..."
+              placeholder={t`Search integrations...`}
               className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             />
           </div>
@@ -92,25 +95,25 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
             <Select
               value={category}
               onValueChange={setCategory}
-              options={categories.map((value) => ({ value, label: categoryLabel(value) }))}
+              options={categories.map((value) => ({ value, label: categoryLabel(value, i18n) }))}
               className="w-full"
             />
             <Select
               value={status}
               onValueChange={setStatus}
-              options={statuses.map((value) => ({ value, label: statusLabel(value) }))}
+              options={statuses.map((value) => ({ value, label: statusLabel(value, i18n) }))}
               className="w-full"
             />
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500">
-            <span>{filtered.length} integrations</span>
+            <span>{t`${filtered.length} integrations`}</span>
             <button
               type="button"
               onClick={refresh}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
             >
               <RefreshCw size={11} className={fetching ? "animate-spin" : ""} />
-              Refresh
+              {t`Refresh`}
             </button>
           </div>
         </header>
@@ -119,7 +122,7 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
           {loading && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
-              Loading integrations...
+              {t`Loading integrations...`}
             </div>
           )}
           {error && (
@@ -130,13 +133,13 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
           )}
           {!loading && !error && filtered.length === 0 && (
             <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
-              No integrations match your filters.
+              {t`No integrations match your filters.`}
             </div>
           )}
           {grouped.map(({ category: group, items }) => (
             <section key={group} className="mb-4">
               <h3 className="mb-1 px-1 text-[10px] uppercase tracking-wide text-neutral-500">
-                {categoryLabel(group)}
+                {categoryLabel(group, i18n)}
               </h3>
               <div className="space-y-1">
                 {items.map((item) => {
@@ -156,7 +159,9 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-xs font-medium">{item.name}</span>
                         <span className="mt-0.5 block truncate text-[10px] text-neutral-500">
-                          {item.description || aliasesSummary(aliases) || statusLabel(item.status)}
+                          {item.description ||
+                            aliasesSummary(aliases) ||
+                            statusLabel(item.status, i18n)}
                         </span>
                       </span>
                       {aliases.length > 0 && (
@@ -190,15 +195,15 @@ function IntegrationDetail({
   channels: ChannelInfo[];
   onConfigure?: (section: string) => void;
 }) {
+  const { t, i18n } = useLingui();
   if (!item) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
           <PlugZap size={28} className="mx-auto mb-3 text-neutral-600" />
-          <h2 className="text-sm font-medium text-neutral-200">Select an integration</h2>
+          <h2 className="text-sm font-medium text-neutral-200">{t`Select an integration`}</h2>
           <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
-            Choose an integration to inspect status, configured aliases, and the related config
-            section.
+            {t`Choose an integration to inspect status, configured aliases, and the related config section.`}
           </p>
         </div>
       </div>
@@ -220,7 +225,7 @@ function IntegrationDetail({
               <h2 className="truncate text-base font-semibold text-neutral-100">{item.name}</h2>
               <StatusBadge status={item.status} />
               <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
-                {categoryLabel(item.category)}
+                {categoryLabel(item.category, i18n)}
               </span>
             </div>
             {item.description && (
@@ -233,7 +238,7 @@ function IntegrationDetail({
               onClick={() => onConfigure(configSection)}
               className="flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300"
             >
-              Configure
+              {t`Configure`}
               <ChevronRight size={12} />
             </button>
           )}
@@ -244,24 +249,24 @@ function IntegrationDetail({
         <div className="mx-auto max-w-4xl space-y-4">
           <section className="rounded-lg border border-white/10 bg-white/[0.035]">
             <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-              Gateway catalog
+              {t`Gateway catalog`}
             </h3>
             <dl className="grid gap-3 p-4 text-xs sm:grid-cols-2">
-              <InfoItem label="Status" value={statusLabel(item.status)} />
-              <InfoItem label="Category" value={categoryLabel(item.category)} />
-              <InfoItem label="Config section" value={configSection} />
-              <InfoItem label="Configured aliases" value={String(aliases.length)} />
+              <InfoItem label={t`Status`} value={statusLabel(item.status, i18n)} />
+              <InfoItem label={t`Category`} value={categoryLabel(item.category, i18n)} />
+              <InfoItem label={t`Config section`} value={configSection} />
+              <InfoItem label={t`Configured aliases`} value={String(aliases.length)} />
             </dl>
           </section>
 
           {item.category === "Chat" && (
             <section className="rounded-lg border border-white/10 bg-white/[0.035]">
               <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-                Channels
+                {t`Channels`}
               </h3>
               {aliases.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-neutral-500">
-                  No configured aliases reported for this channel type.
+                  {t`No configured aliases reported for this channel type.`}
                 </p>
               ) : (
                 <div className="divide-y divide-white/10">
@@ -275,7 +280,7 @@ function IntegrationDetail({
 
           <details className="rounded-lg border border-white/10 bg-white/[0.035]">
             <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-neutral-100">
-              Raw integration payload
+              {t`Raw integration payload`}
             </summary>
             <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400 zc-scrollbar">
               {JSON.stringify(item, null, 2)}
@@ -288,6 +293,7 @@ function IntegrationDetail({
 }
 
 function ChannelRow({ channel }: { channel: ChannelInfo }) {
+  const { t } = useLingui();
   return (
     <div className="grid gap-3 px-4 py-3 text-xs sm:grid-cols-[minmax(0,1fr)_160px]">
       <div className="min-w-0">
@@ -298,15 +304,17 @@ function ChannelRow({ channel }: { channel: ChannelInfo }) {
           )}
         </div>
         <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-neutral-500">
-          {channel.type && <span>type {channel.type}</span>}
-          {channel.owning_agent && <span>agent {channel.owning_agent}</span>}
-          {channel.message_count !== undefined && <span>{channel.message_count} messages</span>}
+          {channel.type && <span>{t`type ${channel.type}`}</span>}
+          {channel.owning_agent && <span>{t`agent ${channel.owning_agent}`}</span>}
+          {channel.message_count !== undefined && (
+            <span>{t`${channel.message_count} messages`}</span>
+          )}
         </div>
       </div>
       <div className="space-y-1 text-right text-[10px] text-neutral-500 sm:text-left">
-        {channel.readiness && <div>readiness {channel.readiness}</div>}
-        {channel.health && <div>health {channel.health}</div>}
-        {channel.status && <div>status {channel.status}</div>}
+        {channel.readiness && <div>{t`readiness ${channel.readiness}`}</div>}
+        {channel.health && <div>{t`health ${channel.health}`}</div>}
+        {channel.status && <div>{t`status ${channel.status}`}</div>}
       </div>
     </div>
   );
@@ -332,7 +340,8 @@ function CategoryIcon({ category, size = 13 }: { category?: string; size?: numbe
 }
 
 function StatusBadge({ status }: { status?: string }) {
-  const label = statusLabel(status);
+  const { i18n } = useLingui();
+  const label = statusLabel(status, i18n);
   const active = String(status ?? "").toLowerCase() === "active";
   return (
     <span
@@ -370,25 +379,31 @@ function categoryRank(category: string) {
   return idx >= 0 ? idx : CATEGORY_ORDER.length;
 }
 
-function categoryLabel(category?: string) {
+type LinguiI18n = ReturnType<typeof useLingui>["i18n"];
+
+function categoryLabel(category: string | undefined, i18n: LinguiI18n) {
   switch (category) {
     case "All":
-      return "All categories";
+      return i18n._(msg`All categories`);
     case "Chat":
-      return "Chat";
+      return i18n._(msg`Chat`);
     case "AiModel":
-      return "AI models";
+      return i18n._(msg`AI models`);
     case "ToolsAutomation":
-      return "Tools and automation";
+      return i18n._(msg`Tools and automation`);
     case "Platform":
-      return "Platform";
+      return i18n._(msg`Platform`);
     default:
-      return category || "Other";
+      return category || i18n._(msg`Other`);
   }
 }
 
-function statusLabel(status?: string) {
-  if (!status || status === "All") return status === "All" ? "All statuses" : "Unknown";
+function statusLabel(status: string | undefined, i18n: LinguiI18n) {
+  if (!status || status === "All") {
+    return status === "All" ? i18n._(msg`All statuses`) : i18n._(msg`Unknown`);
+  }
+  if (status === "Active") return i18n._(msg`Active`);
+  if (status === "Available") return i18n._(msg`Available`);
   return status;
 }
 

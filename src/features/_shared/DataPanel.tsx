@@ -1,5 +1,6 @@
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 
 interface DataPanelProps<T> {
@@ -13,6 +14,7 @@ interface DataPanelProps<T> {
 }
 
 export function DataPanel<T>({ queryKey, load, render, empty, what = "data" }: DataPanelProps<T>) {
+  const { t } = useLingui();
   const query = useQuery({
     queryKey,
     queryFn: load,
@@ -21,23 +23,23 @@ export function DataPanel<T>({ queryKey, load, render, empty, what = "data" }: D
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
-        <span className="text-neutral-400">Last updated when refreshed.</span>
+        <span className="text-neutral-400">{t`Last updated when refreshed.`}</span>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => void query.refetch()}
           className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
-          title={`Refresh ${what}`}
+          title={t`Refresh ${what}`}
         >
           <RefreshCw size={10} className={query.isFetching ? "animate-spin" : ""} />
-          Refresh
+          {t`Refresh`}
         </button>
       </header>
       <div className="flex-1 overflow-auto p-4 zc-scrollbar">
         {query.isLoading && (
           <div className="flex items-center gap-2 text-xs text-neutral-500">
             <Loader2 size={12} className="animate-spin" />
-            Loading…
+            {t`Loading…`}
           </div>
         )}
         {query.isError && (
@@ -48,7 +50,7 @@ export function DataPanel<T>({ queryKey, load, render, empty, what = "data" }: D
         )}
         {query.data &&
           (isEmpty(query.data)
-            ? (empty ?? <p className="text-xs text-neutral-500">No items.</p>)
+            ? (empty ?? <p className="text-xs text-neutral-500">{t`No items.`}</p>)
             : render(query.data))}
       </div>
     </div>

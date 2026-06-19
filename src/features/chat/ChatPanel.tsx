@@ -1,6 +1,7 @@
 // Chat/Code panel — session list + messages + composer.
 
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   AlertTriangle,
@@ -133,13 +134,6 @@ function formatBytes(size?: number) {
 
 type ToolCallView = ChatMessage["toolCalls"][number];
 
-const SUGGESTED_PROMPTS = [
-  "Review current changes",
-  "Explain this project",
-  "Find likely bugs",
-  "Run diagnostics",
-];
-
 function valueFromKeys(value: unknown, keys: string[]) {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
@@ -197,27 +191,6 @@ function buildExecutionRows(toolCalls: ToolCallView[]) {
   }));
 }
 
-function contextSummary({
-  workspaceRoot,
-  gitStatus,
-  attachmentCount,
-}: {
-  workspaceRoot: string | null;
-  gitStatus: WorkspaceGitStatus | null;
-  attachmentCount: number;
-}) {
-  const scope = workspaceRoot ? filenameFromPath(workspaceRoot) : "general";
-  const git =
-    gitStatus?.is_repo && gitStatus.branch
-      ? `${gitStatus.branch} · ${gitStatus.changed_count} changed`
-      : gitStatus?.is_repo
-        ? `${gitStatus.changed_count} changed`
-        : "no git status";
-  return `Context: ${scope} · ${attachmentCount} attachment${
-    attachmentCount === 1 ? "" : "s"
-  } · ${git}`;
-}
-
 export function ChatPanel({
   agentAlias,
   mode = "chat",
@@ -231,6 +204,7 @@ export function ChatPanel({
   onWorkspaceRoot?: (path: string | null) => void;
   workspaceDir?: string | null;
 }) {
+  const { t } = useLingui();
   const { active } = useConnections();
   const { recentRoots, selectedFiles, addFiles, clearSelection, setRoot } = useWorkspace();
   const [cwd, setCwd] = useState(workspaceDir ?? "");
@@ -447,7 +421,7 @@ export function ChatPanel({
     const trimmed = draft.trim();
     if (!trimmed && selectedFiles.length === 0) return;
     if (!active) {
-      setComposerError("No active connection.");
+      setComposerError(t`No active connection.`);
       return;
     }
     setSending(true);
@@ -496,25 +470,36 @@ export function ChatPanel({
   const hasMessages = chat.messages.length > 0;
   const selectedModelChoice = modelChoices.find((choice) => choice.value === selectedModelProvider);
   const modelOptions = [
-    { value: MODEL_FOLLOWS_AGENT, label: "Agent default" },
+    { value: MODEL_FOLLOWS_AGENT, label: t`Agent default` },
     ...modelChoices.map((choice) => ({
       value: choice.value,
       label: choice.model ? `${choice.value} · ${choice.model}` : choice.value,
     })),
   ];
-  const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : "No project";
-  const sessionName = currentSession?.name ?? `New ${isCode ? "code" : "session"}`;
+  const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : t`No project`;
+  const sessionName = currentSession?.name ?? (isCode ? t`New code` : t`New session`);
   const gitLabel =
     gitStatus?.is_repo && gitStatus.branch
-      ? `${gitStatus.branch} · ${gitStatus.changed_count} changed`
+      ? t`${gitStatus.branch} · ${gitStatus.changed_count} changed`
       : gitStatus?.is_repo
-        ? `${gitStatus.changed_count} changed`
-        : "No git status";
-  const composerContext = contextSummary({
-    workspaceRoot,
-    gitStatus,
-    attachmentCount: attachmentDrafts.length,
-  });
+        ? t`${gitStatus.changed_count} changed`
+        : t`No git status`;
+  const contextScope = workspaceRoot ? filenameFromPath(workspaceRoot) : t`general`;
+  const contextGit =
+    gitStatus?.is_repo && gitStatus.branch
+      ? t`${gitStatus.branch} · ${gitStatus.changed_count} changed`
+      : gitStatus?.is_repo
+        ? t`${gitStatus.changed_count} changed`
+        : t`no git status`;
+  const contextAttachments =
+    attachmentDrafts.length === 1 ? t`1 attachment` : t`${attachmentDrafts.length} attachments`;
+  const composerContext = t`Context: ${contextScope} · ${contextAttachments} · ${contextGit}`;
+  const suggestedPrompts = [
+    t`Review current changes`,
+    t`Explain this project`,
+    t`Find likely bugs`,
+    t`Run diagnostics`,
+  ];
   const renderComposer = (variant: "center" | "footer") => (
     <div
       className={
@@ -549,7 +534,7 @@ export function ChatPanel({
             }}
             rows={variant === "center" ? 4 : 2}
             placeholder={
-              variant === "center" ? "Start this session..." : "Continue this session..."
+              variant === "center" ? t`Start this session...` : t`Continue this session...`
             }
             className={
               variant === "center"
@@ -573,11 +558,11 @@ export function ChatPanel({
                     ? "border-white/10 text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
                     : "border-cyan-400/40 bg-cyan-400/10 text-cyan-200 hover:border-cyan-300"
                 }`}
-                title={workspaceRoot ?? "No project"}
+                title={workspaceRoot ?? t`No project`}
               >
                 <FolderOpen size={13} />
                 <span className="min-w-0 truncate">
-                  {workspaceRoot ? `Project: ${workspaceName}` : "Open project"}
+                  {workspaceRoot ? t`Project: ${workspaceName}` : t`Open project`}
                 </span>
                 <ChevronDown size={12} className="shrink-0" />
               </button>
@@ -593,7 +578,7 @@ export function ChatPanel({
                     }`}
                   >
                     <FolderOpen size={12} className="text-neutral-500" />
-                    <span className="min-w-0 flex-1 truncate">General session</span>
+                    <span className="min-w-0 flex-1 truncate">{t`General session`}</span>
                   </button>
                   {recentRoots.slice(0, 8).map((path) => (
                     <button
@@ -617,7 +602,7 @@ export function ChatPanel({
                     className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-xs text-cyan-300 hover:bg-white/[0.05]"
                   >
                     <FilePlus2 size={12} />
-                    <span className="min-w-0 flex-1 truncate">Open project...</span>
+                    <span className="min-w-0 flex-1 truncate">{t`Open project...`}</span>
                   </button>
                 </div>
               )}
@@ -626,7 +611,7 @@ export function ChatPanel({
               type="button"
               onClick={() => void pickFiles()}
               className="rounded border border-white/10 px-2 py-2 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
-              title="Add file attachment"
+              title={t`Add file attachment`}
             >
               <FilePlus2 size={12} />
             </button>
@@ -634,7 +619,7 @@ export function ChatPanel({
               type="button"
               onClick={() => void pasteClipboard()}
               className="rounded border border-white/10 px-2 py-2 text-neutral-400 hover:border-cyan-400 hover:text-cyan-300"
-              title="Paste clipboard into message"
+              title={t`Paste clipboard into message`}
             >
               <Clipboard size={12} />
             </button>
@@ -646,7 +631,7 @@ export function ChatPanel({
               className="flex items-center gap-1 rounded bg-sky-400 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-              Send
+              {t`Send`}
             </button>
           </div>
         </div>
@@ -668,19 +653,19 @@ export function ChatPanel({
               className={workspaceRoot ? "text-cyan-300" : "text-neutral-600"}
             />
             <span className="min-w-0 truncate font-medium text-neutral-100">
-              Project: {workspaceRoot ? workspaceName : "No project"}
+              {t`Project:`} {workspaceRoot ? workspaceName : t`No project`}
             </span>
             <span className="shrink-0 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
               {gitLabel}
             </span>
             <span className="shrink-0 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-400">
-              Agent: {agentAlias}
+              {t`Agent:`} {agentAlias}
             </span>
             <Select
               value={selectedModelProvider}
               options={modelOptions}
               onValueChange={changeModelProvider}
-              placeholder="Model"
+              placeholder={t`Model`}
               className="h-6 max-w-64 border-white/10 bg-white/[0.04] py-0 text-[10px]"
             />
             <span
@@ -690,7 +675,7 @@ export function ChatPanel({
                   : "bg-white/[0.08] text-neutral-500"
               }`}
             >
-              {chat.connected ? "Online" : "Connecting"}
+              {chat.connected ? t`Online` : t`Connecting`}
             </span>
             <div className="flex-1" />
             <button
@@ -699,8 +684,8 @@ export function ChatPanel({
               className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
               title={
                 selectedModelChoice
-                  ? `New session with ${selectedModelChoice.value}`
-                  : "New session"
+                  ? t`New session with ${selectedModelChoice.value}`
+                  : t`New session`
               }
             >
               <Plus size={12} />
@@ -709,7 +694,7 @@ export function ChatPanel({
               type="button"
               onClick={() => void chat.abort()}
               className="flex items-center gap-1 text-neutral-400 hover:text-red-300"
-              title="Abort current turn"
+              title={t`Abort current turn`}
             >
               <CircleStop size={12} />
             </button>
@@ -717,7 +702,7 @@ export function ChatPanel({
               type="button"
               onClick={chat.clear}
               className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
-              title="Clear local view"
+              title={t`Clear local view`}
             >
               <RotateCcw size={12} />
             </button>
@@ -728,14 +713,16 @@ export function ChatPanel({
             ) : (
               <Sparkles size={11} className="text-cyan-300" />
             )}
-            <span className="min-w-0 truncate">Session: {sessionName}</span>
+            <span className="min-w-0 truncate">
+              {t`Session:`} {sessionName}
+            </span>
           </div>
           {remoteCode && (
             <div className="mt-2 flex min-w-0 items-center gap-1">
               <input
                 value={cwd}
                 onChange={(e) => setCwd(e.target.value)}
-                placeholder="Remote working directory"
+                placeholder={t`Remote working directory`}
                 className="min-w-0 flex-1 rounded border border-white/10 bg-[#020818]/90 px-2 py-1 font-mono text-[11px] text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
               />
               <button
@@ -743,7 +730,7 @@ export function ChatPanel({
                 onClick={() => setAppliedCwd(cwd)}
                 className="rounded border border-white/10 px-2 py-1 text-[10px] text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
               >
-                Apply
+                {t`Apply`}
               </button>
               {remoteBrowseAvailable && (
                 <button
@@ -751,7 +738,7 @@ export function ChatPanel({
                   onClick={() => void browseRemoteWorkspace()}
                   className="rounded border border-white/10 px-2 py-1 text-[10px] text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
                 >
-                  Browse
+                  {t`Browse`}
                 </button>
               )}
             </div>
@@ -790,7 +777,7 @@ export function ChatPanel({
           {!hasMessages && (
             <div className="w-full max-w-4xl">
               <h1 className="mb-6 text-center text-3xl font-medium tracking-normal text-neutral-100">
-                What do you want to work on in this session?
+                {t`What do you want to work on in this session?`}
               </h1>
               {!workspaceRoot && (
                 <div className="mx-auto mb-4 flex max-w-xl items-center justify-center">
@@ -800,13 +787,13 @@ export function ChatPanel({
                     className="flex items-center gap-2 rounded border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-sm font-medium text-cyan-200 hover:border-cyan-300"
                   >
                     <FolderOpen size={14} />
-                    Open Project
+                    {t`Open Project`}
                   </button>
                 </div>
               )}
               {renderComposer("center")}
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
+                {suggestedPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
@@ -846,20 +833,19 @@ function AttachmentStrip({
   onClear: () => void;
   onPreview: (path: string) => void;
 }) {
+  const { t } = useLingui();
   if (files.length === 0) return null;
   return (
     <div className="mb-2 rounded border border-white/10 bg-[#020818]/80 p-2 text-[10px]">
       <div className="mb-1 flex items-center gap-1 text-neutral-400">
         <Paperclip size={10} className="text-cyan-300" />
-        <span>
-          {files.length} attachment{files.length === 1 ? "" : "s"}
-        </span>
-        <span className="text-neutral-600">drop files here or use the file button</span>
+        <span>{files.length === 1 ? t`1 attachment` : t`${files.length} attachments`}</span>
+        <span className="text-neutral-600">{t`drop files here or use the file button`}</span>
         <button
           type="button"
           onClick={onClear}
           className="ml-auto text-neutral-500 hover:text-red-300"
-          title="Clear attachments"
+          title={t`Clear attachments`}
         >
           <X size={10} />
         </button>
@@ -874,7 +860,7 @@ function AttachmentStrip({
             <FileText size={10} className="shrink-0 text-neutral-500" />
             <span className="max-w-40 truncate">{file.filename}</span>
             <span className="rounded bg-white/[0.08] px-1 text-neutral-500">
-              {file.embedBytes ? "bytes" : "path"}
+              {file.embedBytes ? t`bytes` : t`path`}
             </span>
             <span className="text-neutral-600">{file.mime}</span>
             <span className="text-neutral-600">{formatBytes()}</span>
@@ -882,7 +868,7 @@ function AttachmentStrip({
               type="button"
               onClick={() => onPreview(file.path)}
               className="ml-0.5 text-neutral-500 opacity-0 hover:text-cyan-300 group-hover:opacity-100"
-              title="Preview file"
+              title={t`Preview file`}
             >
               <Eye size={10} />
             </button>
@@ -891,7 +877,9 @@ function AttachmentStrip({
       </div>
       {files.length > 0 && (
         <p className="mt-1 text-[10px] text-neutral-600">
-          Files over {formatBytes(maxAttachmentBytes ?? undefined)} are rejected during send.
+          {maxAttachmentBytes === null
+            ? t`Files are checked during send.`
+            : t`Files over ${formatBytes(maxAttachmentBytes)} are rejected during send.`}
         </p>
       )}
     </div>
@@ -905,6 +893,7 @@ function FilePreviewDialog({
   preview: { path: string; content: string; error?: string; loading: boolean };
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   return (
     <Dialog open title={preview.path} onOpenChange={(open) => !open && onClose()}>
       <div className="flex max-h-[82vh] w-full flex-col overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 shadow-2xl">
@@ -915,7 +904,7 @@ function FilePreviewDialog({
             type="button"
             onClick={() => void navigator.clipboard?.writeText(preview.path)}
             className="rounded px-1.5 py-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
-            title="Copy path"
+            title={t`Copy path`}
           >
             <Copy size={12} />
           </button>
@@ -931,7 +920,7 @@ function FilePreviewDialog({
           {preview.loading ? (
             <div className="flex items-center gap-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
-              Loading preview...
+              {t`Loading preview...`}
             </div>
           ) : preview.error ? (
             <pre className="whitespace-pre-wrap text-xs text-red-300">{preview.error}</pre>
@@ -955,6 +944,7 @@ function ContextSummaryBar({ label }: { label: string }) {
 }
 
 function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {
+  const { t } = useLingui();
   const rows = buildExecutionRows(toolCalls);
   if (rows.length === 0) return null;
 
@@ -962,7 +952,7 @@ function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {
     <div className="mb-3 overflow-hidden rounded-lg border border-white/10 bg-[#020818]/55 text-xs">
       <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2 text-neutral-400">
         <Wrench size={12} className="text-cyan-300" />
-        <span className="font-medium text-neutral-300">Execution</span>
+        <span className="font-medium text-neutral-300">{t`Execution`}</span>
       </div>
       <div className="divide-y divide-white/[0.06]">
         {rows.map(({ id, toolCall, summary, status }) => (
@@ -984,7 +974,7 @@ function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {
             </div>
             {(toolCall.args !== undefined || toolCall.result !== undefined) && (
               <details className="mt-1 pl-5 text-[10px] text-neutral-500">
-                <summary className="cursor-pointer hover:text-neutral-300">raw details</summary>
+                <summary className="cursor-pointer hover:text-neutral-300">{t`raw details`}</summary>
                 {toolCall.args !== undefined && (
                   <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
                     {stringifyValue(toolCall.args)}
@@ -1013,6 +1003,7 @@ function ApprovalCard({
   toolCalls: ToolCallView[];
   onApprove: (request_id: string, decision: "approve" | "deny" | "always") => void;
 }) {
+  const { t } = useLingui();
   const recentArgs = [...toolCalls]
     .reverse()
     .find((toolCall) => toolCall.name === approval.tool)?.args;
@@ -1022,34 +1013,34 @@ function ApprovalCard({
       <div className="border-b border-amber-500/20 px-3 py-2">
         <p className="flex items-center gap-1 font-medium text-amber-200">
           <GitCompare size={12} />
-          Approval required
+          {t`Approval required`}
         </p>
         <p className="mt-1 text-neutral-300">
-          Tool <code className="text-amber-300">{approval.tool}</code> requires approval before the
-          agent can continue.
+          {t`Tool`} <code className="text-amber-300">{approval.tool}</code>{" "}
+          {t`requires approval before the agent can continue.`}
         </p>
         {approval.timeout_secs !== undefined && (
           <p className="mt-1 text-[10px] text-neutral-500">
-            Auto-denies after {approval.timeout_secs}s without a response.
+            {t`Auto-denies after ${approval.timeout_secs}s without a response.`}
           </p>
         )}
       </div>
       <div className="p-3">
         <div className="mb-2 rounded border border-white/10 bg-[#020818]/75 p-2">
-          <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">Summary</div>
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">{t`Summary`}</div>
           <pre className="whitespace-pre-wrap text-[11px] text-neutral-300 zc-scrollbar">
             {approval.arguments_summary}
           </pre>
         </div>
         {approval.preview && (
           <div className="mb-2">
-            <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">Preview</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">{t`Preview`}</div>
             <DiffPreviewBlock preview={approval.preview} />
           </div>
         )}
         {recentArgs !== undefined && (
           <details className="mb-2 text-[10px] text-neutral-500">
-            <summary className="cursor-pointer hover:text-neutral-300">tool input</summary>
+            <summary className="cursor-pointer hover:text-neutral-300">{t`tool input`}</summary>
             <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
               {stringifyValue(recentArgs)}
             </pre>
@@ -1061,22 +1052,22 @@ function ApprovalCard({
             onClick={() => onApprove(approval.request_id, "approve")}
             className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-1 font-medium text-emerald-300 hover:bg-emerald-500/30"
           >
-            <Check size={10} /> Approve once
+            <Check size={10} /> {t`Approve once`}
           </button>
           <button
             type="button"
             onClick={() => onApprove(approval.request_id, "deny")}
             className="flex items-center gap-1 rounded bg-red-500/15 px-2 py-1 text-red-300 hover:bg-red-500/25"
           >
-            <Trash2 size={10} /> Reject
+            <Trash2 size={10} /> {t`Reject`}
           </button>
           <button
             type="button"
             onClick={() => onApprove(approval.request_id, "always")}
             className="rounded border border-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10"
-            title="Allow this tool for the current gateway session policy"
+            title={t`Allow this tool for the current gateway session policy`}
           >
-            Always allow
+            {t`Always allow`}
           </button>
         </div>
       </div>
@@ -1091,6 +1082,7 @@ function MessageRow({
   message: ChatMessage;
   onApprove: (request_id: string, decision: "approve" | "deny" | "always") => void;
 }) {
+  const { t } = useLingui();
   const isUser = message.role === "user";
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
@@ -1119,7 +1111,7 @@ function MessageRow({
           <details className="mb-2 text-xs">
             <summary className="flex cursor-pointer items-center gap-1 text-neutral-500">
               <Brain size={10} />
-              thinking
+              {t`thinking`}
             </summary>
             <pre className="mt-1 whitespace-pre-wrap rounded bg-[#020818]/60 p-2 text-[11px] text-neutral-400">
               {message.thinking}
@@ -1146,10 +1138,12 @@ function MessageRow({
         )}
 
         {message.cost_usd !== undefined && (
-          <p className="mt-2 text-[10px] text-neutral-500">cost ${message.cost_usd.toFixed(4)}</p>
+          <p className="mt-2 text-[10px] text-neutral-500">
+            {t`cost`} ${message.cost_usd.toFixed(4)}
+          </p>
         )}
         {message.status === "error" && (
-          <p className="mt-2 text-xs text-red-300">{message.error || "error"}</p>
+          <p className="mt-2 text-xs text-red-300">{message.error || t`error`}</p>
         )}
         {message.status === "streaming" && (
           <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
@@ -1164,6 +1158,7 @@ function DiffPreviewBlock({
 }: {
   preview: NonNullable<ChatMessage["approval"]>["preview"];
 }) {
+  const { t } = useLingui();
   const lines = useMemo(() => preview?.lines ?? [], [preview]);
   if (!preview) return null;
   return (
@@ -1175,7 +1170,7 @@ function DiffPreviewBlock({
             type="button"
             onClick={() => void navigator.clipboard?.writeText(preview.path ?? "")}
             className="shrink-0 rounded px-1 py-0.5 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
-            title="Copy path"
+            title={t`Copy path`}
           >
             <Copy size={10} />
           </button>
@@ -1200,7 +1195,7 @@ function DiffPreviewBlock({
       </pre>
       {preview.truncated && (
         <div className="border-t border-white/10 px-2 py-1 text-[10px] text-amber-300">
-          Preview truncated to 400 lines.
+          {t`Preview truncated to 400 lines.`}
         </div>
       )}
     </div>

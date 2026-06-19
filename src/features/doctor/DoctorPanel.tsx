@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLingui } from "@lingui/react/macro";
 import { Loader2, Play } from "lucide-react";
 import { queryKeys } from "@/api/query";
 import { apiDoctor } from "@/api/tools";
 
 export function DoctorPanel() {
+  const { t } = useLingui();
   const doctorQuery = useQuery({
     queryKey: queryKeys.gateway.doctor,
     queryFn: apiDoctor,
@@ -14,7 +16,7 @@ export function DoctorPanel() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
-        <span className="text-neutral-400">Diagnostics</span>
+        <span className="text-neutral-400">{t`Diagnostics`}</span>
         <div className="flex-1" />
         <button
           type="button"
@@ -27,7 +29,7 @@ export function DoctorPanel() {
           ) : (
             <Play size={10} />
           )}
-          Run doctor
+          {t`Run doctor`}
         </button>
       </header>
       <div className="flex-1 overflow-auto p-4 text-xs zc-scrollbar">
@@ -36,9 +38,9 @@ export function DoctorPanel() {
             <DoctorResult severity="ERROR" message={String(doctorQuery.error)} />
           </ul>
         ) : results === null ? (
-          <p className="text-neutral-500">Click "Run doctor" to start.</p>
+          <p className="text-neutral-500">{t`Click "Run doctor" to start.`}</p>
         ) : results.length === 0 ? (
-          <p className="text-emerald-300">All checks passed.</p>
+          <p className="text-emerald-300">{t`All checks passed.`}</p>
         ) : (
           <ul className="space-y-1.5">
             {results.map((r, i) => (

@@ -1,6 +1,7 @@
 // Recursive file tree for the workspace root.
 
 import { useEffect, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { ChevronDown, ChevronRight, File, Folder, FolderOpen } from "lucide-react";
 import { type DirEntry, workspaceListDir } from "@/api/tauri";
 import { useWorkspace } from "@/app/workspace-context";
@@ -74,6 +75,7 @@ function FileNode({ entry, depth }: NodeProps) {
 }
 
 export function FileTree() {
+  const { t } = useLingui();
   const { root, changeNonce } = useWorkspace();
   const [top, setTop] = useState<DirEntry[] | null>(null);
 
@@ -89,10 +91,10 @@ export function FileTree() {
 
   if (!root) return null;
   if (top === null) {
-    return <div className="px-3 py-2 text-xs text-neutral-500">Loading…</div>;
+    return <div className="px-3 py-2 text-xs text-neutral-500">{t`Loading…`}</div>;
   }
   if (top.length === 0) {
-    return <div className="px-3 py-2 text-xs text-neutral-500">Empty directory</div>;
+    return <div className="px-3 py-2 text-xs text-neutral-500">{t`Empty directory`}</div>;
   }
 
   return (

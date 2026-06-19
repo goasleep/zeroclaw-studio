@@ -1,6 +1,7 @@
 // Agent Setup Wizard — full quickstart builder for the workspace surface.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { AlertCircle, Bot, CheckCircle2, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   apiQuickstartApply,
@@ -39,6 +40,7 @@ interface PersonalityDraft {
 }
 
 export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
+  const { t } = useLingui();
   const [step, setStep] = useState<WizardStep>("loading");
   const [qsState, setQsState] = useState<QuickstartState | null>(null);
   const [error, setError] = useState("");
@@ -140,7 +142,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
     for (const f of fieldDescs) {
       const v = fieldValues[f.key] ?? "";
       if (f.required && !v) {
-        setError(`Required field missing: ${f.label}`);
+        setError(t`Required field missing: ${f.label}`);
         setStep("form");
         return;
       }
@@ -197,7 +199,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
         return;
       }
     } catch (e) {
-      setError(`Validation failed: ${errorMessage(e)}`);
+      setError(t`Validation failed: ${errorMessage(e)}`);
       setStep("form");
       return;
     }
@@ -213,7 +215,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
       setStep("done");
       onAgentCreated?.();
     } catch (e) {
-      setError(`Apply failed: ${errorMessage(e)}`);
+      setError(t`Apply failed: ${errorMessage(e)}`);
       setStep("form");
     }
   }, [
@@ -235,13 +237,14 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
     runtimeMode,
     runtimeValue,
     systemPrompt,
+    t,
   ]);
 
   if (step === "loading") {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90">
         <Loader2 size={20} className="animate-spin text-cyan-300" />
-        <span className="ml-2 text-xs text-neutral-400">Loading setup...</span>
+        <span className="ml-2 text-xs text-neutral-400">{t`Loading setup...`}</span>
       </div>
     );
   }
@@ -251,13 +254,13 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
         <div className="max-w-sm rounded-lg border border-white/10 bg-white/[0.05]/50 p-6 text-center">
           <CheckCircle2 size={24} className="mx-auto mb-3 text-green-400" />
-          <h3 className="mb-1 text-sm font-semibold text-neutral-100">Agent created</h3>
+          <h3 className="mb-1 text-sm font-semibold text-neutral-100">{t`Agent created`}</h3>
           <p className="mb-3 text-xs text-neutral-400">
-            Waiting for the gateway to restart and load the new agent.
+            {t`Waiting for the gateway to restart and load the new agent.`}
           </p>
           <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500">
             <Loader2 size={12} className="animate-spin" />
-            <span>Refreshing...</span>
+            <span>{t`Refreshing...`}</span>
           </div>
         </div>
       </div>
@@ -269,7 +272,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[#020818]/90 p-8">
         <div className="max-w-sm rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center">
           <AlertCircle size={20} className="mx-auto mb-2 text-red-400" />
-          <h3 className="mb-1 text-sm font-semibold text-red-200">Setup unavailable</h3>
+          <h3 className="mb-1 text-sm font-semibold text-red-200">{t`Setup unavailable`}</h3>
           <p className="text-xs text-red-300/70">{error}</p>
         </div>
       </div>
@@ -284,10 +287,9 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             <Bot size={18} />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-neutral-100">Quickstart Builder</h2>
+            <h2 className="text-base font-semibold text-neutral-100">{t`Quickstart Builder`}</h2>
             <p className="text-xs text-neutral-500">
-              Create an agent, provider, runtime, memory, channels, and peer groups in one apply
-              step.
+              {t`Create an agent, provider, runtime, memory, channels, and peer groups in one apply step.`}
             </p>
           </div>
         </header>
@@ -299,8 +301,8 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
         )}
 
         <section className="grid gap-5 lg:grid-cols-2">
-          <Panel title="Provider">
-            <Field label="Provider type">
+          <Panel title={t`Provider`}>
+            <Field label={t`Provider type`}>
               <Select value={providerType} onChange={setProviderType}>
                 {qsState?.model_provider_types.map((pt) => (
                   <option key={pt.kind} value={pt.kind}>
@@ -309,10 +311,10 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                 ))}
               </Select>
             </Field>
-            <Field label="Provider alias">
+            <Field label={t`Provider alias`}>
               <Input value={providerAlias} onChange={setProviderAlias} />
             </Field>
-            <Field label="Model">
+            <Field label={t`Model`}>
               <Input value={model} onChange={setModel} placeholder="e.g. gpt-5.1-code" />
             </Field>
             {fieldDescs.map((f) => (
@@ -340,11 +342,11 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             ))}
           </Panel>
 
-          <Panel title="Agent">
-            <Field label="Agent alias">
+          <Panel title={t`Agent`}>
+            <Field label={t`Agent alias`}>
               <Input value={agentName} onChange={setAgentName} />
             </Field>
-            <Field label="System prompt">
+            <Field label={t`System prompt`}>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
@@ -353,9 +355,9 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
               />
             </Field>
             {qsState && qsState.personality_files.length > 0 && (
-              <Field label="Personality file">
+              <Field label={t`Personality file`}>
                 <Select value={personalityFile} onChange={setPersonalityFile}>
-                  <option value="">none</option>
+                  <option value="">{t`none`}</option>
                   {qsState.personality_files.map((file) => (
                     <option key={file} value={file}>
                       {file}
@@ -366,11 +368,11 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             )}
           </Panel>
 
-          <Panel title="Runtime">
+          <Panel title={t`Runtime`}>
             <ChoiceRow
               mode={riskMode}
               value={riskValue}
-              label="Risk profile"
+              label={t`Risk profile`}
               existing={qsState?.risk_profiles ?? []}
               fresh={riskOptions.map((r) => ({ key: r.key, label: r.label }))}
               onMode={setRiskMode}
@@ -379,7 +381,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             <ChoiceRow
               mode={runtimeMode}
               value={runtimeValue}
-              label="Runtime profile"
+              label={t`Runtime profile`}
               existing={qsState?.runtime_profiles ?? []}
               fresh={runtimeOptions.map((r) => ({ key: r.key, label: r.label }))}
               onMode={setRuntimeMode}
@@ -388,7 +390,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             <ChoiceRow
               mode={memoryMode}
               value={memoryValue}
-              label="Memory"
+              label={t`Memory`}
               existing={qsState?.storage ?? []}
               fresh={(qsState?.memory_kinds ?? []).map((m) => ({
                 key: m,
@@ -400,7 +402,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
           </Panel>
 
           <Panel
-            title="Channels"
+            title={t`Channels`}
             action={
               <button
                 type="button"
@@ -421,7 +423,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             }
           >
             {channels.length === 0 && (
-              <p className="text-xs text-neutral-500">No channels will be created.</p>
+              <p className="text-xs text-neutral-500">{t`No channels will be created.`}</p>
             )}
             {channels.map((channel, idx) => (
               <div key={idx} className="mb-3 rounded-md border border-white/10 p-3">
@@ -434,7 +436,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     <Trash2 size={12} />
                   </button>
                 </div>
-                <Field label="Type">
+                <Field label={t`Type`}>
                   <Select
                     value={channel.channel_type}
                     onChange={(value) =>
@@ -450,7 +452,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     ))}
                   </Select>
                 </Field>
-                <Field label="Alias">
+                <Field label={t`Alias`}>
                   <Input
                     value={channel.alias}
                     onChange={(value) =>
@@ -460,7 +462,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     }
                   />
                 </Field>
-                <Field label="Token">
+                <Field label={t`Token`}>
                   <Input
                     type="password"
                     value={channel.token}
@@ -469,7 +471,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                         current.map((c, i) => (i === idx ? { ...c, token: value } : c)),
                       )
                     }
-                    placeholder="optional"
+                    placeholder={t`optional`}
                   />
                 </Field>
               </div>
@@ -477,7 +479,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
           </Panel>
 
           <Panel
-            title="Peer groups"
+            title={t`Peer groups`}
             action={
               <button
                 type="button"
@@ -499,7 +501,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             }
           >
             {peerGroups.length === 0 && (
-              <p className="text-xs text-neutral-500">No peer groups will be created.</p>
+              <p className="text-xs text-neutral-500">{t`No peer groups will be created.`}</p>
             )}
             {peerGroups.map((peer, idx) => (
               <div key={idx} className="mb-3 rounded-md border border-white/10 p-3">
@@ -512,7 +514,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     <Trash2 size={12} />
                   </button>
                 </div>
-                <Field label="Name">
+                <Field label={t`Name`}>
                   <Input
                     value={peer.name}
                     onChange={(value) =>
@@ -522,7 +524,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     }
                   />
                 </Field>
-                <Field label="Channel alias">
+                <Field label={t`Channel alias`}>
                   <Input
                     value={peer.channel}
                     onChange={(value) =>
@@ -532,7 +534,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     }
                   />
                 </Field>
-                <Field label="External peers" help="Comma or newline separated">
+                <Field label={t`External peers`} help={t`Comma or newline separated`}>
                   <Input
                     value={peer.external_peers}
                     onChange={(value) =>
@@ -542,7 +544,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     }
                   />
                 </Field>
-                <Field label="Ignore" help="Comma or newline separated">
+                <Field label={t`Ignore`} help={t`Comma or newline separated`}>
                   <Input
                     value={peer.ignore}
                     onChange={(value) =>
@@ -557,7 +559,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
           </Panel>
 
           <Panel
-            title="Personality files"
+            title={t`Personality files`}
             action={
               <button
                 type="button"
@@ -575,7 +577,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
           >
             {personalityFiles.length === 0 && (
               <p className="text-xs text-neutral-500">
-                Add inline personality files when the gateway supports them.
+                {t`Add inline personality files when the gateway supports them.`}
               </p>
             )}
             {personalityFiles.map((file, idx) => (
@@ -591,7 +593,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     <Trash2 size={12} />
                   </button>
                 </div>
-                <Field label="Filename">
+                <Field label={t`Filename`}>
                   <Input
                     value={file.filename}
                     onChange={(value) =>
@@ -601,7 +603,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
                     }
                   />
                 </Field>
-                <Field label="Content">
+                <Field label={t`Content`}>
                   <textarea
                     value={file.content}
                     onChange={(e) =>
@@ -628,10 +630,10 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
             {step === "validating" || step === "applying" ? (
               <>
                 <Loader2 size={12} className="animate-spin" />
-                {step === "validating" ? "Validating..." : "Applying..."}
+                {step === "validating" ? t`Validating...` : t`Applying...`}
               </>
             ) : (
-              "Apply Quickstart"
+              t`Apply Quickstart`
             )}
           </button>
         </div>
@@ -743,10 +745,11 @@ function ChoiceRow({
   onMode: (mode: "fresh" | "existing") => void;
   onValue: (value: string) => void;
 }) {
+  const { t } = useLingui();
   const options = mode === "existing" ? existing.map((v) => ({ key: v, label: v })) : fresh;
   return (
     <div className="grid gap-2 sm:grid-cols-[120px_minmax(0,1fr)]">
-      <Field label={`${label} mode`}>
+      <Field label={t`${label} mode`}>
         <Select
           value={mode}
           onChange={(next) => {
@@ -757,9 +760,9 @@ function ChoiceRow({
             if (nextOptions[0]) onValue(nextOptions[0].key);
           }}
         >
-          <option value="fresh">fresh</option>
+          <option value="fresh">{t`fresh`}</option>
           <option value="existing" disabled={existing.length === 0}>
-            existing
+            {t`existing`}
           </option>
         </Select>
       </Field>

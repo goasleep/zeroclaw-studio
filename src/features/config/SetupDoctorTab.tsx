@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
 import {
   CheckCircle2,
   CircleAlert,
@@ -35,6 +36,7 @@ export function SetupDoctorTab({
   preferredCapabilityId,
   onConfigSaved,
 }: SetupDoctorTabProps) {
+  const { t } = useLingui();
   const baseTargets = useMemo(() => setupTargetsForPrefix(prefix), [prefix]);
   const [targets, setTargets] = useState(baseTargets);
   const [activeKey, setActiveKey] = useState(
@@ -87,9 +89,9 @@ export function SetupDoctorTab({
           <div className="mx-auto mb-3 flex justify-center text-neutral-600">
             <Settings2 size={28} />
           </div>
-          <h2 className="text-sm font-medium text-neutral-200">No setup doctor</h2>
+          <h2 className="text-sm font-medium text-neutral-200">{t`No setup doctor`}</h2>
           <p className="mt-1 max-w-sm text-xs leading-relaxed text-neutral-500">
-            This config prefix does not map to a local setup capability.
+            {t`This config prefix does not map to a local setup capability.`}
           </p>
         </div>
       </div>
@@ -144,6 +146,7 @@ function DesktopSetupPanel({
   target: SetupTarget;
   onConfigSaved: () => void;
 }) {
+  const { t } = useLingui();
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
@@ -173,7 +176,7 @@ function DesktopSetupPanel({
 
   async function runAction(action: SetupAction) {
     const command = formatCommand(action.command);
-    if (!window.confirm(`Run this command?\n\n${command}`)) return;
+    if (!window.confirm(t`Run this command?\n\n${command}`)) return;
     setRunning(action.id);
     setError(null);
     setMessage(null);
@@ -184,8 +187,8 @@ function DesktopSetupPanel({
       });
       setMessage(
         result.success
-          ? `Command completed: ${command}`
-          : `Command exited ${result.exit_code ?? "without code"}: ${
+          ? t`Command completed: ${command}`
+          : t`Command exited ${result.exit_code ?? "without code"}: ${
               result.stderr || result.stdout || command
             }`,
       );
@@ -204,7 +207,7 @@ function DesktopSetupPanel({
     try {
       const value = await recommendationValue(rec);
       await apiConfigPutProp(rec.path, value);
-      setMessage(`Applied ${rec.path}`);
+      setMessage(t`Applied ${rec.path}`);
       onConfigSaved();
       await load(false);
     } catch (e) {
@@ -215,7 +218,7 @@ function DesktopSetupPanel({
   }
 
   if (loading && !status) {
-    return <LoadingInline label="Running local setup checks..." />;
+    return <LoadingInline label={t`Running local setup checks...`} />;
   }
 
   if (error && !status) {
@@ -243,7 +246,7 @@ function DesktopSetupPanel({
             className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300 disabled:opacity-50"
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Refresh
+            {t`Refresh`}
           </button>
         </div>
       </section>
@@ -257,7 +260,7 @@ function DesktopSetupPanel({
 
       <section className="rounded-lg border border-white/10 bg-white/[0.035]">
         <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-          Checks
+          {t`Checks`}
         </h3>
         <div className="divide-y divide-white/10">
           {status.checks.map((check) => (
@@ -280,7 +283,7 @@ function DesktopSetupPanel({
       {status.actions.length > 0 && (
         <section className="rounded-lg border border-white/10 bg-white/[0.035]">
           <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-            Actions
+            {t`Actions`}
           </h3>
           <div className="divide-y divide-white/10">
             {status.actions.map((action) => (
@@ -304,7 +307,7 @@ function DesktopSetupPanel({
                     ) : (
                       <Play size={12} />
                     )}
-                    Run
+                    {t`Run`}
                   </button>
                 </div>
               </div>
@@ -316,7 +319,7 @@ function DesktopSetupPanel({
       {status.config_recommendations.length > 0 && (
         <section className="rounded-lg border border-white/10 bg-white/[0.035]">
           <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
-            Recommended config
+            {t`Recommended config`}
           </h3>
           <div className="divide-y divide-white/10">
             {status.config_recommendations.map((rec) => (
@@ -342,7 +345,7 @@ function DesktopSetupPanel({
                     ) : (
                       <Settings2 size={12} />
                     )}
-                    Apply
+                    {t`Apply`}
                   </button>
                 </div>
               </div>
@@ -354,7 +357,7 @@ function DesktopSetupPanel({
       {status.remediations.length > 0 && (
         <section className="rounded-lg border border-amber-500/30 bg-amber-500/10">
           <h3 className="border-b border-amber-500/20 px-4 py-3 text-sm font-medium text-amber-200">
-            Manual remediation
+            {t`Manual remediation`}
           </h3>
           <div className="divide-y divide-amber-500/20">
             {status.remediations.map((item) => (
@@ -374,18 +377,17 @@ function DesktopSetupPanel({
 }
 
 function ManualSetupPanel({ capabilityId }: { capabilityId: SetupCapabilityId }) {
+  const { t } = useLingui();
   return (
     <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
       <div className="flex items-start gap-3">
         <Info size={16} className="mt-0.5 shrink-0 text-sky-300" />
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-medium text-neutral-100">
-            {CAPABILITY_LABELS[capabilityId]} setup
+            {t`${CAPABILITY_LABELS[capabilityId]} setup`}
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-            Local checks, one-click actions, and remediation commands are provided by the desktop
-            backend. Open this tab in ZeroClaw Workspace to view the current backend-provided setup
-            status for this capability.
+            {t`Local checks, one-click actions, and remediation commands are provided by the desktop backend. Open this tab in ZeroClaw Workspace to view the current backend-provided setup status for this capability.`}
           </p>
         </div>
       </div>
