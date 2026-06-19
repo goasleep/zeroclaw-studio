@@ -55,6 +55,12 @@ import { Select } from "@/ui/select";
 import { Switch } from "@/ui/switch";
 import { SetupDoctorTab } from "./SetupDoctorTab";
 import { setupTargetsForPrefix } from "./setup-targets";
+import {
+  configGetSummaries,
+  type AgentSummary,
+  type RiskProfileSummary,
+  type RuntimeProfileSummary,
+} from "@/api/tauri";
 
 const GROUP_ORDER = [
   "Foundation",
@@ -70,7 +76,12 @@ const GROUP_ORDER = [
 
 type PanelMode = "overview" | "sections" | "advanced";
 type StatusFilter = "all" | "needs" | "ready";
-type FormTarget = { prefix: string; title: string; subtitle?: string };
+type FormTarget = {
+  prefix: string;
+  title: string;
+  subtitle?: string;
+  initialTab?: "fields" | "setup";
+};
 type TaskState = "ready" | "needs" | "neutral";
 export type ConfigCategoryId =
   | "models-providers"
@@ -133,7 +144,7 @@ const CONFIG_CATEGORIES: Record<ConfigCategoryId, ConfigCategory> = {
   "tools-skills": {
     id: "tools-skills",
     label: "Tools & Skills",
-    description: "Configure tools, skills, skill bundles, MCP servers, and tool runtimes.",
+    description: "Add capabilities, connect tools, and check setup.",
     sectionKeys: ["tools", "skills", "skill_bundles", "mcp"],
     icon: Wrench,
     emptyTitle: "No tools or skills sections",
@@ -198,7 +209,13 @@ export function ConfigPanel({
 }) {
   const category = categoryId ? CONFIG_CATEGORIES[categoryId] : null;
   const [state, setState] = useState<LoadState>({ kind: "loading" });
-  const [mode, setMode] = useState<PanelMode>(categoryId || focusSection ? "sections" : "overview");
+  const [mode, setMode] = useState<PanelMode>(
+    categoryId === "tools-skills" && !focusSection
+      ? "overview"
+      : categoryId || focusSection
+        ? "sections"
+        : "overview",
+  );
   const [activeKey, setActiveKey] = useState<string | null>(focusSection ?? null);
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -244,7 +261,15 @@ export function ConfigPanel({
   }, [category, focusSection, state]);
 
   useEffect(() => {
-    setMode(category ? "sections" : focusSection ? "sections" : "overview");
+    setMode(
+      category?.id === "tools-skills" && !focusSection
+        ? "overview"
+        : category
+          ? "sections"
+          : focusSection
+            ? "sections"
+            : "overview",
+    );
     setTarget(null);
     setFilter("");
     setStatusFilter("all");
@@ -281,6 +306,10 @@ export function ConfigPanel({
         onSection={chooseSection}
         onTarget={setTarget}
         onRefresh={loadSections}
+        onOverview={() => {
+          setMode("overview");
+          setTarget(null);
+        }}
         onAdvanced={() => {
           setMode("advanced");
           setTarget(null);
@@ -467,6 +496,7 @@ function ConfigCategoryWorkspace({
   onSection,
   onTarget,
   onRefresh,
+  onOverview,
   onAdvanced,
   onSaved,
 }: {
@@ -480,6 +510,7 @@ function ConfigCategoryWorkspace({
   onSection: (section: ConfigSectionInfo) => void;
   onTarget: (target: FormTarget | null) => void;
   onRefresh: () => void;
+  onOverview: () => void;
   onAdvanced: () => void;
   onSaved: () => void;
 }) {
@@ -487,6 +518,8 @@ function ConfigCategoryWorkspace({
   const stats = getSectionStats(sections);
   const orderedSections = orderSectionsForCategory(sections, category);
   const showingAdvanced = mode === "advanced";
+  const showingOverview = mode === "overview";
+  const isToolsSkills = category.id === "tools-skills";
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -542,13 +575,27 @@ function ConfigCategoryWorkspace({
 
         {orderedSections.length > 1 && (
           <div className="mt-4 flex flex-wrap gap-1">
+            {isToolsSkills && (
+              <button
+                type="button"
+                onClick={onOverview}
+                className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition ${
+                  showingOverview
+                    ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                    : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
+                }`}
+              >
+                <Layers3 size={12} />
+                <span>Overview</span>
+              </button>
+            )}
             {orderedSections.map((section) => (
               <button
                 key={section.key}
                 type="button"
                 onClick={() => onSection(section)}
                 className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition ${
-                  !showingAdvanced && activeSection?.key === section.key
+                  !showingOverview && !showingAdvanced && activeSection?.key === section.key
                     ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
                     : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
                 }`}
@@ -570,6 +617,13 @@ function ConfigCategoryWorkspace({
           </div>
         ) : showingAdvanced ? (
           <AdvancedConfigEditor />
+        ) : isToolsSkills && showingOverview ? (
+          <ToolsSkillsBeginnerHome
+            sections={orderedSections}
+            onSection={onSection}
+            onTarget={onTarget}
+            onAdvanced={onAdvanced}
+          />
         ) : sections.length === 0 ? (
           <EmptyState
             icon={<IconNode icon={category.icon} size={28} />}
@@ -586,6 +640,306 @@ function ConfigCategoryWorkspace({
           />
         )}
       </main>
+    </div>
+  );
+}
+
+function ToolsSkillsBeginnerHome({
+  sections,
+  onSection,
+  onTarget,
+  onAdvanced,
+}: {
+  sections: ConfigSectionInfo[];
+  onSection: (section: ConfigSectionInfo) => void;
+  onTarget: (target: FormTarget | null) => void;
+  onAdvanced: () => void;
+}) {
+  const skills = sectionByRoot(sections, "skills");
+  const bundles = sectionByRoot(sections, "skill_bundles");
+  const mcp = sectionByRoot(sections, "mcp");
+  const tools = sectionByRoot(sections, "tools");
+  const readyCount = [skills, bundles, mcp].filter((section) => section?.ready).length;
+
+  function openSection(section: ConfigSectionInfo | null) {
+    if (section) onSection(section);
+  }
+
+  function openSetup(section: ConfigSectionInfo | null) {
+    if (!section) return;
+    const setupTargets = setupTargetsForPrefix(section.key);
+    if (setupTargets.length === 0) {
+      onSection(section);
+      return;
+    }
+    onSection(section);
+    onTarget({
+      prefix: section.key,
+      title: section.label,
+      subtitle: section.help,
+      initialTab: "setup",
+    });
+  }
+
+  const rawPreview = [skills, bundles, mcp, tools]
+    .flatMap((section) => (section ? [section.key] : []))
+    .slice(0, 4);
+
+  return (
+    <div className="h-full overflow-auto zc-scrollbar">
+      <div className="mx-auto max-w-6xl space-y-5 px-6 py-5">
+        <section className="grid gap-3 md:grid-cols-3">
+          <BeginnerStatusItem
+            label="Skills"
+            detail={skills?.ready ? "Ready to use" : "Review setup"}
+            state={statusState(skills)}
+          />
+          <BeginnerStatusItem
+            label="Skill bundles"
+            detail={bundles?.completed ? "Available to manage" : "Not configured yet"}
+            state={statusState(bundles)}
+          />
+          <BeginnerStatusItem
+            label="MCP servers"
+            detail={mcp?.ready ? "Connected" : "Needs setup"}
+            state={statusState(mcp)}
+          />
+        </section>
+
+        <section className="grid gap-3 xl:grid-cols-3">
+          <BeginnerCapabilityCard
+            icon={Sparkles}
+            title="Skills"
+            description="Use guided workflows for PDF, images, docs, code tasks, and other repeatable work."
+            section={skills}
+            primaryLabel="Manage skills"
+            onPrimary={() => openSection(skills)}
+            secondaryLabel="Check setup"
+            onSecondary={() => openSetup(skills)}
+          />
+          <BeginnerCapabilityCard
+            icon={Boxes}
+            title="Skill Bundles"
+            description="Install or enable groups of skills from trusted sources."
+            section={bundles}
+            primaryLabel="Browse bundles"
+            onPrimary={() => openSection(bundles)}
+          />
+          <BeginnerCapabilityCard
+            icon={Network}
+            title="MCP Servers"
+            description="Connect external tools and local services so agents can use them safely."
+            section={mcp}
+            primaryLabel="Add server"
+            onPrimary={() => openSection(mcp)}
+            secondaryLabel="Run doctor"
+            onSecondary={() => openSection(mcp)}
+          />
+        </section>
+
+        <section className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.035]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-100">Recommended next steps</h3>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                Start here if you are setting up tools and skills for the first time.
+              </p>
+            </div>
+            <Badge label={`${readyCount} ready`} />
+          </div>
+          <div className="divide-y divide-white/10">
+            <NextStepRow
+              number="1"
+              title="Enable Skills"
+              detail="Turn on the skills system before managing or installing skills."
+              state={skills?.ready ? "ready" : skills?.completed ? "needs" : "neutral"}
+              actionLabel="Review skills"
+              onAction={() => openSection(skills)}
+            />
+            <NextStepRow
+              number="2"
+              title="Choose skills folder"
+              detail="Pick where local skill markdown and community bundles should live."
+              state={skills?.completed ? "ready" : "neutral"}
+              actionLabel="Open fields"
+              onAction={() => openSection(skills)}
+            />
+            <NextStepRow
+              number="3"
+              title="Check Python support"
+              detail="Run the local setup check used by Python-backed skills."
+              state={skills?.ready ? "ready" : "needs"}
+              actionLabel="Check now"
+              onAction={() => openSetup(skills)}
+            />
+            <NextStepRow
+              number="4"
+              title="Add your first MCP server"
+              detail="Create a server entry when you want agents to use an external tool."
+              state={mcp?.ready ? "ready" : "neutral"}
+              actionLabel="Add server"
+              onAction={() => openSection(mcp)}
+            />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold text-neutral-100">Advanced fields</h3>
+                <Badge label="raw config" />
+              </div>
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
+                Use this when you know the exact config path you want to inspect or edit.
+              </p>
+              {rawPreview.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {rawPreview.map((path) => (
+                    <span
+                      key={path}
+                      className="rounded border border-white/10 bg-[#020818]/80 px-2 py-1 font-mono text-[10px] text-neutral-500"
+                    >
+                      {path}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={onAdvanced}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
+            >
+              <Code2 size={12} />
+              Advanced
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function BeginnerStatusItem({
+  label,
+  detail,
+  state,
+}: {
+  label: string;
+  detail: string;
+  state: TaskState;
+}) {
+  const tone =
+    state === "ready"
+      ? "border-emerald-400/20 bg-emerald-400/[0.045]"
+      : state === "needs"
+        ? "border-amber-400/20 bg-amber-400/[0.045]"
+        : "border-white/10 bg-white/[0.03]";
+  return (
+    <div className={`rounded-md border px-4 py-3 ${tone}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-neutral-100">{label}</span>
+        <TaskBadge state={state} />
+      </div>
+      <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">{detail}</p>
+    </div>
+  );
+}
+
+function BeginnerCapabilityCard({
+  icon: Icon,
+  title,
+  description,
+  section,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  section: ConfigSectionInfo | null;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <section className="flex min-h-[190px] flex-col rounded-lg border border-white/10 bg-white/[0.035] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+          <Icon size={16} />
+        </span>
+        {section ? <SectionStatusBadge section={section} /> : <Badge label="missing" />}
+      </div>
+      <h3 className="mt-4 text-sm font-semibold text-neutral-100">{title}</h3>
+      <p className="mt-1 text-xs leading-relaxed text-neutral-500">{description}</p>
+      {section?.help && (
+        <p className="mt-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-600">
+          {section.help}
+        </p>
+      )}
+      <div className="mt-auto flex flex-wrap gap-2 pt-4">
+        <button
+          type="button"
+          onClick={onPrimary}
+          disabled={!section}
+          className="inline-flex items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {primaryLabel}
+          <ChevronRight size={12} />
+        </button>
+        {secondaryLabel && onSecondary && (
+          <button
+            type="button"
+            onClick={onSecondary}
+            disabled={!section}
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Wrench size={12} />
+            {secondaryLabel}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function NextStepRow({
+  number,
+  title,
+  detail,
+  state,
+  actionLabel,
+  onAction,
+}: {
+  number: string;
+  title: string;
+  detail: string;
+  state: TaskState;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="grid gap-3 px-4 py-3 text-xs md:grid-cols-[32px_minmax(0,1fr)_auto_auto] md:items-center">
+      <span className="flex h-7 w-7 items-center justify-center rounded-md border border-white/10 bg-[#020818]/80 font-mono text-[11px] text-neutral-400">
+        {number}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-medium text-neutral-100">{title}</span>
+        <span className="mt-0.5 block text-[11px] leading-relaxed text-neutral-500">{detail}</span>
+      </span>
+      <TaskBadge state={state} />
+      <button
+        type="button"
+        onClick={onAction}
+        className="inline-flex items-center justify-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
+      >
+        {actionLabel}
+        <ChevronRight size={12} />
+      </button>
     </div>
   );
 }
@@ -2100,6 +2454,18 @@ function OneTierAliasManager({
   const pluralNoun = entryPluralNoun(section);
   const showFilter = items.length > 4 || filter.trim().length > 0;
   const drawerOpen = Boolean(inlineTarget || showCreateItem || openingKey);
+  const summaryKind = summaryKindForSection(section.key);
+  const [summaryReloadKey, setSummaryReloadKey] = useState(0);
+  const [summaryState, setSummaryState] = useState<{
+    loading: boolean;
+    error: string | null;
+    data: ConfigSummaryRows | null;
+  }>({ loading: false, error: null, data: null });
+
+  const handleSaved = useCallback(() => {
+    setSummaryReloadKey((n) => n + 1);
+    onSaved();
+  }, [onSaved]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -2109,6 +2475,39 @@ function OneTierAliasManager({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [drawerOpen, onCloseDrawer]);
+
+  useEffect(() => {
+    if (!summaryKind) {
+      setSummaryState({ loading: false, error: null, data: null });
+      return;
+    }
+    let cancelled = false;
+    setSummaryState((current) => ({ ...current, loading: true, error: null }));
+    void configGetSummaries()
+      .then((data) => {
+        if (cancelled) return;
+        setSummaryState({
+          loading: false,
+          error: null,
+          data: {
+            agents: data.agents,
+            risk_profiles: data.risk_profiles,
+            runtime_profiles: data.runtime_profiles,
+          },
+        });
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setSummaryState((current) => ({
+          ...current,
+          loading: false,
+          error: errorMessage(e),
+        }));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [summaryKind, summaryReloadKey, items]);
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
@@ -2123,7 +2522,9 @@ function OneTierAliasManager({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {loading ? <Loader2 size={13} className="animate-spin text-neutral-500" /> : null}
+            {loading || summaryState.loading ? (
+              <Loader2 size={13} className="animate-spin text-neutral-500" />
+            ) : null}
             <span className="rounded bg-white/[0.05] px-2 py-1 text-[11px] text-neutral-400">
               {items.length} {items.length === 1 ? noun : pluralNoun}
             </span>
@@ -2140,6 +2541,11 @@ function OneTierAliasManager({
         {error && (
           <div className="mt-3">
             <ErrorBox message={error} />
+          </div>
+        )}
+        {summaryState.error && (
+          <div className="mt-3">
+            <ErrorBox message={summaryState.error} />
           </div>
         )}
       </header>
@@ -2173,52 +2579,15 @@ function OneTierAliasManager({
               </div>
             )}
             {!loading && filtered.length > 0 && (
-              <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
-                {filtered.map((item) => {
-                  const selected = selectedItem?.key === item.key;
-                  const busy = openingKey === item.key;
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => onOpenItem(item)}
-                      className={`grid w-full gap-3 px-4 py-3 text-left transition md:grid-cols-[minmax(140px,1fr)_minmax(180px,1.2fr)_auto] md:items-center ${
-                        selected ? "bg-cyan-400/10" : "hover:bg-white/[0.04] hover:text-neutral-100"
-                      }`}
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span
-                          className={`h-2 w-2 shrink-0 rounded-full ${
-                            selected ? "bg-cyan-300" : "bg-emerald-400"
-                          }`}
-                        />
-                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-100">
-                          {item.label || item.key}
-                        </span>
-                        {busy ? (
-                          <Loader2 size={12} className="animate-spin text-neutral-500" />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 truncate font-mono text-[11px] text-neutral-500">
-                        {section.key}.{item.key}
-                      </div>
-                      <div className="flex min-w-0 items-center justify-between gap-3 md:justify-end">
-                        {item.badge && (
-                          <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-neutral-400">
-                            {item.badge}
-                          </span>
-                        )}
-                        <ChevronRight size={14} className="shrink-0 text-neutral-500" />
-                      </div>
-                      {item.description && (
-                        <p className="text-[11px] leading-relaxed text-neutral-500 md:col-span-3">
-                          {item.description}
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              <AliasRows
+                section={section}
+                items={filtered}
+                selectedKey={selectedItem?.key ?? null}
+                openingKey={openingKey}
+                summaryKind={summaryKind}
+                summaries={summaryState.data}
+                onOpenItem={onOpenItem}
+              />
             )}
           </div>
         </main>
@@ -2238,7 +2607,7 @@ function OneTierAliasManager({
                 target={inlineTarget}
                 onBack={onCloseDrawer}
                 backLabel="Close"
-                onSaved={onSaved}
+                onSaved={handleSaved}
               />
             ) : openingKey ? (
               <div className="flex h-full flex-col">
@@ -2260,6 +2629,253 @@ function OneTierAliasManager({
       )}
     </div>
   );
+}
+
+type SummaryKind = "agents" | "risk_profiles" | "runtime_profiles";
+type ConfigSummaryRows = {
+  agents: AgentSummary[];
+  risk_profiles: RiskProfileSummary[];
+  runtime_profiles: RuntimeProfileSummary[];
+};
+
+function AliasRows({
+  section,
+  items,
+  selectedKey,
+  openingKey,
+  summaryKind,
+  summaries,
+  onOpenItem,
+}: {
+  section: ConfigSectionInfo;
+  items: PickerItem[];
+  selectedKey: string | null;
+  openingKey: string | null;
+  summaryKind: SummaryKind | null;
+  summaries: ConfigSummaryRows | null;
+  onOpenItem: (item: PickerItem) => void;
+}) {
+  const summaryByAlias = useMemo(() => {
+    const map = new Map<string, AgentSummary | RiskProfileSummary | RuntimeProfileSummary>();
+    if (summaryKind && summaries) {
+      for (const summary of summaries[summaryKind]) map.set(summary.alias, summary);
+    }
+    return map;
+  }, [summaries, summaryKind]);
+
+  return (
+    <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
+      {items.map((item) => {
+        const selected = selectedKey === item.key;
+        const busy = openingKey === item.key;
+        const summary = summaryByAlias.get(item.key);
+        return (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => onOpenItem(item)}
+            className={`grid w-full gap-3 px-4 py-3 text-left transition md:grid-cols-[minmax(170px,0.9fr)_minmax(260px,1.6fr)_auto] md:items-center ${
+              selected ? "bg-cyan-400/10" : "hover:bg-white/[0.04] hover:text-neutral-100"
+            }`}
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${
+                  selected ? "bg-cyan-300" : statusDotClass(summary, item)
+                }`}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium text-neutral-100">
+                  {item.label || item.key}
+                </span>
+                <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                  {section.key}.{item.key}
+                </span>
+              </span>
+              {busy ? <Loader2 size={12} className="animate-spin text-neutral-500" /> : null}
+            </div>
+
+            <div className="min-w-0">
+              {summaryKind === "agents" && summary ? (
+                <AgentSummaryLine summary={summary as AgentSummary} />
+              ) : summaryKind === "risk_profiles" && summary ? (
+                <RiskProfileSummaryLine summary={summary as RiskProfileSummary} />
+              ) : summaryKind === "runtime_profiles" && summary ? (
+                <RuntimeProfileSummaryLine summary={summary as RuntimeProfileSummary} />
+              ) : (
+                <GenericAliasLine item={item} />
+              )}
+            </div>
+
+            <div className="flex min-w-0 items-center justify-between gap-3 md:justify-end">
+              {summaryBadge(summary, item) && (
+                <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-neutral-400">
+                  {summaryBadge(summary, item)}
+                </span>
+              )}
+              <ChevronRight size={14} className="shrink-0 text-neutral-500" />
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AgentSummaryLine({ summary }: { summary: AgentSummary }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="grid gap-1 text-[11px] text-neutral-400 lg:grid-cols-3">
+        <SummaryValue label="Model" value={summary.model_provider} />
+        <SummaryValue label="Safety" value={summary.risk_profile} />
+        <SummaryValue label="Runtime" value={summary.runtime_profile} />
+      </div>
+      <SummaryPills
+        items={[
+          summary.channels.length ? `${summary.channels.length} channels` : "No channels",
+          summary.peer_groups.length ? `${summary.peer_groups.length} groups` : "",
+          bundleCount(summary) ? `${bundleCount(summary)} bundles` : "",
+        ]}
+      />
+      {summary.missing.length > 0 && (
+        <div className="truncate text-[10px] text-amber-300">
+          Missing: {summary.missing.join(", ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RiskProfileSummaryLine({ summary }: { summary: RiskProfileSummary }) {
+  const approval = summary.require_approval_for_medium_risk
+    ? "medium risk asks"
+    : "medium risk not set";
+  const sandbox =
+    summary.sandbox_enabled === null
+      ? "sandbox inherits"
+      : summary.sandbox_enabled
+        ? `sandbox ${summary.sandbox_backend || "enabled"}`
+        : "sandbox off";
+  return (
+    <div className="space-y-1.5">
+      <div className="grid gap-1 text-[11px] text-neutral-400 lg:grid-cols-3">
+        <SummaryValue label="Level" value={summary.level} />
+        <SummaryValue label="Approval" value={approval} />
+        <SummaryValue label="Sandbox" value={sandbox} />
+      </div>
+      <SummaryPills
+        items={[
+          `${summary.allowed_commands.length} commands`,
+          `${summary.auto_approve.length} auto`,
+          `${summary.always_ask.length} ask`,
+          usedByLabel(summary.used_by_agents),
+        ]}
+      />
+    </div>
+  );
+}
+
+function RuntimeProfileSummaryLine({ summary }: { summary: RuntimeProfileSummary }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="grid gap-1 text-[11px] text-neutral-400 lg:grid-cols-3">
+        <SummaryValue label="Mode" value={summary.agentic ? "agentic" : "single turn"} />
+        <SummaryValue label="Iterations" value={inheritNumber(summary.max_tool_iterations)} />
+        <SummaryValue label="Timeout" value={secondsLabel(summary.shell_timeout_secs)} />
+      </div>
+      <SummaryPills
+        items={[
+          `${summary.max_actions_per_hour ?? 0} actions/hr`,
+          centsLabel(summary.max_cost_per_day_cents),
+          summary.parallel_tools ? "parallel tools" : "",
+          usedByLabel(summary.used_by_agents),
+        ]}
+      />
+    </div>
+  );
+}
+
+function GenericAliasLine({ item }: { item: PickerItem }) {
+  return item.description ? (
+    <p className="text-[11px] leading-relaxed text-neutral-500">{item.description}</p>
+  ) : (
+    <span className="text-[11px] text-neutral-500">Open details</span>
+  );
+}
+
+function SummaryValue({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="min-w-0 truncate">
+      <span className="text-neutral-600">{label}: </span>
+      <span className="font-mono text-neutral-300">{value || "Not set"}</span>
+    </span>
+  );
+}
+
+function SummaryPills({ items }: { items: string[] }) {
+  const visible = items.filter(Boolean);
+  if (visible.length === 0) return null;
+  return (
+    <div className="flex min-w-0 flex-wrap gap-1">
+      {visible.map((item) => (
+        <span
+          key={item}
+          className="rounded bg-white/[0.045] px-1.5 py-0.5 text-[10px] text-neutral-500"
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function summaryKindForSection(sectionKey: string): SummaryKind | null {
+  if (sectionKey === "agents") return "agents";
+  if (sectionKey === "risk_profiles") return "risk_profiles";
+  if (sectionKey === "runtime_profiles") return "runtime_profiles";
+  return null;
+}
+
+function summaryBadge(
+  summary: AgentSummary | RiskProfileSummary | RuntimeProfileSummary | undefined,
+  item: PickerItem,
+) {
+  if (summary && "dispatchable" in summary) {
+    return summary.dispatchable ? "ready" : "needs setup";
+  }
+  return item.badge;
+}
+
+function statusDotClass(
+  summary: AgentSummary | RiskProfileSummary | RuntimeProfileSummary | undefined,
+  item: PickerItem,
+) {
+  if (summary && "dispatchable" in summary) {
+    return summary.dispatchable ? "bg-emerald-400" : "bg-amber-400";
+  }
+  return item.badge ? "bg-emerald-400" : "bg-white/[0.12]";
+}
+
+function bundleCount(summary: AgentSummary) {
+  return (
+    summary.skill_bundles.length + summary.knowledge_bundles.length + summary.mcp_bundles.length
+  );
+}
+
+function usedByLabel(agents: string[]) {
+  return agents.length ? `used by ${agents.length}` : "unused";
+}
+
+function inheritNumber(value: number | null) {
+  return value && value > 0 ? String(value) : "inherit";
+}
+
+function secondsLabel(value: number | null) {
+  return value && value > 0 ? `${value}s` : "inherit";
+}
+
+function centsLabel(value: number | null) {
+  return value && value > 0 ? `$${(value / 100).toFixed(2)}/day` : "budget inherit";
 }
 
 function DrawerHeader({
@@ -2492,7 +3108,9 @@ function ConfigFieldForm({
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<"fields" | "setup">("fields");
+  const [activeTab, setActiveTab] = useState<"fields" | "setup">(
+    target.initialTab === "setup" ? "setup" : "fields",
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2521,8 +3139,8 @@ function ConfigFieldForm({
   const setupTargets = useMemo(() => setupTargetsForPrefix(target.prefix), [target.prefix]);
 
   useEffect(() => {
-    setActiveTab("fields");
-  }, [target.prefix]);
+    setActiveTab(target.initialTab === "setup" ? "setup" : "fields");
+  }, [target.prefix, target.initialTab]);
 
   async function save() {
     if (dirtyEntries.length === 0) return;
@@ -3160,6 +3778,21 @@ function ErrorBox({ message }: { message: string }) {
   );
 }
 
+function sectionByRoot(sections: ConfigSectionInfo[], root: string) {
+  return (
+    sections.find((section) => section.key === root) ??
+    sections.find((section) => section.key.startsWith(`${root}.`)) ??
+    null
+  );
+}
+
+function statusState(section: ConfigSectionInfo | null): TaskState {
+  if (!section) return "neutral";
+  if (section.ready) return "ready";
+  if (section.completed) return "needs";
+  return "neutral";
+}
+
 function LoadingInline({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
@@ -3525,7 +4158,8 @@ function modelProviderHint(item: PickerItem) {
 function channelHint(item: PickerItem) {
   if (item.description) return item.description;
   const name = (item.label || item.key).toLowerCase();
-  if (name.includes("bluesky")) return "Receive posts, mentions, or replies from a Bluesky account.";
+  if (name.includes("bluesky"))
+    return "Receive posts, mentions, or replies from a Bluesky account.";
   if (name.includes("webhook")) return "Accept incoming HTTP events from another app or service.";
   if (name.includes("discord")) return "Connect a Discord server or bot-style message source.";
   if (name.includes("slack")) return "Route Slack workspace messages to a ZeroClaw agent.";

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type Dispatch } from "react";
 import { ChatClient, type ChatFrame, type ChatMode } from "@/api/ws-chat";
 import type { ChatAction } from "./chat-reducer";
+import type { ChatModelOverride } from "./chat-types";
 
 export function useChatTransport({
   agentAlias,
   mode,
   workspaceRoot,
   workspaceDir,
+  modelOverride,
   connectionSeed,
   dispatch,
   loadSelected,
@@ -20,6 +22,7 @@ export function useChatTransport({
   mode: ChatMode;
   workspaceRoot: string | null;
   workspaceDir: string | null;
+  modelOverride: ChatModelOverride | null;
   connectionSeed: number;
   dispatch: Dispatch<ChatAction>;
   loadSelected: () => Promise<string | null>;
@@ -71,11 +74,14 @@ export function useChatTransport({
       if (storedSessionId && workspaceRoot) {
         void assignWorkspace(storedSessionId);
       }
+      const newSessionModelOverride = storedSessionId ? null : modelOverride;
 
       client = new ChatClient({
         agentAlias,
         mode,
         workspaceDir,
+        modelProvider: newSessionModelOverride?.modelProvider ?? null,
+        model: newSessionModelOverride?.model ?? null,
         sessionId: storedSessionId ?? undefined,
         onFrame: handleFrame,
         onOpen: () => setConnected(true),
@@ -101,6 +107,7 @@ export function useChatTransport({
     mode,
     workspaceRoot,
     workspaceDir,
+    modelOverride,
     connectionSeed,
     dispatch,
     loadSelected,

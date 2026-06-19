@@ -36,7 +36,13 @@ export default [
       "@typescript-eslint/no-unused-vars": "off",
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/rules-of-hooks": "error",
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        {
+          allowConstantExport: true,
+          allowExportNames: ["useConnections", "useWorkspace"],
+        },
+      ],
     },
   },
   {

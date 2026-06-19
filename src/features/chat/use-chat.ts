@@ -8,9 +8,15 @@ import { chatReducer } from "./chat-reducer";
 import { useChatTransport } from "./use-chat-transport";
 import { useSessionService } from "./use-session-service";
 import { useTranscriptCache } from "./use-transcript-cache";
-import type { UseChatOptions } from "./chat-types";
+import type { ChatModelOverride, UseChatOptions } from "./chat-types";
 
-export type { ChatMessage, MessageRole, NormalizedSession, UseChatOptions } from "./chat-types";
+export type {
+  ChatMessage,
+  ChatModelOverride,
+  MessageRole,
+  NormalizedSession,
+  UseChatOptions,
+} from "./chat-types";
 export { normalizeSession, sessionSort, shortSessionName } from "./chat-reducer";
 
 export function useChat({
@@ -24,6 +30,7 @@ export function useChat({
     sessionId: null,
   });
   const [connectionSeed, setConnectionSeed] = useState(0);
+  const [modelOverride, setModelOverride] = useState<ChatModelOverride | null>(null);
   const hydratedSessionRef = useRef<string | null>(null);
 
   const sessions = useSessionService(agentAlias);
@@ -89,6 +96,7 @@ export function useChat({
     mode: mode as ChatMode,
     workspaceRoot,
     workspaceDir,
+    modelOverride,
     connectionSeed,
     dispatch,
     loadSelected,
@@ -101,6 +109,7 @@ export function useChat({
 
   const selectSession = useCallback(
     (sessionId: string | null) => {
+      setModelOverride(null);
       void saveSelected(sessionId);
       if (sessionId) {
         void assignWorkspace(sessionId);
@@ -112,9 +121,16 @@ export function useChat({
     [assignWorkspace, saveSelected],
   );
 
-  const newSession = useCallback(() => {
-    selectSession(null);
-  }, [selectSession]);
+  const newSession = useCallback(
+    (override?: ChatModelOverride | null) => {
+      setModelOverride(override ?? null);
+      void saveSelected(null);
+      hydratedSessionRef.current = null;
+      dispatch({ type: "select-session", sessionId: null });
+      setConnectionSeed((n) => n + 1);
+    },
+    [saveSelected],
+  );
 
   const renameSession = useCallback(
     async (sessionId: string, name: string) => {

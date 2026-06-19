@@ -38,3 +38,8 @@ export interface UseChatOptions {
   workspaceRoot?: string | null;
   workspaceDir?: string | null;
 }
+
+export interface ChatModelOverride {
+  modelProvider?: string | null;
+  model?: string | null;
+}

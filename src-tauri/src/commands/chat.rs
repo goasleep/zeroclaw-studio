@@ -18,6 +18,8 @@ pub struct ChatConnectRequest {
     pub token: String,
     pub mode: Option<ChatMode>,
     pub workspace_dir: Option<String>,
+    pub model_provider: Option<String>,
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -72,6 +74,8 @@ pub async fn chat_connect<R: Runtime>(
             token: req.token,
             mode: req.mode.unwrap_or(ChatMode::Chat),
             workspace_dir: req.workspace_dir,
+            model_provider: req.model_provider,
+            model: req.model,
         },
     )
     .await

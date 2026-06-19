@@ -1,6 +1,7 @@
 //! Tauri command surface exposed to the frontend.
 
 pub mod chat;
+pub mod config_summary;
 pub mod connection;
 pub mod fs;
 pub mod gateway;
