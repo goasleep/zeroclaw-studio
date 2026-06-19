@@ -12,7 +12,7 @@ import {
   type MemoryChoice,
   type QuickstartPeerGroup,
   type QuickstartState,
-} from "@/api/client";
+} from "@/api/quickstart";
 
 type WizardStep = "loading" | "form" | "validating" | "applying" | "done" | "error";
 

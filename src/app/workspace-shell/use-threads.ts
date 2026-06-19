@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { apiSessionDelete, apiSessionRename, apiSessions } from "@/api/client";
+import { apiSessionDelete, apiSessionRename, apiSessions } from "@/api/sessions";
 import { normalizeSession, sessionSort, type NormalizedSession } from "@/features/chat/use-chat";
 import { loadSessionWorkspaceMap } from "@/features/chat/chat-local-state";
 

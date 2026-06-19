@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useWorkspace } from "@/app/workspace-context";
-import { apiQuickstartState } from "@/api/client";
+import { apiQuickstartState } from "@/api/quickstart";
 import { ChatWorkspace } from "./workspace-shell/ChatWorkspace";
 import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
 import { SettingsPage } from "./workspace-shell/SettingsPage";

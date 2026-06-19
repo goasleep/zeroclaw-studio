@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Pause, Play, RefreshCw } from "lucide-react";
-import { apiLogs } from "@/api/client";
-import type { LogEvent } from "@/api/client";
+import { apiLogs, type LogEvent } from "@/api/logs";
 
 export function LogsPanel() {
   const [events, setEvents] = useState<LogEvent[]>([]);

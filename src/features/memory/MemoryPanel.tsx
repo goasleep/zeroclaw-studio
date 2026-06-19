@@ -16,7 +16,6 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import {
-  ApiError,
   apiConfigList,
   apiConfigPatch,
   apiConfigPicker,
@@ -26,7 +25,8 @@ import {
   type ConfigSectionInfo,
   type PatchOp,
   type PickerItem,
-} from "@/api/client";
+} from "@/api/config";
+import { ApiError } from "@/api/base";
 
 type LoadState =
   | { kind: "loading" }

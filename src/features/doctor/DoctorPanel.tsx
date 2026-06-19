@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, Play } from "lucide-react";
-import { apiDoctor } from "@/api/client";
+import { apiDoctor } from "@/api/tools";
 
 export function DoctorPanel() {
   const [busy, setBusy] = useState(false);
