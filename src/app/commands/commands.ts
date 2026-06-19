@@ -127,13 +127,21 @@ export function isAppCommandId(value: unknown): value is AppCommandId {
   return typeof value === "string" && COMMAND_IDS.has(value);
 }
 
-export function appCommandFromEvent(event: Event): AppCommandId | null {
-  const detail = (event as CustomEvent<AppCommandEventDetail | AppCommandId>).detail;
-  if (isAppCommandId(detail)) return detail;
-  if (detail && typeof detail === "object" && isAppCommandId(detail.command)) {
-    return detail.command;
+export function appCommandFromPayload(payload: unknown): AppCommandId | null {
+  if (isAppCommandId(payload)) return payload;
+  if (
+    payload &&
+    typeof payload === "object" &&
+    isAppCommandId((payload as AppCommandEventDetail).command)
+  ) {
+    return (payload as AppCommandEventDetail).command;
   }
   return null;
+}
+
+export function appCommandFromEvent(event: Event): AppCommandId | null {
+  const detail = (event as CustomEvent<AppCommandEventDetail | AppCommandId>).detail;
+  return appCommandFromPayload(detail);
 }
 
 export function dispatchAppCommand(command: AppCommandId, source: AppCommandSource = "ui") {

@@ -1,6 +1,7 @@
 // Workspace shell — page-level state, deep links, and native menu commands.
 
 import { useCallback, useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useWorkspace } from "@/app/workspace-context";
 import {
@@ -8,6 +9,7 @@ import {
   APP_COMMANDS,
   SETTINGS_COMMAND_SECTIONS,
   appCommandFromEvent,
+  appCommandFromPayload,
   type AppCommandId,
 } from "@/app/commands/commands";
 import { apiQuickstartState } from "@/api/quickstart";
@@ -118,6 +120,9 @@ export function WorkspaceShell() {
   }, [activeAgent, focusComposer, page, pendingSessionId]);
 
   useEffect(() => {
+    let disposed = false;
+    let unlistenCommand: (() => void) | undefined;
+
     function runCommand(command: AppCommandId) {
       const settingsTarget = SETTINGS_COMMAND_SECTIONS[command];
       if (settingsTarget) {
@@ -195,6 +200,16 @@ export function WorkspaceShell() {
       runCommand(APP_COMMANDS.workspaceFocusCode.id);
     }
 
+    void listen(APP_COMMAND_EVENT, (event) => {
+      const command = appCommandFromPayload(event.payload);
+      if (command) runCommand(command);
+    }).then((unlisten) => {
+      if (disposed) {
+        unlisten();
+      } else {
+        unlistenCommand = unlisten;
+      }
+    });
     window.addEventListener(APP_COMMAND_EVENT, onCommand);
     window.addEventListener("zeroclaw://open-settings", onOpenSettings);
     window.addEventListener("zeroclaw://deep-link", onDeepLink);
@@ -202,6 +217,8 @@ export function WorkspaceShell() {
     window.addEventListener("zeroclaw://focus-chat", onFocusChat);
     window.addEventListener("zeroclaw://focus-code", onFocusCode);
     return () => {
+      disposed = true;
+      unlistenCommand?.();
       window.removeEventListener(APP_COMMAND_EVENT, onCommand);
       window.removeEventListener("zeroclaw://open-settings", onOpenSettings);
       window.removeEventListener("zeroclaw://deep-link", onDeepLink);

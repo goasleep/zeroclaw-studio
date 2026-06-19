@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { ConnectionProvider, useConnections } from "@/app/connection-context";
 import { ConnectionPicker } from "@/app/ConnectionPicker";
 import { WelcomeScreen } from "@/app/WelcomeScreen";
 import { AddConnectionDialog } from "@/app/AddConnectionDialog";
 import { WorkspaceProvider } from "@/app/workspace-context";
 import { WorkspaceShell } from "@/app/WorkspaceShell";
-import { APP_COMMAND_EVENT, APP_COMMANDS, appCommandFromEvent } from "@/app/commands/commands";
+import {
+  APP_COMMAND_EVENT,
+  APP_COMMANDS,
+  appCommandFromEvent,
+  appCommandFromPayload,
+} from "@/app/commands/commands";
 import { useGlobalQuickInvoke } from "@/workspace/shortcuts/useGlobalQuickInvoke";
 import { useNotifications } from "@/workspace/notifications/useNotifications";
 import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
@@ -33,23 +39,41 @@ function Shell() {
   }, []);
 
   useEffect(() => {
+    let disposed = false;
+    let unlistenCommand: (() => void) | undefined;
+
     function retryActiveConnection() {
       void retry();
     }
 
-    function onCommand(e: Event) {
-      if (appCommandFromEvent(e) === APP_COMMANDS.workspaceRetryConnection.id) {
+    function runCommand(command: unknown) {
+      if (appCommandFromPayload(command) === APP_COMMANDS.workspaceRetryConnection.id) {
         retryActiveConnection();
       }
+    }
+
+    function onCommand(e: Event) {
+      runCommand(appCommandFromEvent(e));
     }
 
     function onTrayAction(e: Event) {
       const action = (e as CustomEvent<string>).detail;
       if (action === "retry-active-connection") retryActiveConnection();
     }
+    void listen(APP_COMMAND_EVENT, (event) => {
+      runCommand(event.payload);
+    }).then((unlisten) => {
+      if (disposed) {
+        unlisten();
+      } else {
+        unlistenCommand = unlisten;
+      }
+    });
     window.addEventListener(APP_COMMAND_EVENT, onCommand);
     window.addEventListener("zeroclaw://tray-action", onTrayAction);
     return () => {
+      disposed = true;
+      unlistenCommand?.();
       window.removeEventListener(APP_COMMAND_EVENT, onCommand);
       window.removeEventListener("zeroclaw://tray-action", onTrayAction);
     };
