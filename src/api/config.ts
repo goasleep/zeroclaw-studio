@@ -143,10 +143,10 @@ export const apiConfigCreateMapKey = (path: string, key: string, template?: stri
   });
 
 export const apiConfigDeleteMapKey = (path: string, key: string) =>
-  apiFetch<{ deleted?: boolean }>("/api/config/map-key", {
-    method: "DELETE",
-    body: JSON.stringify({ path, key }),
-  });
+  apiFetch<{ deleted?: boolean }>(
+    `/api/config/map-key?path=${encodeURIComponent(path)}&key=${encodeURIComponent(key)}`,
+    { method: "DELETE" },
+  );
 
 export const apiConfigCatalog = (path?: string) =>
   apiFetch<unknown>(`/api/config/catalog${path ? `?path=${encodeURIComponent(path)}` : ""}`);

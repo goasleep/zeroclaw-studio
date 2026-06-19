@@ -20,6 +20,7 @@ import {
   Trash2,
   TriangleAlert,
   Wrench,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -70,6 +71,7 @@ const GROUP_ORDER = [
 type PanelMode = "overview" | "sections" | "advanced";
 type StatusFilter = "all" | "needs" | "ready";
 type FormTarget = { prefix: string; title: string; subtitle?: string };
+type TaskState = "ready" | "needs" | "neutral";
 export type ConfigCategoryId =
   | "models-providers"
   | "agents"
@@ -94,8 +96,8 @@ interface ConfigCategory {
 const CONFIG_CATEGORIES: Record<ConfigCategoryId, ConfigCategory> = {
   "models-providers": {
     id: "models-providers",
-    label: "Models & Providers",
-    description: "Configure model providers, aliases, API keys, base URLs, and model defaults.",
+    label: "Model Connections",
+    description: "Connect a model service, add credentials, and make it available to agents.",
     sectionKeys: ["providers.models"],
     icon: Sparkles,
     emptyTitle: "No model provider sections",
@@ -518,7 +520,14 @@ function ConfigCategoryWorkspace({
             </button>
             <button
               type="button"
-              onClick={onAdvanced}
+              onClick={() => {
+                if (showingAdvanced) {
+                  const fallbackSection = activeSection ?? orderedSections[0];
+                  if (fallbackSection) onSection(fallbackSection);
+                  return;
+                }
+                onAdvanced();
+              }}
               className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs ${
                 showingAdvanced
                   ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
@@ -579,6 +588,17 @@ function ConfigCategoryWorkspace({
       </main>
     </div>
   );
+}
+
+function TaskBadge({ state }: { state: TaskState }) {
+  const label = state === "ready" ? "ready" : state === "needs" ? "needs setup" : "next";
+  const tone =
+    state === "ready"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : state === "needs"
+        ? "bg-amber-500/10 text-amber-300"
+        : "bg-white/[0.05] text-neutral-500";
+  return <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${tone}`}>{label}</span>;
 }
 
 function ConfigOverview({
@@ -958,6 +978,55 @@ function PickerSection({
   const [selectedItem, setSelectedItem] = useState<PickerItem | null>(null);
   const [newItemName, setNewItemName] = useState("");
   const [creatingItem, setCreatingItem] = useState(false);
+  const [showCreateItem, setShowCreateItem] = useState(false);
+  const [openingKey, setOpeningKey] = useState<string | null>(null);
+  const [inlineTarget, setInlineTarget] = useState<FormTarget | null>(null);
+  const typed =
+    section.shape === "typed_family_map" || section.shape === undefined || section.shape === null;
+  const oneTier = section.shape === "one_tier_alias_map";
+
+  const openOneTierItem = useCallback(
+    async (item: PickerItem) => {
+      setOpeningKey(item.key);
+      setShowCreateItem(false);
+      setError(null);
+      try {
+        const result = await apiConfigSelectItem(section.key, item.key);
+        setSelectedItem(item);
+        setInlineTarget({
+          prefix: result.fields_prefix,
+          title: item.label || item.key,
+          subtitle: result.created ? `Created new ${entryNoun(section)}` : undefined,
+        });
+      } catch (e) {
+        setSelectedItem(null);
+        setInlineTarget(null);
+        setError(errorMessage(e));
+      } finally {
+        setOpeningKey(null);
+      }
+    },
+    [section],
+  );
+
+  const openBackendItem = useCallback(
+    async (item: PickerItem) => {
+      setError(null);
+      try {
+        const result = await apiConfigSelectItem(section.key, item.key);
+        onSaved();
+        onTarget({
+          prefix: result.fields_prefix,
+          title: item.label || item.key,
+          subtitle: result.created ? `Created ${entryNoun(section)} from picker` : undefined,
+        });
+      } catch (e) {
+        setSelectedItem(null);
+        setError(errorMessage(e));
+      }
+    },
+    [onSaved, onTarget, section],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -965,12 +1034,15 @@ function PickerSection({
     setError(null);
     setFilter("");
     setNewItemName("");
+    setShowCreateItem(false);
+    setOpeningKey(null);
+    setInlineTarget(null);
     setSelectedItem(null);
     void apiConfigPicker(section.key)
       .then((resp) => {
         if (cancelled) return;
         setItems(resp.items);
-        setSelectedItem(resp.items[0] ?? null);
+        setSelectedItem(typed ? (resp.items[0] ?? null) : null);
       })
       .catch((e) => {
         if (!cancelled) setError(errorMessage(e));
@@ -981,7 +1053,7 @@ function PickerSection({
     return () => {
       cancelled = true;
     };
-  }, [section.key]);
+  }, [typed, section.key]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -993,20 +1065,42 @@ function PickerSection({
         )
       : items;
   }, [filter, items]);
+  const selectableItems = useMemo(() => {
+    if (!selectedItem || filtered.some((item) => item.key === selectedItem.key)) return filtered;
+    return [selectedItem, ...filtered];
+  }, [filtered, selectedItem]);
 
-  async function selectBackend(item: PickerItem, alias?: string) {
-    const result = await apiConfigSelectItem(section.key, item.key, alias);
-    onSaved();
-    onTarget({
-      prefix: result.fields_prefix,
-      title: alias ? `${item.label} / ${alias}` : item.label,
-      subtitle: result.created ? "Created from section picker" : section.help,
-    });
+  if (section.key === "providers.models" && typed) {
+    return (
+      <ModelConnectionsPanel
+        section={section}
+        items={items}
+        filtered={filtered}
+        filter={filter}
+        loading={loading}
+        error={error}
+        onFilterChange={setFilter}
+        onTarget={onTarget}
+        onSaved={onSaved}
+      />
+    );
   }
 
-  const typed =
-    section.shape === "typed_family_map" || section.shape === undefined || section.shape === null;
-  const oneTier = section.shape === "one_tier_alias_map";
+  if (section.key === "channels" && typed) {
+    return (
+      <ChannelConnectionsPanel
+        section={section}
+        items={items}
+        filtered={filtered}
+        filter={filter}
+        loading={loading}
+        error={error}
+        onFilterChange={setFilter}
+        onTarget={onTarget}
+        onSaved={onSaved}
+      />
+    );
+  }
 
   async function createOneTierItem() {
     const clean = newItemName.trim();
@@ -1022,13 +1116,14 @@ function PickerSection({
           : [...current, nextItem],
       );
       setSelectedItem(nextItem);
-      setNewItemName("");
-      onSaved();
-      onTarget({
+      setInlineTarget({
         prefix: result.fields_prefix,
         title: clean,
-        subtitle: result.created ? "Created new entry" : section.help,
+        subtitle: result.created ? `Created new ${entryNoun(section)}` : section.help,
       });
+      setNewItemName("");
+      setShowCreateItem(false);
+      onSaved();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -1036,99 +1131,141 @@ function PickerSection({
     }
   }
 
+  if (oneTier) {
+    return (
+      <OneTierAliasManager
+        section={section}
+        items={items}
+        filtered={filtered}
+        filter={filter}
+        selectedItem={selectedItem}
+        newItemName={newItemName}
+        loading={loading}
+        creatingItem={creatingItem}
+        showCreateItem={showCreateItem || items.length === 0}
+        openingKey={openingKey}
+        error={error}
+        inlineTarget={inlineTarget}
+        onFilterChange={setFilter}
+        onNewItemNameChange={setNewItemName}
+        onStartCreate={() => {
+          setInlineTarget(null);
+          setSelectedItem(null);
+          setShowCreateItem(true);
+        }}
+        onOpenItem={(item) => void openOneTierItem(item)}
+        onCreateItem={() => void createOneTierItem()}
+        onCloseDrawer={() => {
+          setShowCreateItem(false);
+          setInlineTarget(null);
+        }}
+        onSaved={onSaved}
+      />
+    );
+  }
+
   return (
-    <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
-        <header className="shrink-0 border-b border-white/10 p-3">
-          <h2 className="truncate text-sm font-semibold text-neutral-100">{section.label}</h2>
-          {section.help && (
-            <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-neutral-500">
-              {section.help}
-            </p>
-          )}
-          <input
-            type="search"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter choices..."
-            className="mt-3 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
-          />
-          {oneTier && (
-            <div className="mt-3 rounded-md border border-dashed border-white/10 bg-white/[0.025] p-2">
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium text-neutral-300">
-                <Plus size={12} className="text-cyan-300" />
-                {createEntryLabel(section)}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void createOneTierItem();
-                  }}
-                  placeholder={entryNamePlaceholder(section)}
-                  className="min-w-0 flex-1 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => void createOneTierItem()}
-                  disabled={!newItemName.trim() || creatingItem}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-sky-400 px-2.5 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {creatingItem ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Plus size={12} />
-                  )}
-                  Create
-                </button>
-              </div>
-            </div>
-          )}
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
-          {loading && <LoadingInline label="Loading picker..." />}
-          {error && <ErrorBox message={error} />}
-          {!loading && !error && filtered.length === 0 && (
-            <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
-              No choices match this filter.
-            </div>
-          )}
-          <div className="space-y-1">
-            {filtered.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setSelectedItem(item)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition ${
-                  selectedItem?.key === item.key
-                    ? "bg-cyan-400/10 text-cyan-100"
-                    : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
-                }`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-medium">{item.label}</span>
-                  <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
-                    {item.key}
-                  </span>
-                </span>
-                {item.badge && <Badge label={item.badge} />}
-              </button>
-            ))}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <header className="shrink-0 border-b border-white/10 px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-sm font-semibold text-neutral-100">{section.label}</h2>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 text-[11px] text-neutral-500">
+            {loading ? <Loader2 size={12} className="animate-spin" /> : null}
+            <span>{choiceCountLabel(section, items.length)}</span>
           </div>
         </div>
-      </aside>
 
-      <div className="min-h-0 min-w-0 overflow-hidden">
+        <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(220px,360px)_minmax(180px,1fr)]">
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+              {pickerSelectionLabel(section)}
+            </span>
+            <select
+              value={selectedItem?.key ?? ""}
+              onChange={(e) => {
+                const next = items.find((item) => item.key === e.target.value) ?? null;
+                setSelectedItem(next);
+                if (oneTier && next) void openOneTierItem(next);
+                if (!oneTier && !typed && next) void openBackendItem(next);
+              }}
+              disabled={loading || selectableItems.length === 0}
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Select {pickerSelectionOption(section)}</option>
+              {selectableItems.map((item) => (
+                <option key={item.key} value={item.key}>
+                  {item.badge ? `${item.label} (${item.badge})` : item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+              Filter
+            </span>
+            <div className="relative">
+              <Search
+                size={13}
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+              />
+              <input
+                type="search"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder={`Filter ${pickerSelectionOption(section)}s...`}
+                className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+              />
+            </div>
+          </label>
+        </div>
+
+        {oneTier && (
+          <div className="mt-3 grid gap-2 rounded-md border border-dashed border-white/10 bg-white/[0.025] p-2 sm:grid-cols-[auto_minmax(160px,1fr)_auto] sm:items-center">
+            <div className="flex items-center gap-2 text-xs font-medium text-neutral-300">
+              <Plus size={12} className="text-cyan-300" />
+              {createEntryLabel(section)}
+            </div>
+            <input
+              type="text"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void createOneTierItem();
+              }}
+              placeholder={entryNamePlaceholder(section)}
+              className="min-w-0 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+            />
+            <button
+              type="button"
+              onClick={() => void createOneTierItem()}
+              disabled={!newItemName.trim() || creatingItem}
+              className="inline-flex shrink-0 items-center justify-center gap-1 rounded-md bg-sky-400 px-2.5 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {creatingItem ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+              {createButtonLabel(section)}
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-3">
+            <ErrorBox message={error} />
+          </div>
+        )}
+        {!loading && !error && filtered.length === 0 && (
+          <div className="mt-3 rounded-md border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
+            No {pickerSelectionOption(section)}s match this filter.
+          </div>
+        )}
+      </header>
+
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
         {selectedItem ? (
           oneTier ? (
-            <OneTierAliasPanel
-              section={section}
-              item={selectedItem}
-              onTarget={onTarget}
-              onSaved={onSaved}
-            />
+            <LoadingInline label={`Opening ${entryNoun(section)}...`} />
           ) : typed ? (
             <TypedAliasPanel
               section={section}
@@ -1137,25 +1274,1075 @@ function PickerSection({
               onSaved={onSaved}
             />
           ) : (
-            <BackendPanel
-              section={section}
-              item={selectedItem}
-              onSelect={(alias) => void selectBackend(selectedItem, alias)}
-            />
+            <LoadingInline label="Opening fields..." />
           )
         ) : oneTier ? (
           <EmptyState
             icon={<Plus size={28} />}
             title={`Create or select ${entryNoun(section)}`}
-            body={`Use the list on the left to add a ${entryNoun(section)} or open an existing one.`}
+            body={`Add a ${entryNoun(section)} or open an existing one.`}
           />
         ) : (
           <EmptyState
             icon={<Plus size={28} />}
             title="Pick a choice"
-            body="Select a row to create, choose, or inspect its config fields."
+            body="Choose an option above to create, choose, or inspect its config fields."
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+type ModelConnection = {
+  providerKey: string;
+  providerLabel: string;
+  alias: string;
+  badge?: string;
+};
+
+function ModelConnectionsPanel({
+  section,
+  items,
+  filtered,
+  filter,
+  loading,
+  error,
+  onFilterChange,
+  onTarget,
+  onSaved,
+}: {
+  section: ConfigSectionInfo;
+  items: PickerItem[];
+  filtered: PickerItem[];
+  filter: string;
+  loading: boolean;
+  error: string | null;
+  onFilterChange: (value: string) => void;
+  onTarget: (target: FormTarget) => void;
+  onSaved: () => void;
+}) {
+  const [connections, setConnections] = useState<ModelConnection[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(true);
+  const [connectionsError, setConnectionsError] = useState<string | null>(null);
+  const [alias, setAlias] = useState("default");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ModelConnection | null>(null);
+  const recommended = useMemo(() => recommendedModelProviders(items), [items]);
+
+  const loadConnections = useCallback(async () => {
+    setLoadingConnections(true);
+    setConnectionsError(null);
+    try {
+      const data = await apiConfigList(section.key);
+      setConnections(modelConnectionsFromEntries(data.entries, section.key, items));
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setLoadingConnections(false);
+    }
+  }, [items, section.key]);
+
+  useEffect(() => {
+    void loadConnections();
+  }, [loadConnections]);
+
+  async function openConnection(item: PickerItem, nextAlias = alias) {
+    const clean = nextAlias.trim() || "default";
+    const key = `${item.key}:${clean}`;
+    setBusyKey(key);
+    setConnectionsError(null);
+    try {
+      const result = await apiConfigSelectItem(section.key, item.key, clean);
+      onSaved();
+      await loadConnections();
+      onTarget({
+        prefix: result.fields_prefix,
+        title: `${item.label || item.key} / ${clean}`,
+        subtitle: result.created
+          ? "New connection created. Add an API key, choose a default model, then save."
+          : "Review this model connection, credentials, default model, and endpoint settings.",
+      });
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function deleteConnection(connection: ModelConnection) {
+    const key = `${connection.providerKey}:${connection.alias}`;
+    setDeletingKey(key);
+    setConnectionsError(null);
+    try {
+      await apiConfigDeleteMapKey(`${section.key}.${connection.providerKey}`, connection.alias);
+      setDeleteTarget(null);
+      onSaved();
+      await loadConnections();
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setDeletingKey(null);
+    }
+  }
+
+  return (
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <section className="rounded-lg border border-cyan-400/15 bg-cyan-400/[0.035] p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm font-semibold text-neutral-100">Connect a model service</h2>
+                <Badge label="guided setup" />
+              </div>
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
+                Pick a provider, keep the connection name as default, then add credentials on the
+                next screen. Advanced provider settings stay available after the connection opens.
+              </p>
+            </div>
+            <label className="block w-full min-w-0 sm:w-60">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                Connection name
+              </span>
+              <input
+                type="text"
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                placeholder="default"
+                className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+              />
+            </label>
+          </div>
+        </section>
+
+        {(error || connectionsError) && <ErrorBox message={error || connectionsError || ""} />}
+
+        <section>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-neutral-100">Saved connections</h3>
+            <span className="rounded bg-white/[0.05] px-2 py-1 text-[11px] text-neutral-400">
+              {loadingConnections ? "Loading..." : `${connections.length} saved`}
+            </span>
+          </div>
+
+          {loadingConnections ? (
+            <LoadingInline label="Loading saved model connections..." />
+          ) : connections.length === 0 ? (
+            <div className="rounded-md border border-dashed border-white/10 bg-white/[0.025] px-4 py-5">
+              <h4 className="text-sm font-medium text-neutral-100">No model connections yet</h4>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                Start with one of the recommended providers below. The connection will appear here
+                after it is created.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
+              {connections.map((connection) => {
+                const item = items.find((candidate) => candidate.key === connection.providerKey);
+                const busy = busyKey === `${connection.providerKey}:${connection.alias}`;
+                const deleting = deletingKey === `${connection.providerKey}:${connection.alias}`;
+                return (
+                  <div
+                    key={`${connection.providerKey}:${connection.alias}`}
+                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(140px,1fr)_minmax(120px,180px)_auto] md:items-center"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-medium text-neutral-100">
+                          {connection.providerLabel}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                          {connection.providerKey}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="font-mono text-xs text-neutral-400">{connection.alias}</span>
+                    <span className="flex items-center justify-between gap-2 md:justify-end">
+                      {connection.badge && <Badge label={connection.badge} />}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item) void openConnection(item, connection.alias);
+                        }}
+                        disabled={!item || busy || deleting}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {busy ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <ChevronRight size={13} />
+                        )}
+                        Manage
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(connection)}
+                        disabled={busy || deleting}
+                        aria-label={`Remove ${connection.providerLabel} ${connection.alias}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deleting ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-neutral-100">Add a model connection</h3>
+            <span className="text-[10px] uppercase tracking-wide text-neutral-600">
+              Recommended
+            </span>
+          </div>
+
+          {loading ? (
+            <LoadingInline label="Loading provider types..." />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {recommended.map((item) => {
+                const busy = busyKey === `${item.key}:${alias.trim() || "default"}`;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => void openConnection(item)}
+                    disabled={busy}
+                    className="group flex min-h-[132px] flex-col rounded-md border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-cyan-400/35 hover:bg-cyan-400/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                        <Sparkles size={16} />
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {item.badge && <Badge label={item.badge} />}
+                        {busy ? (
+                          <Loader2 size={13} className="animate-spin text-neutral-500" />
+                        ) : null}
+                      </span>
+                    </span>
+                    <span className="mt-3 block text-sm font-semibold text-neutral-100">
+                      {item.label || item.key}
+                    </span>
+                    <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                      {modelProviderHint(item)}
+                    </span>
+                    <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-medium text-cyan-300">
+                      Set up connection
+                      <ChevronRight size={13} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <details className="rounded-lg border border-white/10 bg-white/[0.025]">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-neutral-100">
+            Looking for another provider?
+          </summary>
+          <div className="space-y-3 border-t border-white/10 p-4">
+            <label className="block max-w-xl">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                Search all providers
+              </span>
+              <div className="relative">
+                <Search
+                  size={13}
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+                />
+                <input
+                  type="search"
+                  value={filter}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  placeholder="Search provider name..."
+                  className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+                />
+              </div>
+            </label>
+
+            {!loading && filtered.length === 0 && (
+              <div className="rounded-md border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
+                No provider types match this search.
+              </div>
+            )}
+
+            {!loading && filtered.length > 0 && (
+              <div className="divide-y divide-white/10 overflow-hidden rounded-md border border-white/10">
+                {filtered.map((item) => {
+                  const busy = busyKey === `${item.key}:${alias.trim() || "default"}`;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => void openConnection(item)}
+                      disabled={busy}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-neutral-100">
+                          {item.label || item.key}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                          {item.key}
+                        </span>
+                      </span>
+                      {item.badge && <Badge label={item.badge} />}
+                      {busy ? (
+                        <Loader2 size={13} className="animate-spin text-neutral-500" />
+                      ) : (
+                        <ChevronRight size={13} className="text-neutral-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </details>
+      </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-model-connection-title"
+            className="w-full max-w-md rounded-lg border border-red-500/25 bg-[#060b1a] p-5 shadow-2xl shadow-black/50"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-300">
+                <Trash2 size={16} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3
+                  id="delete-model-connection-title"
+                  className="text-sm font-semibold text-neutral-100"
+                >
+                  Remove model connection?
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+                  This removes{" "}
+                  <span className="font-medium text-neutral-100">
+                    {deleteTarget.providerLabel} / {deleteTarget.alias}
+                  </span>{" "}
+                  from saved model connections. Agents using this connection may need a new model
+                  connection before they can run.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={Boolean(deletingKey)}
+                className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-white/20 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void deleteConnection(deleteTarget)}
+                disabled={Boolean(deletingKey)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deletingKey ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Trash2 size={13} />
+                )}
+                Remove
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type ChannelConnection = {
+  channelKey: string;
+  channelLabel: string;
+  name: string;
+  badge?: string;
+};
+
+function ChannelConnectionsPanel({
+  section,
+  items,
+  filtered,
+  filter,
+  loading,
+  error,
+  onFilterChange,
+  onTarget,
+  onSaved,
+}: {
+  section: ConfigSectionInfo;
+  items: PickerItem[];
+  filtered: PickerItem[];
+  filter: string;
+  loading: boolean;
+  error: string | null;
+  onFilterChange: (value: string) => void;
+  onTarget: (target: FormTarget) => void;
+  onSaved: () => void;
+}) {
+  const [connections, setConnections] = useState<ChannelConnection[]>([]);
+  const [loadingConnections, setLoadingConnections] = useState(true);
+  const [connectionsError, setConnectionsError] = useState<string | null>(null);
+  const [name, setName] = useState("default");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChannelConnection | null>(null);
+  const recommended = useMemo(() => recommendedChannels(items), [items]);
+
+  const loadConnections = useCallback(async () => {
+    setLoadingConnections(true);
+    setConnectionsError(null);
+    try {
+      const data = await apiConfigList(section.key);
+      setConnections(channelConnectionsFromEntries(data.entries, section.key, items));
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setLoadingConnections(false);
+    }
+  }, [items, section.key]);
+
+  useEffect(() => {
+    void loadConnections();
+  }, [loadConnections]);
+
+  async function openConnection(item: PickerItem, nextName = name) {
+    const clean = nextName.trim() || "default";
+    const key = `${item.key}:${clean}`;
+    setBusyKey(key);
+    setConnectionsError(null);
+    try {
+      const result = await apiConfigSelectItem(section.key, item.key, clean);
+      onSaved();
+      await loadConnections();
+      onTarget({
+        prefix: result.fields_prefix,
+        title: `${item.label || item.key} connection`,
+        subtitle: result.created
+          ? "New channel created. Add credentials, turn it on, and choose where messages should go."
+          : "Review credentials, enabled status, and agent routing for this channel.",
+      });
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function deleteConnection(connection: ChannelConnection) {
+    const key = `${connection.channelKey}:${connection.name}`;
+    setDeletingKey(key);
+    setConnectionsError(null);
+    try {
+      await apiConfigDeleteMapKey(`${section.key}.${connection.channelKey}`, connection.name);
+      setDeleteTarget(null);
+      onSaved();
+      await loadConnections();
+    } catch (e) {
+      setConnectionsError(errorMessage(e));
+    } finally {
+      setDeletingKey(null);
+    }
+  }
+
+  return (
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
+      <div className="mx-auto max-w-6xl space-y-5">
+        {(error || connectionsError) && <ErrorBox message={error || connectionsError || ""} />}
+
+        <section>
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-neutral-100">Connected channels</h3>
+            <span className="rounded bg-white/[0.05] px-2 py-1 text-[11px] text-neutral-400">
+              {loadingConnections ? "Loading..." : `${connections.length} connected`}
+            </span>
+          </div>
+
+          {loadingConnections ? (
+            <LoadingInline label="Loading connected channels..." />
+          ) : connections.length === 0 ? (
+            <div className="rounded-md border border-dashed border-white/10 bg-white/[0.025] px-4 py-5">
+              <h4 className="text-sm font-medium text-neutral-100">No channels connected yet</h4>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-neutral-500">
+                Start with one of the choices below. After setup, it will appear here for quick
+                editing.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
+              {connections.map((connection) => {
+                const item = items.find((candidate) => candidate.key === connection.channelKey);
+                const busy = busyKey === `${connection.channelKey}:${connection.name}`;
+                const deleting = deletingKey === `${connection.channelKey}:${connection.name}`;
+                return (
+                  <div
+                    key={`${connection.channelKey}:${connection.name}`}
+                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(120px,180px)_auto] md:items-center"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+                        <Network size={14} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-medium text-neutral-100">
+                          {connection.channelLabel}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                          {connection.channelKey}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[10px] uppercase tracking-wide text-neutral-600">
+                        Connection
+                      </span>
+                      <span className="block truncate font-mono text-xs text-neutral-400">
+                        {connection.name}
+                      </span>
+                    </span>
+                    <span className="flex items-center justify-between gap-2 md:justify-end">
+                      {connection.badge && <Badge label={connection.badge} />}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item) void openConnection(item, connection.name);
+                        }}
+                        disabled={!item || busy || deleting}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {busy ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <ChevronRight size={13} />
+                        )}
+                        Edit setup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(connection)}
+                        disabled={busy || deleting}
+                        aria-label={`Remove ${connection.channelLabel} ${connection.name}`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deleting ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-neutral-100">Add a channel</h3>
+              <p className="mt-1 text-xs text-neutral-500">
+                Choose the platform you want to connect.
+              </p>
+            </div>
+            <label className="block w-full min-w-0 sm:w-64">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                Connection name
+              </span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="default"
+                className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+              />
+            </label>
+          </div>
+          <div className="mb-2 flex justify-end">
+            <span className="text-[10px] uppercase tracking-wide text-neutral-600">
+              Good first choices
+            </span>
+          </div>
+
+          {loading ? (
+            <LoadingInline label="Loading channel platforms..." />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {recommended.map((item) => {
+                const clean = name.trim() || "default";
+                const busy = busyKey === `${item.key}:${clean}`;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => void openConnection(item)}
+                    disabled={busy}
+                    className="group flex min-h-[138px] flex-col rounded-md border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-cyan-400/35 hover:bg-cyan-400/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                        <Network size={16} />
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {item.badge && <Badge label={item.badge} />}
+                        {busy ? (
+                          <Loader2 size={13} className="animate-spin text-neutral-500" />
+                        ) : null}
+                      </span>
+                    </span>
+                    <span className="mt-3 block text-sm font-semibold text-neutral-100">
+                      {item.label || item.key}
+                    </span>
+                    <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500">
+                      {channelHint(item)}
+                    </span>
+                    <span className="mt-auto flex items-center gap-1 pt-3 text-xs font-medium text-cyan-300">
+                      Configure {item.label || item.key}
+                      <ChevronRight size={13} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <details className="rounded-lg border border-white/10 bg-white/[0.025]">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-neutral-100">
+            Show all channel platforms
+          </summary>
+          <div className="space-y-3 border-t border-white/10 p-4">
+            <label className="block max-w-xl">
+              <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+                Search platforms
+              </span>
+              <div className="relative">
+                <Search
+                  size={13}
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+                />
+                <input
+                  type="search"
+                  value={filter}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  placeholder="Search platform name..."
+                  className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+                />
+              </div>
+            </label>
+
+            {!loading && filtered.length === 0 && (
+              <div className="rounded-md border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
+                No channel platforms match this search.
+              </div>
+            )}
+
+            {!loading && filtered.length > 0 && (
+              <div className="divide-y divide-white/10 overflow-hidden rounded-md border border-white/10">
+                {filtered.map((item) => {
+                  const clean = name.trim() || "default";
+                  const busy = busyKey === `${item.key}:${clean}`;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => void openConnection(item)}
+                      disabled={busy}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-xs transition hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-neutral-100">
+                          {item.label || item.key}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                          channels.{item.key}.{name.trim() || "default"}
+                        </span>
+                      </span>
+                      {item.badge && <Badge label={item.badge} />}
+                      {busy ? (
+                        <Loader2 size={13} className="animate-spin text-neutral-500" />
+                      ) : (
+                        <ChevronRight size={13} className="text-neutral-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </details>
+      </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-channel-connection-title"
+            className="w-full max-w-md rounded-lg border border-red-500/25 bg-[#060b1a] p-5 shadow-2xl shadow-black/50"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-300">
+                <Trash2 size={16} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3
+                  id="delete-channel-connection-title"
+                  className="text-sm font-semibold text-neutral-100"
+                >
+                  Remove channel connection?
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+                  This removes{" "}
+                  <span className="font-medium text-neutral-100">
+                    {deleteTarget.channelLabel} / {deleteTarget.name}
+                  </span>{" "}
+                  from saved channels. Incoming messages for this connection will stop until it is
+                  configured again.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={Boolean(deletingKey)}
+                className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-white/20 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void deleteConnection(deleteTarget)}
+                disabled={Boolean(deletingKey)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deletingKey ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Trash2 size={13} />
+                )}
+                Remove
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OneTierAliasManager({
+  section,
+  items,
+  filtered,
+  filter,
+  selectedItem,
+  newItemName,
+  loading,
+  creatingItem,
+  showCreateItem,
+  openingKey,
+  error,
+  inlineTarget,
+  onFilterChange,
+  onNewItemNameChange,
+  onStartCreate,
+  onOpenItem,
+  onCreateItem,
+  onCloseDrawer,
+  onSaved,
+}: {
+  section: ConfigSectionInfo;
+  items: PickerItem[];
+  filtered: PickerItem[];
+  filter: string;
+  selectedItem: PickerItem | null;
+  newItemName: string;
+  loading: boolean;
+  creatingItem: boolean;
+  showCreateItem: boolean;
+  openingKey: string | null;
+  error: string | null;
+  inlineTarget: FormTarget | null;
+  onFilterChange: (value: string) => void;
+  onNewItemNameChange: (value: string) => void;
+  onStartCreate: () => void;
+  onOpenItem: (item: PickerItem) => void;
+  onCreateItem: () => void;
+  onCloseDrawer: () => void;
+  onSaved: () => void;
+}) {
+  const noun = entryNoun(section);
+  const pluralNoun = entryPluralNoun(section);
+  const showFilter = items.length > 4 || filter.trim().length > 0;
+  const drawerOpen = Boolean(inlineTarget || showCreateItem || openingKey);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseDrawer();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [drawerOpen, onCloseDrawer]);
+
+  return (
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+      <header className="shrink-0 border-b border-white/10 px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-neutral-100">{section.label}</h2>
+            {section.help && (
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
+                {section.help}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {loading ? <Loader2 size={13} className="animate-spin text-neutral-500" /> : null}
+            <span className="rounded bg-white/[0.05] px-2 py-1 text-[11px] text-neutral-400">
+              {items.length} {items.length === 1 ? noun : pluralNoun}
+            </span>
+            <button
+              type="button"
+              onClick={onStartCreate}
+              className="inline-flex items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300"
+            >
+              <Plus size={13} />
+              {createEntryLabel(section)}
+            </button>
+          </div>
+        </div>
+        {error && (
+          <div className="mt-3">
+            <ErrorBox message={error} />
+          </div>
+        )}
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <main className="h-full overflow-auto p-5 zc-scrollbar">
+          <div className="mx-auto max-w-6xl space-y-4">
+            {showFilter && (
+              <label className="block max-w-md">
+                <span className="sr-only">Filter {pluralNoun}</span>
+                <div className="relative">
+                  <Search
+                    size={13}
+                    className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+                  />
+                  <input
+                    type="search"
+                    value={filter}
+                    onChange={(e) => onFilterChange(e.target.value)}
+                    placeholder={`Filter ${pluralNoun}...`}
+                    className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+                  />
+                </div>
+              </label>
+            )}
+
+            {loading && <LoadingInline label={`Loading ${section.label.toLowerCase()}...`} />}
+            {!loading && filtered.length === 0 && (
+              <div className="rounded-md border border-dashed border-white/10 bg-white/[0.035] p-6 text-sm text-neutral-500">
+                {filter ? `No ${pluralNoun} match this filter.` : `No ${pluralNoun} yet.`}
+              </div>
+            )}
+            {!loading && filtered.length > 0 && (
+              <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
+                {filtered.map((item) => {
+                  const selected = selectedItem?.key === item.key;
+                  const busy = openingKey === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => onOpenItem(item)}
+                      className={`grid w-full gap-3 px-4 py-3 text-left transition md:grid-cols-[minmax(140px,1fr)_minmax(180px,1.2fr)_auto] md:items-center ${
+                        selected ? "bg-cyan-400/10" : "hover:bg-white/[0.04] hover:text-neutral-100"
+                      }`}
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${
+                            selected ? "bg-cyan-300" : "bg-emerald-400"
+                          }`}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-100">
+                          {item.label || item.key}
+                        </span>
+                        {busy ? (
+                          <Loader2 size={12} className="animate-spin text-neutral-500" />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 truncate font-mono text-[11px] text-neutral-500">
+                        {section.key}.{item.key}
+                      </div>
+                      <div className="flex min-w-0 items-center justify-between gap-3 md:justify-end">
+                        {item.badge && (
+                          <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-neutral-400">
+                            {item.badge}
+                          </span>
+                        )}
+                        <ChevronRight size={14} className="shrink-0 text-neutral-500" />
+                      </div>
+                      {item.description && (
+                        <p className="text-[11px] leading-relaxed text-neutral-500 md:col-span-3">
+                          {item.description}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {drawerOpen && (
+        <div className="absolute inset-0 z-20 flex bg-[#000010]/70 backdrop-blur-[2px]">
+          <button
+            type="button"
+            aria-label={`Close ${noun} editor`}
+            onClick={onCloseDrawer}
+            className="hidden min-w-8 flex-1 cursor-default lg:block"
+          />
+          <div className="h-full w-full max-w-[980px] border-l border-white/10 bg-[#020818] shadow-2xl shadow-black/50">
+            {inlineTarget ? (
+              <ConfigFieldForm
+                target={inlineTarget}
+                onBack={onCloseDrawer}
+                backLabel="Close"
+                onSaved={onSaved}
+              />
+            ) : openingKey ? (
+              <div className="flex h-full flex-col">
+                <DrawerHeader title={`Opening ${noun}`} code={openingKey} onClose={onCloseDrawer} />
+                <LoadingInline label={`Opening ${noun}...`} />
+              </div>
+            ) : (
+              <NewAliasDrawer
+                section={section}
+                newItemName={newItemName}
+                creatingItem={creatingItem}
+                onNewItemNameChange={onNewItemNameChange}
+                onCreateItem={onCreateItem}
+                onClose={onCloseDrawer}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DrawerHeader({
+  title,
+  code,
+  onClose,
+}: {
+  title: string;
+  code?: string;
+  onClose: () => void;
+}) {
+  return (
+    <header className="shrink-0 border-b border-white/10 px-5 py-4">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="truncate text-sm font-semibold text-neutral-100">{title}</h2>
+            {code && (
+              <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
+                {code}
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 text-neutral-400 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-100"
+          aria-label="Close"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function NewAliasDrawer({
+  section,
+  newItemName,
+  creatingItem,
+  onNewItemNameChange,
+  onCreateItem,
+  onClose,
+}: {
+  section: ConfigSectionInfo;
+  newItemName: string;
+  creatingItem: boolean;
+  onNewItemNameChange: (value: string) => void;
+  onCreateItem: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <DrawerHeader title={createEntryLabel(section)} code={section.key} onClose={onClose} />
+      <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
+        <div className="space-y-4">
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+              {entryNameLabel(section)}
+            </span>
+            <input
+              type="text"
+              value={newItemName}
+              autoFocus
+              onChange={(e) => onNewItemNameChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onCreateItem();
+              }}
+              placeholder={entryNamePlaceholder(section)}
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onCreateItem}
+            disabled={!newItemName.trim() || creatingItem}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {creatingItem ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            {createButtonLabel(section)}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1199,14 +2386,16 @@ function TypedAliasPanel({
   }, [loadAliases]);
 
   async function openAlias(nextAlias: string) {
+    const clean = nextAlias.trim();
+    if (!clean) return;
     setBusy(true);
     setError(null);
     try {
-      const result = await apiConfigSelectItem(section.key, item.key, nextAlias);
+      const result = await apiConfigSelectItem(section.key, item.key, clean);
       onSaved();
       onTarget({
         prefix: result.fields_prefix,
-        title: `${item.label} / ${nextAlias}`,
+        title: `${item.label} / ${clean}`,
         subtitle: result.created ? "Created new alias" : item.description,
       });
     } catch (e) {
@@ -1218,130 +2407,67 @@ function TypedAliasPanel({
 
   return (
     <div className="h-full overflow-auto p-5 zc-scrollbar">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <SectionHeader title={item.label} code={item.key} body={item.description} />
-        {loading ? (
-          <LoadingInline label="Loading aliases..." />
-        ) : (
-          <section className="rounded-lg border border-white/10 bg-white/[0.035]">
-            <div className="border-b border-white/10 px-4 py-3">
-              <h3 className="text-sm font-medium text-neutral-100">Aliases</h3>
-              <p className="mt-1 text-xs text-neutral-500">
-                Existing aliases under <span className="font-mono">{prefix}</span>.
-              </p>
-            </div>
-            <div className="divide-y divide-white/10">
-              {aliases.length === 0 ? (
-                <p className="px-4 py-3 text-xs text-neutral-500">No aliases configured yet.</p>
-              ) : (
-                aliases.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => void openAlias(name)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
-                  >
-                    <span className="font-mono">{name}</span>
-                    <ChevronRight size={13} />
-                  </button>
-                ))
-              )}
-            </div>
-          </section>
-        )}
-        <AliasCreator
-          alias={alias}
-          busy={busy}
-          label="Create or open alias"
-          buttonLabel="Open"
-          placeholder="default"
-          onAlias={setAlias}
-          onSubmit={() => void openAlias(alias.trim() || "default")}
-        />
-        {error && <ErrorBox message={error} />}
-      </div>
-    </div>
-  );
-}
-
-function OneTierAliasPanel({
-  section,
-  item,
-  onTarget,
-  onSaved,
-}: {
-  section: ConfigSectionInfo;
-  item: PickerItem;
-  onTarget: (target: FormTarget) => void;
-  onSaved: () => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function openAlias(name: string) {
-    const clean = name.trim();
-    if (!clean) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await apiConfigSelectItem(section.key, clean);
-      onSaved();
-      onTarget({
-        prefix: result.fields_prefix,
-        title: clean,
-        subtitle: result.created ? "Created new entry" : section.help,
-      });
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="h-full overflow-auto p-5 zc-scrollbar">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <SectionHeader title={item.label} code={item.key} body={item.description} />
-        <button
-          type="button"
-          onClick={() => void openAlias(item.key)}
-          disabled={busy}
-          className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-left text-sm text-neutral-200 hover:border-cyan-400/50 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <span>
-            <span className="block font-medium">Open configured entry</span>
-            <span className="mt-1 block font-mono text-xs text-neutral-500">
-              {section.key}.{item.key}
+      <div className="mx-auto max-w-4xl space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h2 className="truncate text-sm font-semibold text-neutral-100">{item.label}</h2>
+            <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
+              {item.key}
             </span>
-          </span>
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
-        </button>
-        {error && <ErrorBox message={error} />}
-      </div>
-    </div>
-  );
-}
+          </div>
+          {(loading || busy) && <Loader2 size={13} className="animate-spin text-neutral-500" />}
+        </div>
+        {item.description && (
+          <p className="text-xs leading-relaxed text-neutral-500">{item.description}</p>
+        )}
 
-function BackendPanel({
-  item,
-  onSelect,
-}: {
-  section: ConfigSectionInfo;
-  item: PickerItem;
-  onSelect: (alias?: string) => void;
-}) {
-  return (
-    <div className="h-full overflow-auto p-5 zc-scrollbar">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <SectionHeader title={item.label} code={item.key} body={item.description} />
-        <button
-          type="button"
-          onClick={() => onSelect()}
-          className="inline-flex items-center gap-2 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300"
-        >
-          <Check size={13} />
-          Select and edit fields
-        </button>
+        <section className="grid gap-2 rounded-lg border border-white/10 bg-white/[0.035] p-3 md:grid-cols-[minmax(180px,260px)_minmax(180px,1fr)_auto] md:items-end">
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+              Existing aliases
+            </span>
+            <select
+              value=""
+              onChange={(e) => void openAlias(e.target.value)}
+              disabled={loading || busy || aliases.length === 0}
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">{aliases.length ? "Select alias" : "No aliases"}</option>
+              {aliases.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[10px] uppercase tracking-wide text-neutral-500">
+              Provider alias
+            </span>
+            <input
+              type="text"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void openAlias(alias || "default");
+              }}
+              placeholder="default"
+              className="w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-2 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => void openAlias(alias || "default")}
+            disabled={busy}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+            Open alias
+          </button>
+        </section>
+        {error && <ErrorBox message={error} />}
       </div>
     </div>
   );
@@ -1350,10 +2476,12 @@ function BackendPanel({
 function ConfigFieldForm({
   target,
   onBack,
+  backLabel = "Back",
   onSaved,
 }: {
   target: FormTarget;
   onBack?: () => void;
+  backLabel?: string;
   onSaved: () => void;
 }) {
   const [entries, setEntries] = useState<ConfigListEntry[]>([]);
@@ -1444,7 +2572,7 @@ function ConfigFieldForm({
                   onClick={onBack}
                   className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
                 >
-                  Back
+                  {backLabel}
                 </button>
               )}
               <h2 className="truncate text-sm font-semibold text-neutral-100">{target.title}</h2>
@@ -1520,6 +2648,7 @@ function ConfigFieldForm({
           )}
           {!loading && entries.length > 0 && (
             <div className="mx-auto max-w-4xl space-y-5">
+              <ConfigTaskSummary prefix={target.prefix} entries={entries} />
               {tabs.map(({ label, fields }) => (
                 <section key={label} className="rounded-lg border border-white/10 bg-white/[0.035]">
                   <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
@@ -1549,6 +2678,28 @@ function ConfigFieldForm({
         </div>
       )}
     </div>
+  );
+}
+
+function ConfigTaskSummary({ prefix, entries }: { prefix: string; entries: ConfigListEntry[] }) {
+  const tasks = formTasksForPrefix(prefix, entries);
+  if (tasks.length === 0) return null;
+
+  return (
+    <section className="grid gap-2 md:grid-cols-3">
+      {tasks.map((task) => (
+        <div
+          key={task.label}
+          className="rounded-md border border-white/10 bg-white/[0.025] px-3 py-3"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-neutral-100">{task.label}</span>
+            <TaskBadge state={task.state} />
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">{task.detail}</p>
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -1988,62 +3139,6 @@ function AdvancedConfigEditor() {
   );
 }
 
-function AliasCreator({
-  alias,
-  busy,
-  buttonLabel,
-  label,
-  placeholder,
-  onAlias,
-  onSubmit,
-}: {
-  alias: string;
-  busy: boolean;
-  buttonLabel: string;
-  label: string;
-  placeholder: string;
-  onAlias: (alias: string) => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
-      <h3 className="text-sm font-medium text-neutral-100">{label}</h3>
-      <div className="mt-3 flex gap-2">
-        <input
-          type="text"
-          value={alias}
-          onChange={(e) => onAlias(e.target.value)}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
-        />
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={busy}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
-        >
-          {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          {buttonLabel}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function SectionHeader({ title, code, body }: { title: string; code: string; body?: string }) {
-  return (
-    <header>
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-base font-semibold text-neutral-100">{title}</h2>
-        <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-neutral-500">
-          {code}
-        </span>
-      </div>
-      {body && <p className="mt-2 text-xs leading-relaxed text-neutral-500">{body}</p>}
-    </header>
-  );
-}
-
 function EmptyState({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
     <div className="flex h-full items-center justify-center p-8 text-center">
@@ -2205,11 +3300,19 @@ function categorySectionLabel(category: ConfigCategory, section: ConfigSectionIn
 function entryNoun(section: ConfigSectionInfo) {
   if (section.key === "risk_profiles") return "risk profile";
   if (section.key === "agents" || section.key.startsWith("agents.")) return "agent";
-  if (section.key === "channels" || section.key.startsWith("channels.")) return "channel";
+  if (section.key === "channels" || section.key.startsWith("channels.")) return "channel alias";
   if (section.key === "providers.models" || section.key.startsWith("providers.models.")) {
     return "provider";
   }
   return section.shape === "typed_family_map" ? "alias" : "entry";
+}
+
+function entryPluralNoun(section: ConfigSectionInfo) {
+  const noun = entryNoun(section);
+  if (noun === "entry") return "entries";
+  if (noun === "alias") return "aliases";
+  if (noun === "channel alias") return "channel aliases";
+  return `${noun}s`;
 }
 
 function groupRank(group: string) {
@@ -2268,6 +3371,169 @@ function aliasesFromEntries(entries: ConfigListEntry[], prefix: string) {
   return Array.from(aliases).sort();
 }
 
+function modelConnectionsFromEntries(
+  entries: ConfigListEntry[],
+  sectionKey: string,
+  items: PickerItem[],
+) {
+  const prefixDot = `${sectionKey}.`;
+  const providerByKey = new Map(items.map((item) => [item.key, item]));
+  const seen = new Set<string>();
+  const connections: ModelConnection[] = [];
+
+  for (const entry of entries) {
+    if (!entry.path.startsWith(prefixDot)) continue;
+    const [providerKey, alias] = entry.path.slice(prefixDot.length).split(".");
+    if (!providerKey || !alias) continue;
+    const key = `${providerKey}:${alias}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const item = providerByKey.get(providerKey);
+    connections.push({
+      providerKey,
+      providerLabel: item?.label || providerKey,
+      alias,
+      badge: item?.badge,
+    });
+  }
+
+  return connections.sort(
+    (a, b) =>
+      a.providerLabel.localeCompare(b.providerLabel) ||
+      a.alias.localeCompare(b.alias) ||
+      a.providerKey.localeCompare(b.providerKey),
+  );
+}
+
+function channelConnectionsFromEntries(
+  entries: ConfigListEntry[],
+  sectionKey: string,
+  items: PickerItem[],
+) {
+  const prefixDot = `${sectionKey}.`;
+  const channelByKey = new Map(items.map((item) => [item.key, item]));
+  const seen = new Set<string>();
+  const connections: ChannelConnection[] = [];
+
+  for (const entry of entries) {
+    if (!entry.path.startsWith(prefixDot)) continue;
+    const [channelKey, name] = entry.path.slice(prefixDot.length).split(".");
+    if (!channelKey || !name) continue;
+    const key = `${channelKey}:${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const item = channelByKey.get(channelKey);
+    connections.push({
+      channelKey,
+      channelLabel: item?.label || channelKey,
+      name,
+      badge: item?.badge,
+    });
+  }
+
+  return connections.sort(
+    (a, b) =>
+      a.channelLabel.localeCompare(b.channelLabel) ||
+      a.name.localeCompare(b.name) ||
+      a.channelKey.localeCompare(b.channelKey),
+  );
+}
+
+function recommendedModelProviders(items: PickerItem[]) {
+  const matches: PickerItem[] = [];
+  const used = new Set<string>();
+  const targets = [
+    "openrouter",
+    "openai",
+    "anthropic",
+    "gemini",
+    "google",
+    "ollama",
+    "openai-compatible",
+    "custom",
+  ];
+
+  for (const target of targets) {
+    const match = items.find((item) => {
+      if (used.has(item.key)) return false;
+      const haystack = `${item.key} ${item.label}`.toLowerCase();
+      return haystack.includes(target);
+    });
+    if (match) {
+      used.add(match.key);
+      matches.push(match);
+    }
+  }
+
+  for (const item of items) {
+    if (matches.length >= 6) break;
+    if (used.has(item.key)) continue;
+    used.add(item.key);
+    matches.push(item);
+  }
+
+  return matches;
+}
+
+function recommendedChannels(items: PickerItem[]) {
+  const matches: PickerItem[] = [];
+  const used = new Set<string>();
+  const targets = [
+    "bluesky",
+    "webhook",
+    "discord",
+    "slack",
+    "telegram",
+    "email",
+    "matrix",
+    "github",
+  ];
+
+  for (const target of targets) {
+    const match = items.find((item) => {
+      if (used.has(item.key)) return false;
+      const haystack = `${item.key} ${item.label}`.toLowerCase();
+      return haystack.includes(target);
+    });
+    if (match) {
+      used.add(match.key);
+      matches.push(match);
+    }
+  }
+
+  for (const item of items) {
+    if (matches.length >= 6) break;
+    if (used.has(item.key)) continue;
+    used.add(item.key);
+    matches.push(item);
+  }
+
+  return matches;
+}
+
+function modelProviderHint(item: PickerItem) {
+  if (item.description) return item.description;
+  const name = (item.label || item.key).toLowerCase();
+  if (name.includes("openrouter")) return "Good first choice for routing many hosted models.";
+  if (name.includes("openai")) return "Use OpenAI-compatible chat, reasoning, and tool models.";
+  if (name.includes("anthropic")) return "Connect Claude models with your provider credentials.";
+  if (name.includes("gemini") || name.includes("google")) return "Connect Google Gemini models.";
+  if (name.includes("ollama")) return "Use local models running on this machine or network.";
+  return "Create a reusable connection for agents.";
+}
+
+function channelHint(item: PickerItem) {
+  if (item.description) return item.description;
+  const name = (item.label || item.key).toLowerCase();
+  if (name.includes("bluesky")) return "Receive posts, mentions, or replies from a Bluesky account.";
+  if (name.includes("webhook")) return "Accept incoming HTTP events from another app or service.";
+  if (name.includes("discord")) return "Connect a Discord server or bot-style message source.";
+  if (name.includes("slack")) return "Route Slack workspace messages to a ZeroClaw agent.";
+  if (name.includes("telegram")) return "Connect a Telegram bot or chat entry point.";
+  if (name.includes("email")) return "Bring mailbox messages into an agent workflow.";
+  return "Create an incoming message connection for an agent.";
+}
+
 function dottedToPointer(path: string) {
   return `/${path
     .split(".")
@@ -2281,13 +3547,124 @@ function leafLabel(path: string) {
 }
 
 function createEntryLabel(section: ConfigSectionInfo) {
-  if (section.key === "risk_profiles") return "Create new risk profile";
-  return "Create new entry";
+  return `New ${entryNoun(section)}`;
+}
+
+function createButtonLabel(section: ConfigSectionInfo) {
+  return `Create ${entryNoun(section)}`;
+}
+
+function entryNameLabel(section: ConfigSectionInfo) {
+  if (section.key === "channels" || section.key.startsWith("channels.")) return "Channel alias";
+  if (section.key === "agents" || section.key.startsWith("agents.")) return "Agent alias";
+  if (section.key === "risk_profiles") return "Risk profile name";
+  return "Entry name";
 }
 
 function entryNamePlaceholder(section: ConfigSectionInfo) {
   if (section.key === "risk_profiles") return "profile name, e.g. dev";
+  if (section.key === "agents" || section.key.startsWith("agents.")) return "agent alias, e.g. dev";
+  if (section.key === "channels" || section.key.startsWith("channels.")) return "channel alias";
   return "entry name";
+}
+
+function pickerSelectionLabel(section: ConfigSectionInfo) {
+  if (section.key === "providers.models") return "Provider type";
+  return "Selection";
+}
+
+function pickerSelectionOption(section: ConfigSectionInfo) {
+  if (section.key === "providers.models") return "provider type";
+  return entryNoun(section);
+}
+
+function choiceCountLabel(section: ConfigSectionInfo, count: number) {
+  if (section.key === "providers.models") {
+    return `${count} provider ${count === 1 ? "type" : "types"}`;
+  }
+  return `${count} choices`;
+}
+
+function formTasksForPrefix(prefix: string, entries: ConfigListEntry[]) {
+  if (prefix.startsWith("providers.models.")) {
+    return [
+      {
+        label: "Credentials",
+        detail: configuredDetail(
+          entries,
+          ["api_key", "token", "credential"],
+          "Secret field is set",
+        ),
+        state: configuredState(entries, ["api_key", "token", "credential"]),
+      },
+      {
+        label: "Model",
+        detail: configuredDetail(entries, ["model", "deployment"], "Model value is set"),
+        state: configuredState(entries, ["model", "deployment"]),
+      },
+      {
+        label: "Endpoint",
+        detail: configuredDetail(
+          entries,
+          ["base_url", "uri", "endpoint"],
+          "Endpoint override is set",
+        ),
+        state: configuredState(entries, ["base_url", "uri", "endpoint"], "neutral"),
+      },
+    ];
+  }
+
+  if (prefix === "channels" || prefix.startsWith("channels.")) {
+    return [
+      {
+        label: "Enabled",
+        detail: configuredDetail(entries, ["enabled"], "Enabled field is set"),
+        state: configuredState(entries, ["enabled"], "neutral"),
+      },
+      {
+        label: "Token/webhook",
+        detail: configuredDetail(entries, ["token", "secret", "webhook"], "Secret field is set"),
+        state: configuredState(entries, ["token", "secret", "webhook"]),
+      },
+      {
+        label: "Agent routing",
+        detail: configuredDetail(
+          entries,
+          ["owning_agent", "agent", "peer_group"],
+          "Routing field is set",
+        ),
+        state: configuredState(entries, ["owning_agent", "agent", "peer_group"], "neutral"),
+      },
+    ];
+  }
+
+  return [];
+}
+
+function configuredState(
+  entries: ConfigListEntry[],
+  leaves: string[],
+  fallback: TaskState = "needs",
+): TaskState {
+  return entries.some((entry) => entryMatchesLeaf(entry, leaves) && entryHasValue(entry))
+    ? "ready"
+    : fallback;
+}
+
+function configuredDetail(entries: ConfigListEntry[], leaves: string[], readyDetail: string) {
+  const match = entries.find((entry) => entryMatchesLeaf(entry, leaves));
+  if (!match) return "No matching field reported";
+  if (entryHasValue(match)) return readyDetail;
+  return match.is_secret ? "Secret is not set yet" : "Value is not set yet";
+}
+
+function entryMatchesLeaf(entry: ConfigListEntry, leaves: string[]) {
+  const leaf = entry.path.split(".").pop() ?? "";
+  return leaves.some((name) => leaf === name || leaf.includes(name));
+}
+
+function entryHasValue(entry: ConfigListEntry) {
+  return Boolean(entry.populated || entry.is_env_overridden);
 }
 
 function formatRawValue(value: unknown) {
