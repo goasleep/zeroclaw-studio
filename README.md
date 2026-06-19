@@ -8,6 +8,19 @@
 
 **Status:** early development. See [`docs/architecture.md`](docs/architecture.md).
 
+## Highlights
+
+- Native Tauri 2 desktop app for macOS, Linux, and Windows.
+- Connects to local-managed, local-attached, and remote ZeroClaw gateways.
+- Supports direct HTTP(S), SSH tunnels, Tailscale, VPNs, and private network
+  routes.
+- Provides one workspace for chat, files, tools, memory, cron, logs, doctor,
+  devices, integrations, and config.
+- Adds native desktop affordances: folder picker, file watcher, global
+  shortcut, clipboard, notifications, and `zeroclaw://` deep links.
+- Keeps the workspace client independent from the main `zeroclaw` repo; the
+  gateway contract is HTTP/WebSocket/SSE.
+
 ## What this is
 
 `zeroclaw-workspace` is a Tauri 2 desktop app for getting real work done
@@ -49,6 +62,56 @@ modifies anything in `~/.zeroclaw/` on machines it doesn't manage.
   crates; it only depends on the gateway HTTP/WS contract and (optionally,
   for managed connections) the `zeroclaw` binary.
 
+## Install
+
+Prebuilt desktop artifacts are produced by tag-triggered GitHub releases:
+
+- macOS: `.dmg` / `.app`
+- Linux: `.deb` / AppImage
+- Windows: `.msi` / NSIS `.exe`
+
+Download the latest draft or published build from
+[GitHub Releases](https://github.com/goasleep/zeroclaw-workspace/releases).
+
+Early releases are currently unsigned. On macOS, Gatekeeper may require
+removing the quarantine attribute after installation:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ZeroClaw\ Workspace.app
+```
+
+Signed and notarized builds are planned for a later release.
+
+## Quick start
+
+You need a reachable ZeroClaw gateway. The gateway can run on the same machine,
+on another host in your network, or behind an SSH/Tailscale/VPN route.
+
+1. Install or start a ZeroClaw gateway. See the
+   [main ZeroClaw repository](https://github.com/zeroclaw-labs/zeroclaw).
+2. Launch ZeroClaw Workspace.
+3. Choose one connection mode:
+   - **Local & managed** — let the workspace find and supervise a local
+     `zeroclaw` binary.
+   - **Local & attached** — connect to a gateway you already started.
+   - **Remote** — enter a reachable URL or configure an SSH-tunneled target.
+4. Pair the workspace with the gateway when prompted.
+5. Open a workspace folder and start a chat.
+
+If no local `zeroclaw` binary is found, remote-only use still works. The desktop
+app does not require `zeroclaw` to be installed locally unless you want a
+managed local connection.
+
+## Gateway compatibility
+
+ZeroClaw Workspace talks to the gateway over HTTP, WebSocket, and SSE. The
+current endpoint map lives in
+[`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md).
+
+The project is still before a stable compatibility promise. If a change touches
+the gateway contract, update the protocol notes and test against the matching
+`zeroclaw` gateway build.
+
 ## Development
 
 Requirements:
@@ -60,17 +123,80 @@ Requirements:
 
 ```bash
 pnpm install
-pnpm tauri dev
+pnpm desktop:dev
 ```
 
-For formatting, checks, generated bindings, and PR workflow, see
+Useful checks:
+
+```bash
+pnpm check
+pnpm rust:check
+```
+
+Build a packaged desktop app:
+
+```bash
+pnpm desktop:build
+```
+
+For formatting, generated Tauri command bindings, and PR workflow, see
 [`docs/development.md`](docs/development.md).
+
+## Repository layout
+
+- `src/` — React + Vite frontend.
+- `src-tauri/` — Tauri Rust backend, native commands, gateway client, runtime
+  supervision, connection storage, and workspace file integration.
+- `docs/` — architecture, development guide, gateway protocol notes, and reuse
+  attribution.
+- `.github/workflows/` — CI and release automation.
+
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) — product and technical model.
+- [`docs/development.md`](docs/development.md) — local development workflow.
+- [`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md) — gateway
+  HTTP/WS/SSE endpoint map.
+- [`docs/reuse-attribution.md`](docs/reuse-attribution.md) — copied or ported
+  upstream files.
+- [`SECURITY.md`](SECURITY.md) — supported versions, vulnerability reporting,
+  data boundaries, and security notes.
+
+## Security notes
+
+This is a desktop app with native capabilities. It can connect to remote
+gateways, store gateway tokens in per-user app data, open SSH tunnels, read and
+write files in the selected workspace, access clipboard text through explicit
+features, and spawn a managed local `zeroclaw` process.
+
+Only connect to gateways you administer or trust. See [`SECURITY.md`](SECURITY.md)
+before using the app with sensitive repositories, private hosts, or shared
+diagnostic logs.
+
+## Known limitations
+
+- The project is in early development; interfaces and gateway compatibility can
+  change before a stable release.
+- Release artifacts are not yet signed or notarized.
+- Gateway bearer tokens are currently stored in the per-user Tauri store rather
+  than the OS keychain.
+- Frontend coverage is currently lighter than Rust coverage; run the documented
+  checks before opening PRs.
+- Some gateway schemas are inferred from upstream source until broader OpenAPI
+  coverage lands.
 
 ## Reuse attribution
 
 Some files are ported from `zeroclaw-labs/zeroclaw` under its dual MIT/Apache-2.0
 license. See [`docs/reuse-attribution.md`](docs/reuse-attribution.md) for the
 exact list.
+
+## Contributing
+
+Contributions are welcome while the project is still taking shape. Start with
+[`CONTRIBUTING.md`](CONTRIBUTING.md), run the checks above, and update the
+relevant docs when changing gateway behavior, native capabilities, or reused
+upstream code.
 
 ## License
 
