@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useWorkspace } from "@/app/workspace-context";
+import {
+  APP_COMMAND_EVENT,
+  APP_COMMANDS,
+  SETTINGS_COMMAND_SECTIONS,
+  appCommandFromEvent,
+  type AppCommandId,
+} from "@/app/commands/commands";
 import { apiQuickstartState } from "@/api/quickstart";
 import { ChatWorkspace } from "./workspace-shell/ChatWorkspace";
 import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
@@ -111,6 +118,41 @@ export function WorkspaceShell() {
   }, [activeAgent, focusComposer, page, pendingSessionId]);
 
   useEffect(() => {
+    function runCommand(command: AppCommandId) {
+      const settingsTarget = SETTINGS_COMMAND_SECTIONS[command];
+      if (settingsTarget) {
+        openSettings(settingsTarget);
+        return;
+      }
+
+      switch (command) {
+        case APP_COMMANDS.workspaceFocusChat.id:
+          setPage("chat");
+          focusComposer();
+          break;
+        case APP_COMMANDS.workspaceFocusCode.id:
+          setPage("code");
+          focusComposer();
+          break;
+        case APP_COMMANDS.workspaceOpenProject.id:
+          void pickProject();
+          break;
+        case APP_COMMANDS.workspaceNewChat.id:
+          newThread(activeChatWorkspaceRoot);
+          break;
+        case APP_COMMANDS.workspaceRefreshChats.id:
+          window.dispatchEvent(new CustomEvent("zeroclaw://refresh-sessions"));
+          break;
+        case APP_COMMANDS.workspaceRetryConnection.id:
+          break;
+      }
+    }
+
+    function onCommand(e: Event) {
+      const command = appCommandFromEvent(e);
+      if (command) runCommand(command);
+    }
+
     function onOpenSettings(e: Event) {
       openSettings((e as CustomEvent<string>).detail);
     }
@@ -142,32 +184,32 @@ export function WorkspaceShell() {
     }
 
     function onOpenProject() {
-      void pickProject();
+      runCommand(APP_COMMANDS.workspaceOpenProject.id);
     }
 
     function onFocusChat() {
-      setPage("chat");
-      focusComposer();
+      runCommand(APP_COMMANDS.workspaceFocusChat.id);
     }
 
     function onFocusCode() {
-      setPage("code");
-      focusComposer();
+      runCommand(APP_COMMANDS.workspaceFocusCode.id);
     }
 
+    window.addEventListener(APP_COMMAND_EVENT, onCommand);
     window.addEventListener("zeroclaw://open-settings", onOpenSettings);
     window.addEventListener("zeroclaw://deep-link", onDeepLink);
     window.addEventListener("zeroclaw://open-project", onOpenProject);
     window.addEventListener("zeroclaw://focus-chat", onFocusChat);
     window.addEventListener("zeroclaw://focus-code", onFocusCode);
     return () => {
+      window.removeEventListener(APP_COMMAND_EVENT, onCommand);
       window.removeEventListener("zeroclaw://open-settings", onOpenSettings);
       window.removeEventListener("zeroclaw://deep-link", onDeepLink);
       window.removeEventListener("zeroclaw://open-project", onOpenProject);
       window.removeEventListener("zeroclaw://focus-chat", onFocusChat);
       window.removeEventListener("zeroclaw://focus-code", onFocusCode);
     };
-  }, [addFiles, focusComposer, pickProject, openSettings]);
+  }, [activeChatWorkspaceRoot, addFiles, focusComposer, newThread, openSettings, pickProject]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden text-slate-100">

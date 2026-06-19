@@ -6,6 +6,7 @@
 import { useEffect } from "react";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { APP_COMMANDS, dispatchAppCommand } from "@/app/commands/commands";
 import { DEFAULT_PREFERENCES, loadPreferences } from "@/workspace/preferences/preferences";
 
 /** Mount once in <App>. Tears down on unmount. */
@@ -20,7 +21,7 @@ export function useGlobalQuickInvoke() {
       const win = getCurrentWindow();
       await win.show();
       await win.setFocus();
-      window.dispatchEvent(new CustomEvent("zeroclaw://quick-invoke"));
+      dispatchAppCommand(APP_COMMANDS.workspaceFocusChat.id, "shortcut");
     }
 
     async function registerShortcut(shortcut: string) {

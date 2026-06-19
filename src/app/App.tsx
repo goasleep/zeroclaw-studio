@@ -5,6 +5,7 @@ import { WelcomeScreen } from "@/app/WelcomeScreen";
 import { AddConnectionDialog } from "@/app/AddConnectionDialog";
 import { WorkspaceProvider } from "@/app/workspace-context";
 import { WorkspaceShell } from "@/app/WorkspaceShell";
+import { APP_COMMAND_EVENT, APP_COMMANDS, appCommandFromEvent } from "@/app/commands/commands";
 import { useGlobalQuickInvoke } from "@/workspace/shortcuts/useGlobalQuickInvoke";
 import { useNotifications } from "@/workspace/notifications/useNotifications";
 import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
@@ -32,12 +33,26 @@ function Shell() {
   }, []);
 
   useEffect(() => {
+    function retryActiveConnection() {
+      void retry();
+    }
+
+    function onCommand(e: Event) {
+      if (appCommandFromEvent(e) === APP_COMMANDS.workspaceRetryConnection.id) {
+        retryActiveConnection();
+      }
+    }
+
     function onTrayAction(e: Event) {
       const action = (e as CustomEvent<string>).detail;
-      if (action === "retry-active-connection") void retry();
+      if (action === "retry-active-connection") retryActiveConnection();
     }
+    window.addEventListener(APP_COMMAND_EVENT, onCommand);
     window.addEventListener("zeroclaw://tray-action", onTrayAction);
-    return () => window.removeEventListener("zeroclaw://tray-action", onTrayAction);
+    return () => {
+      window.removeEventListener(APP_COMMAND_EVENT, onCommand);
+      window.removeEventListener("zeroclaw://tray-action", onTrayAction);
+    };
   }, [retry]);
 
   if (loading) {

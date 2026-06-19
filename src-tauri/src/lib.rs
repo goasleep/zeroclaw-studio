@@ -19,15 +19,23 @@ use tauri::{Emitter, Manager, RunEvent};
 use workspace::fs::WorkspaceState;
 use workspace::local_state::LocalStateStore;
 
-const MENU_FOCUS_CHAT: &str = "menu_focus_chat";
-const MENU_FOCUS_CODE: &str = "menu_focus_code";
-const MENU_OPEN_PROJECT: &str = "menu_open_project";
-const MENU_NEW_SESSION: &str = "menu_new_session";
-const MENU_REFRESH_SESSIONS: &str = "menu_refresh_sessions";
-const MENU_RETRY_CONNECTION: &str = "menu_retry_connection";
-const MENU_OPEN_SETTINGS: &str = "menu_open_settings";
-const MENU_OPEN_LOGS: &str = "menu_open_logs";
-const MENU_OPEN_DOCTOR: &str = "menu_open_doctor";
+const COMMAND_EVENT: &str = "zeroclaw://command";
+const CMD_WORKSPACE_FOCUS_CHAT: &str = "workspace.focusChat";
+const CMD_WORKSPACE_FOCUS_CODE: &str = "workspace.focusCode";
+const CMD_WORKSPACE_OPEN_PROJECT: &str = "workspace.openProject";
+const CMD_WORKSPACE_NEW_CHAT: &str = "workspace.newChat";
+const CMD_WORKSPACE_REFRESH_CHATS: &str = "workspace.refreshChats";
+const CMD_WORKSPACE_RETRY_CONNECTION: &str = "workspace.retryConnection";
+const CMD_SETTINGS_OPEN: &str = "settings.open";
+const CMD_SETTINGS_OPEN_SETUP_CENTER: &str = "settings.openSetupCenter";
+const CMD_SETTINGS_OPEN_GATEWAY_OVERVIEW: &str = "settings.openGatewayOverview";
+const CMD_SETTINGS_OPEN_MODELS_PROVIDERS: &str = "settings.openModelsProviders";
+const CMD_SETTINGS_OPEN_AGENTS: &str = "settings.openAgents";
+const CMD_SETTINGS_OPEN_RUNTIME_SAFETY: &str = "settings.openRuntimeSafety";
+const CMD_SETTINGS_OPEN_TOOLS_SKILLS: &str = "settings.openToolsSkills";
+const CMD_DIAGNOSTICS_OPEN_LOGS: &str = "diagnostics.openLogs";
+const CMD_DIAGNOSTICS_OPEN_DOCTOR: &str = "diagnostics.openDoctor";
+const CMD_DIAGNOSTICS_OPEN_DEVICES: &str = "diagnostics.openDevices";
 const TRAY_SHOW_HIDE: &str = "tray_show_hide";
 const TRAY_FOCUS_CHAT: &str = "tray_focus_chat";
 const TRAY_RETRY_CONNECTION: &str = "tray_retry_connection";
@@ -256,30 +264,45 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
 }
 
 fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
-    let focus_chat = MenuItemBuilder::with_id(MENU_FOCUS_CHAT, "Focus Chat")
+    let focus_chat = MenuItemBuilder::with_id(CMD_WORKSPACE_FOCUS_CHAT, "Focus Chat")
         .accelerator("CmdOrCtrl+1")
         .build(app)?;
-    let focus_code = MenuItemBuilder::with_id(MENU_FOCUS_CODE, "Focus Code")
+    let focus_code = MenuItemBuilder::with_id(CMD_WORKSPACE_FOCUS_CODE, "Focus Code")
         .accelerator("CmdOrCtrl+2")
         .build(app)?;
-    let open_project = MenuItemBuilder::with_id(MENU_OPEN_PROJECT, "Open Project...")
+    let open_project = MenuItemBuilder::with_id(CMD_WORKSPACE_OPEN_PROJECT, "Open Project...")
         .accelerator("CmdOrCtrl+O")
         .build(app)?;
-    let new_session = MenuItemBuilder::with_id(MENU_NEW_SESSION, "New Session")
+    let new_chat = MenuItemBuilder::with_id(CMD_WORKSPACE_NEW_CHAT, "New Chat")
         .accelerator("CmdOrCtrl+N")
         .build(app)?;
-    let refresh_sessions = MenuItemBuilder::with_id(MENU_REFRESH_SESSIONS, "Refresh Sessions")
+    let refresh_chats = MenuItemBuilder::with_id(CMD_WORKSPACE_REFRESH_CHATS, "Refresh Chats")
         .accelerator("CmdOrCtrl+R")
         .build(app)?;
     let retry_connection =
-        MenuItemBuilder::with_id(MENU_RETRY_CONNECTION, "Retry Active Connection")
+        MenuItemBuilder::with_id(CMD_WORKSPACE_RETRY_CONNECTION, "Retry Active Connection")
             .accelerator("CmdOrCtrl+Shift+R")
             .build(app)?;
-    let settings = MenuItemBuilder::with_id(MENU_OPEN_SETTINGS, "Settings")
+    let settings_open = MenuItemBuilder::with_id(CMD_SETTINGS_OPEN, "Open Settings")
         .accelerator("CmdOrCtrl+,")
         .build(app)?;
-    let logs = MenuItemBuilder::with_id(MENU_OPEN_LOGS, "Logs").build(app)?;
-    let doctor = MenuItemBuilder::with_id(MENU_OPEN_DOCTOR, "Doctor").build(app)?;
+    let setup_center =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_SETUP_CENTER, "Setup Center").build(app)?;
+    let gateway_overview =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_GATEWAY_OVERVIEW, "Gateway Overview")
+            .build(app)?;
+    let models_providers =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_MODELS_PROVIDERS, "Models & Providers")
+            .build(app)?;
+    let agents = MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_AGENTS, "Agents").build(app)?;
+    let runtime_safety =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_RUNTIME_SAFETY, "Runtime & Safety")
+            .build(app)?;
+    let tools_skills =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_TOOLS_SKILLS, "Tools & Skills").build(app)?;
+    let logs = MenuItemBuilder::with_id(CMD_DIAGNOSTICS_OPEN_LOGS, "Logs").build(app)?;
+    let doctor = MenuItemBuilder::with_id(CMD_DIAGNOSTICS_OPEN_DOCTOR, "Doctor").build(app)?;
+    let devices = MenuItemBuilder::with_id(CMD_DIAGNOSTICS_OPEN_DEVICES, "Devices").build(app)?;
 
     let workspace = SubmenuBuilder::new(app, "Workspace")
         .item(&focus_chat)
@@ -287,17 +310,28 @@ fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
         .separator()
         .item(&open_project)
         .separator()
-        .item(&new_session)
-        .item(&refresh_sessions)
+        .item(&new_chat)
+        .item(&refresh_chats)
         .separator()
         .item(&retry_connection)
         .build()?;
 
-    let diagnostics = SubmenuBuilder::new(app, "Diagnostics")
-        .item(&settings)
+    let settings = SubmenuBuilder::new(app, "Settings")
+        .item(&settings_open)
         .separator()
+        .item(&setup_center)
+        .separator()
+        .item(&gateway_overview)
+        .item(&models_providers)
+        .item(&agents)
+        .item(&runtime_safety)
+        .item(&tools_skills)
+        .build()?;
+
+    let diagnostics = SubmenuBuilder::new(app, "Diagnostics")
         .item(&logs)
         .item(&doctor)
+        .item(&devices)
         .build()?;
 
     let edit = SubmenuBuilder::new(app, "Edit")
@@ -317,8 +351,9 @@ fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
 
     let menu = MenuBuilder::new(app)
         .item(&workspace)
-        .item(&edit)
+        .item(&settings)
         .item(&diagnostics)
+        .item(&edit)
         .item(&window)
         .build()?;
     app.set_menu(menu)?;
@@ -354,19 +389,16 @@ fn install_tray(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
                 }
             }
             TRAY_FOCUS_CHAT => {
-                focus_main_window(app);
-                let _ = app.emit("zeroclaw://quick-invoke", ());
+                emit_command(app, CMD_WORKSPACE_FOCUS_CHAT);
             }
             TRAY_RETRY_CONNECTION => {
-                let _ = app.emit("zeroclaw://tray-action", "retry-active-connection");
+                emit_command(app, CMD_WORKSPACE_RETRY_CONNECTION);
             }
             TRAY_OPEN_SETTINGS => {
-                focus_main_window(app);
-                let _ = app.emit("zeroclaw://open-settings", "app");
+                emit_command(app, CMD_SETTINGS_OPEN);
             }
             TRAY_OPEN_LOGS => {
-                focus_main_window(app);
-                let _ = app.emit("zeroclaw://open-settings", "logs");
+                emit_command(app, CMD_DIAGNOSTICS_OPEN_LOGS);
             }
             TRAY_QUIT => app.exit(0),
             _ => {}
@@ -382,44 +414,29 @@ fn install_tray(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
 
 fn handle_app_menu_event(app: &tauri::AppHandle<tauri::Wry>, id: &str) {
     match id {
-        MENU_FOCUS_CHAT => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://focus-chat", ());
-        }
-        MENU_FOCUS_CODE => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://focus-code", ());
-        }
-        MENU_OPEN_PROJECT => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://open-project", ());
-        }
-        MENU_NEW_SESSION => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://new-session", ());
-        }
-        MENU_REFRESH_SESSIONS => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://refresh-sessions", ());
-        }
-        MENU_RETRY_CONNECTION => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://tray-action", "retry-active-connection");
-        }
-        MENU_OPEN_SETTINGS => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://open-settings", "app");
-        }
-        MENU_OPEN_LOGS => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://open-settings", "logs");
-        }
-        MENU_OPEN_DOCTOR => {
-            focus_main_window(app);
-            let _ = app.emit("zeroclaw://open-settings", "doctor");
-        }
+        CMD_WORKSPACE_FOCUS_CHAT
+        | CMD_WORKSPACE_FOCUS_CODE
+        | CMD_WORKSPACE_OPEN_PROJECT
+        | CMD_WORKSPACE_NEW_CHAT
+        | CMD_WORKSPACE_REFRESH_CHATS
+        | CMD_WORKSPACE_RETRY_CONNECTION
+        | CMD_SETTINGS_OPEN
+        | CMD_SETTINGS_OPEN_SETUP_CENTER
+        | CMD_SETTINGS_OPEN_GATEWAY_OVERVIEW
+        | CMD_SETTINGS_OPEN_MODELS_PROVIDERS
+        | CMD_SETTINGS_OPEN_AGENTS
+        | CMD_SETTINGS_OPEN_RUNTIME_SAFETY
+        | CMD_SETTINGS_OPEN_TOOLS_SKILLS
+        | CMD_DIAGNOSTICS_OPEN_LOGS
+        | CMD_DIAGNOSTICS_OPEN_DOCTOR
+        | CMD_DIAGNOSTICS_OPEN_DEVICES => emit_command(app, id),
         _ => {}
     }
+}
+
+fn emit_command(app: &tauri::AppHandle<tauri::Wry>, command: &str) {
+    focus_main_window(app);
+    let _ = app.emit(COMMAND_EVENT, command);
 }
 
 fn focus_main_window(app: &tauri::AppHandle<tauri::Wry>) {
