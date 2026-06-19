@@ -284,7 +284,7 @@ function ThreadNav({
           No chats yet.
         </div>
       ) : (
-        <div className="min-h-0 flex-1 space-y-1 overflow-y-scroll overscroll-contain pr-1 [scrollbar-gutter:stable]">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-scroll overscroll-contain pr-1 [scrollbar-gutter:stable] zc-scrollbar">
           {threads.map((thread) => (
             <ThreadButton
               key={thread.session_id}

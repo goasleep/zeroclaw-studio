@@ -77,7 +77,7 @@ export function ToolsPanel() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {state.kind === "loading" && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
@@ -166,7 +166,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto p-5">
+      <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
         <div className="mx-auto max-w-4xl space-y-4">
           {schemaEntries.length > 0 && (
             <section className="rounded-lg border border-white/10 bg-white/[0.035]">
@@ -203,7 +203,7 @@ function ToolDetail({ tool }: { tool: ToolInfo | null }) {
               <Braces size={14} className="text-neutral-500" />
               Raw payload
             </summary>
-            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400">
+            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400 zc-scrollbar">
               {JSON.stringify(tool, null, 2)}
             </pre>
           </details>
@@ -221,7 +221,7 @@ function ToolField({ name, value }: { name: string; value: unknown }) {
         {isPrimitive(value) ? (
           <span className="break-words text-neutral-300">{String(value)}</span>
         ) : (
-          <pre className="max-h-80 overflow-auto rounded-md border border-white/10 bg-[#020818]/90 p-3 text-[11px] leading-relaxed text-neutral-400">
+          <pre className="max-h-80 overflow-auto rounded-md border border-white/10 bg-[#020818]/90 p-3 text-[11px] leading-relaxed text-neutral-400 zc-scrollbar">
             {JSON.stringify(value, null, 2)}
           </pre>
         )}

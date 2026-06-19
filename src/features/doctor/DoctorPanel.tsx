@@ -33,7 +33,7 @@ export function DoctorPanel() {
           Run doctor
         </button>
       </header>
-      <div className="flex-1 overflow-auto p-4 text-xs">
+      <div className="flex-1 overflow-auto p-4 text-xs zc-scrollbar">
         {results === null ? (
           <p className="text-neutral-500">Click "Run doctor" to start.</p>
         ) : results.length === 0 ? (

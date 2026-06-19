@@ -366,7 +366,7 @@ function LocalInstallForm({ onCreate }: { onCreate: (c: Connection) => Promise<v
         <div className="rounded border border-white/10 bg-white/[0.06] p-3 text-xs text-neutral-300">
           No <code>zeroclaw</code> binary found. Run this in your terminal:
         </div>
-        <pre className="overflow-x-auto rounded bg-[#020818]/90 px-3 py-2 text-[11px] text-emerald-300">
+        <pre className="overflow-x-auto rounded bg-[#020818]/90 px-3 py-2 text-[11px] text-emerald-300 zc-scrollbar">
           <Terminal className="-mt-1 mr-1 inline" size={12} />
           {instructions?.command ?? "Loading…"}
         </pre>

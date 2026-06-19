@@ -49,7 +49,7 @@ export function DataPanel<T>({ load, render, empty, what = "data" }: DataPanelPr
           Refresh
         </button>
       </header>
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-4 zc-scrollbar">
         {state.kind === "loading" && (
           <div className="flex items-center gap-2 text-xs text-neutral-500">
             <Loader2 size={12} className="animate-spin" />

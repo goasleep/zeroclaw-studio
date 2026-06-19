@@ -2,7 +2,7 @@ import { Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
-import { ConfigPanel } from "@/features/config/ConfigPanel";
+import { ConfigPanel, type ConfigCategoryId } from "@/features/config/ConfigPanel";
 import { CronPanel } from "@/features/cron/CronPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { DoctorPanel } from "@/features/doctor/DoctorPanel";
@@ -10,7 +10,6 @@ import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
 import { LogsPanel } from "@/features/logs/LogsPanel";
 import { MemoryPanel } from "@/features/memory/MemoryPanel";
 import { SetupCenterPanel } from "@/features/setup/SetupCenterPanel";
-import { ToolsPanel } from "@/features/tools/ToolsPanel";
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
@@ -35,40 +34,104 @@ export function SettingsPage({
   onBackToChat,
   onConfigFocusSection,
 }: SettingsPageProps) {
-  const current = SETTINGS_SECTIONS.find((s) => s.id === section);
+  const effectiveSection = normalizeSettingsSection(section);
+
+  function selectSection(next: SettingsSection) {
+    onConfigFocusSection(null);
+    onSection(normalizeSettingsSection(next));
+  }
+
+  function openConfigTarget(targetSection: string) {
+    onConfigFocusSection(targetSection);
+    onSection(settingsSectionForConfigTarget(targetSection));
+  }
 
   return (
     <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-[#020818]/90">
-      <SettingsNav section={section} onSection={onSection} onBackToChat={onBackToChat} />
+      <SettingsNav
+        section={effectiveSection}
+        onSection={selectSection}
+        onBackToChat={onBackToChat}
+      />
       <main className="flex min-w-0 flex-col overflow-hidden border-l border-white/10">
-        <header className="flex h-16 shrink-0 flex-col justify-center border-b border-white/10 px-8">
-          <h1 className="truncate text-lg font-semibold text-neutral-100">
-            {current?.label ?? "Settings"}
-          </h1>
-          <p className="truncate text-xs text-neutral-500">{current?.group ?? "Settings"}</p>
-        </header>
         <div className="min-h-0 flex-1 overflow-hidden">
-          {section === "app" && <AppSettings />}
-          {section === "setup-center" && <SetupCenterPanel />}
-          {section === "gateway-config" && <ConfigPanel focusSection={configFocusSection} />}
-          {section === "memory" && <MemoryPanel />}
-          {section === "cron" && <CronPanel />}
-          {section === "tools" && <ToolsPanel />}
-          {section === "integrations" && (
-            <IntegrationsPanel
-              onConfigure={(targetSection) => {
-                onConfigFocusSection(targetSection);
-                onSection("gateway-config");
-              }}
+          {effectiveSection === "app" && <AppSettings />}
+          {effectiveSection === "setup-center" && <SetupCenterPanel />}
+          {effectiveSection === "gateway-overview" && (
+            <ConfigPanel
+              focusSection={configFocusSection}
+              onNavigate={(target) =>
+                selectSection(normalizeSettingsSection(target as SettingsSection))
+              }
             />
           )}
-          {section === "logs" && <LogsPanel />}
-          {section === "doctor" && <DoctorPanel />}
-          {section === "devices" && <DevicesPanel />}
+          {isConfigCategorySection(effectiveSection) && (
+            <ConfigPanel
+              categoryId={effectiveSection}
+              focusSection={configFocusSection}
+              onNavigate={(target) =>
+                selectSection(normalizeSettingsSection(target as SettingsSection))
+              }
+            />
+          )}
+          {effectiveSection === "memory" && <MemoryPanel />}
+          {effectiveSection === "cron" && <CronPanel />}
+          {effectiveSection === "integrations" && (
+            <IntegrationsPanel onConfigure={(targetSection) => openConfigTarget(targetSection)} />
+          )}
+          {effectiveSection === "logs" && <LogsPanel />}
+          {effectiveSection === "doctor" && <DoctorPanel />}
+          {effectiveSection === "devices" && <DevicesPanel />}
         </div>
       </main>
     </section>
   );
+}
+
+function normalizeSettingsSection(section: SettingsSection): SettingsSection {
+  if (section === "gateway-config") return "gateway-overview";
+  if (section === "tools") return "tools-skills";
+  return section;
+}
+
+function isConfigCategorySection(section: SettingsSection): section is ConfigCategoryId {
+  return (
+    section === "models-providers" ||
+    section === "agents" ||
+    section === "runtime-safety" ||
+    section === "channels" ||
+    section === "tools-skills"
+  );
+}
+
+function settingsSectionForConfigTarget(targetSection: string): SettingsSection {
+  if (targetSection === "providers.models" || targetSection.startsWith("providers.models.")) {
+    return "models-providers";
+  }
+  if (targetSection === "agents" || targetSection.startsWith("agents.")) return "agents";
+  if (targetSection === "peer_groups" || targetSection.startsWith("peer_groups.")) {
+    return "agents";
+  }
+  if (targetSection === "risk_profiles" || targetSection.startsWith("risk_profiles.")) {
+    return "runtime-safety";
+  }
+  if (targetSection === "runtime_profiles" || targetSection.startsWith("runtime_profiles.")) {
+    return "runtime-safety";
+  }
+  if (targetSection === "channels" || targetSection.startsWith("channels.")) return "channels";
+  if (
+    targetSection === "tools" ||
+    targetSection.startsWith("tools.") ||
+    targetSection === "skills" ||
+    targetSection.startsWith("skills.") ||
+    targetSection === "skill_bundles" ||
+    targetSection.startsWith("skill_bundles.") ||
+    targetSection === "mcp" ||
+    targetSection.startsWith("mcp.")
+  ) {
+    return "tools-skills";
+  }
+  return "gateway-overview";
 }
 
 function SettingsNav({
@@ -80,7 +143,12 @@ function SettingsNav({
   onSection: (section: SettingsSection) => void;
   onBackToChat: () => void;
 }) {
-  const groups: Array<"App" | "Gateway" | "Operations"> = ["App", "Gateway", "Operations"];
+  const groups: Array<"App" | "Gateway" | "Capabilities" | "Operations"> = [
+    "App",
+    "Gateway",
+    "Capabilities",
+    "Operations",
+  ];
 
   return (
     <aside className="flex min-h-0 flex-col bg-[#020818]/90">
@@ -95,7 +163,7 @@ function SettingsNav({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 zc-scrollbar">
         {groups.map((group) => (
           <section key={group} className="mb-5">
             <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">{group}</h2>
@@ -146,7 +214,7 @@ function AppSettings() {
   }
 
   return (
-    <div className="h-full overflow-auto p-5 text-sm">
+    <div className="h-full overflow-auto p-5 text-sm zc-scrollbar">
       <div className="mx-auto max-w-3xl space-y-4">
         <section className="rounded-lg border border-white/10 bg-white/[0.035] p-4">
           <h2 className="mb-3 text-sm font-medium text-neutral-100">Connection</h2>

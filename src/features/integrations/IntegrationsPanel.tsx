@@ -133,7 +133,7 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {state.kind === "loading" && (
             <div className="flex items-center gap-2 p-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
@@ -258,7 +258,7 @@ function IntegrationDetail({
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto p-5">
+      <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
         <div className="mx-auto max-w-4xl space-y-4">
           <section className="rounded-lg border border-white/10 bg-white/[0.035]">
             <h3 className="border-b border-white/10 px-4 py-3 text-sm font-medium text-neutral-100">
@@ -295,7 +295,7 @@ function IntegrationDetail({
             <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-neutral-100">
               Raw integration payload
             </summary>
-            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400">
+            <pre className="overflow-x-auto border-t border-white/10 p-4 text-xs leading-relaxed text-neutral-400 zc-scrollbar">
               {JSON.stringify(item, null, 2)}
             </pre>
           </details>

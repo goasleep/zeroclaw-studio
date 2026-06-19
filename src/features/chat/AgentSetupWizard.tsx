@@ -277,7 +277,7 @@ export function AgentSetupWizard({ onAgentCreated }: AgentSetupWizardProps) {
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto bg-[#020818]/90 p-6">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[#020818]/90 p-6 zc-scrollbar">
       <div className="mx-auto max-w-5xl space-y-5">
         <header className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-400/10 text-cyan-300">

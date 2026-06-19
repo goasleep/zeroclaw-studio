@@ -46,6 +46,7 @@ type MemoryUsage = {
   raw: string;
   backendKey: string | null;
   alias: string | null;
+  populated: boolean;
 };
 
 type BackendSummary = {
@@ -191,7 +192,7 @@ export function MemoryPanel() {
 
   if (state.kind === "error") {
     return (
-      <div className="h-full overflow-auto bg-[#020818]/90 p-5">
+      <div className="h-full overflow-auto bg-[#020818]/90 p-5 zc-scrollbar">
         <ErrorBox message={state.message} />
       </div>
     );
@@ -244,6 +245,8 @@ export function MemoryPanel() {
 
           <CurrentMemoryNotice overview={overview} />
 
+          <ActiveMemoryPanel overview={overview} choices={choices} onSaved={() => void refresh()} />
+
           <div className="relative mt-3">
             <Search
               size={13}
@@ -268,7 +271,7 @@ export function MemoryPanel() {
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {filteredChoices.length === 0 && (
             <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
               No memory backends match this filter.
@@ -457,7 +460,7 @@ function TypedBackendSetup({
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-4xl space-y-4">
         <BackendHeader choice={choice} summary={summary} />
         {error && <ErrorBox message={error} />}
@@ -539,7 +542,7 @@ function OneTierBackendSetup({
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-4xl space-y-4">
         <BackendHeader choice={choice} summary={summary} />
         {error && <ErrorBox message={error} />}
@@ -605,7 +608,7 @@ function BackendOpenPanel({
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-4xl space-y-4">
         <BackendHeader choice={choice} summary={summary} />
         {error && <ErrorBox message={error} />}
@@ -773,7 +776,7 @@ function MemoryFieldForm({
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-auto p-5">
+      <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
         {loading && <LoadingInline label="Loading fields..." />}
         {error && <ErrorBox message={error} />}
         {!loading && !error && entries.length === 0 && (
@@ -1013,6 +1016,151 @@ function CurrentMemoryNotice({ overview }: { overview: MemoryOverview }) {
   );
 }
 
+function ActiveMemoryPanel({
+  overview,
+  choices,
+  onSaved,
+}: {
+  overview: MemoryOverview;
+  choices: PickerItem[];
+  onSaved: () => void;
+}) {
+  const firstUsagePath = overview.usages[0]?.path ?? "";
+  const [usagePath, setUsagePath] = useState(firstUsagePath);
+  const selectedUsage =
+    overview.usages.find((usage) => usage.path === usagePath) ?? overview.usages[0] ?? null;
+  const [backendKey, setBackendKey] = useState(selectedUsage?.backendKey ?? choices[0]?.key ?? "");
+  const [alias, setAlias] = useState(selectedUsage?.alias ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUsagePath(firstUsagePath);
+  }, [firstUsagePath]);
+
+  useEffect(() => {
+    setBackendKey(selectedUsage?.backendKey ?? choices[0]?.key ?? "");
+    setAlias(selectedUsage?.alias ?? "");
+  }, [choices, selectedUsage?.alias, selectedUsage?.backendKey, selectedUsage?.path]);
+
+  if (overview.usages.length === 0) {
+    return (
+      <section className="mt-3 rounded-md border border-white/10 bg-white/[0.025] px-3 py-3">
+        <h3 className="text-xs font-medium text-neutral-200">Active memory selector</h3>
+        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+          No agent or profile currently exposes a memory selector. Configure backends here, then
+          bind one from an agent or profile.
+        </p>
+      </section>
+    );
+  }
+
+  const configuredAliases = backendKey
+    ? (overview.summaries[backendKey]?.configuredAliases ?? [])
+    : [];
+  const nextValue = formatMemorySelectorValue(selectedUsage?.raw ?? "", backendKey, alias);
+  const dirty = Boolean(selectedUsage && nextValue !== selectedUsage.raw);
+
+  async function save() {
+    if (!selectedUsage || !backendKey) return;
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    try {
+      const ops: PatchOp[] = [
+        {
+          op: selectedUsage.populated ? "replace" : "add",
+          path: dottedToPointer(selectedUsage.path),
+          value: nextValue,
+        },
+      ];
+      await apiConfigPatch(ops);
+      setSaved(true);
+      onSaved();
+      window.setTimeout(() => setSaved(false), 1200);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mt-3 rounded-md border border-white/10 bg-white/[0.025] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-medium text-neutral-200">Active selector</h3>
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={!dirty || saving || !backendKey}
+          className="inline-flex shrink-0 items-center gap-1 rounded bg-sky-400 px-2 py-1 text-[10px] font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {saving ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : saved ? (
+            <Check size={11} />
+          ) : (
+            <Save size={11} />
+          )}
+          {saved ? "Saved" : "Save"}
+        </button>
+      </div>
+
+      <label className="mt-3 block text-[10px] uppercase tracking-wide text-neutral-500">
+        Usage
+      </label>
+      <select
+        value={selectedUsage?.path ?? ""}
+        onChange={(event) => setUsagePath(event.target.value)}
+        className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none focus:border-cyan-400"
+      >
+        {overview.usages.map((usage) => (
+          <option key={usage.path} value={usage.path}>
+            {usage.label}
+          </option>
+        ))}
+      </select>
+
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+        <label className="min-w-0 text-[10px] uppercase tracking-wide text-neutral-500">
+          Backend
+          <select
+            value={backendKey}
+            onChange={(event) => setBackendKey(event.target.value)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs normal-case tracking-normal text-neutral-100 outline-none focus:border-cyan-400"
+          >
+            {choices.map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {memoryMeta(choice).label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="min-w-0 text-[10px] uppercase tracking-wide text-neutral-500">
+          Alias
+          <input
+            value={alias}
+            onChange={(event) => setAlias(event.target.value)}
+            placeholder="default"
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs normal-case tracking-normal text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+          />
+        </label>
+      </div>
+
+      <div className="mt-2 truncate font-mono text-[10px] text-neutral-500">
+        {selectedUsage?.path}: {nextValue || "<unset>"}
+      </div>
+      {configuredAliases.length > 0 && (
+        <div className="mt-1 truncate text-[10px] text-neutral-500">
+          configured aliases: {configuredAliases.join(", ")}
+        </div>
+      )}
+      {error && <div className="mt-2 text-[10px] text-red-300">{error}</div>}
+    </section>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-2">
@@ -1187,6 +1335,7 @@ function findMemoryUsages(
       raw,
       backendKey: parsed.backendKey,
       alias: parsed.alias,
+      populated: entry.populated,
     });
   }
   return usages;
@@ -1209,6 +1358,19 @@ function parseMemoryRef(raw: string, choiceKeys: string[]) {
     backendKey,
     alias: parts[index + 1] ?? null,
   };
+}
+
+function formatMemorySelectorValue(seed: string, backendKey: string, alias: string) {
+  const cleanAlias = alias.trim();
+  const suffix = cleanAlias ? `${backendKey}.${cleanAlias}` : backendKey;
+  if (seed.startsWith("memory:")) {
+    return cleanAlias ? `memory:${backendKey}:${cleanAlias}` : `memory:${backendKey}`;
+  }
+  if (seed.startsWith("memory/")) {
+    return cleanAlias ? `memory/${backendKey}/${cleanAlias}` : `memory/${backendKey}`;
+  }
+  if (seed.startsWith("memory.")) return `memory.${suffix}`;
+  return suffix;
 }
 
 function valueAsString(value: unknown) {

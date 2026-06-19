@@ -214,7 +214,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           {connections.length === 0 ? (
             <div className="px-3 py-3 text-xs text-neutral-500">No saved connections yet.</div>
           ) : (
-            <div className="max-h-72 overflow-y-auto py-1">
+            <div className="max-h-72 overflow-y-auto py-1 zc-scrollbar">
               {connections.map((c) => (
                 <button
                   key={c.id}
@@ -295,7 +295,7 @@ export function ConnectionPicker({ onAdd }: Props) {
               {active.url || "pending tunnel"}
             </div>
           </div>
-          <div className="max-h-96 overflow-auto p-3 text-xs">
+          <div className="max-h-96 overflow-auto p-3 text-xs zc-scrollbar">
             {activeDetails.loading ? (
               <div className="flex items-center gap-2 text-neutral-500">
                 <Loader2 size={12} className="animate-spin" />

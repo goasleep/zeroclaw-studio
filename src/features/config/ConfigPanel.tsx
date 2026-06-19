@@ -62,19 +62,108 @@ const GROUP_ORDER = [
 type PanelMode = "overview" | "sections" | "advanced";
 type StatusFilter = "all" | "needs" | "ready";
 type FormTarget = { prefix: string; title: string; subtitle?: string };
+export type ConfigCategoryId =
+  | "models-providers"
+  | "agents"
+  | "runtime-safety"
+  | "channels"
+  | "tools-skills";
 type LoadState =
   | { kind: "loading" }
   | { kind: "ready"; sections: ConfigSectionInfo[] }
   | { kind: "error"; message: string };
 
-const PRIMARY_SECTION_KEYS = [
-  "providers.models",
-  "risk_profiles",
-  "runtime_profiles",
-  "channels",
-  "agents",
-  "memory",
-] as const;
+interface ConfigCategory {
+  id: ConfigCategoryId;
+  label: string;
+  description: string;
+  sectionKeys: string[];
+  icon: LucideIcon;
+  emptyTitle: string;
+  emptyBody: string;
+}
+
+const CONFIG_CATEGORIES: Record<ConfigCategoryId, ConfigCategory> = {
+  "models-providers": {
+    id: "models-providers",
+    label: "Models & Providers",
+    description: "Configure model providers, aliases, API keys, base URLs, and model defaults.",
+    sectionKeys: ["providers.models"],
+    icon: Sparkles,
+    emptyTitle: "No model provider sections",
+    emptyBody: "This gateway did not report provider config sections.",
+  },
+  agents: {
+    id: "agents",
+    label: "Agents",
+    description: "Configure agent identities, prompts, default profiles, and peer groups.",
+    sectionKeys: ["agents", "peer_groups"],
+    icon: Activity,
+    emptyTitle: "No agent sections",
+    emptyBody: "This gateway did not report agent or peer group config sections.",
+  },
+  "runtime-safety": {
+    id: "runtime-safety",
+    label: "Runtime & Safety",
+    description: "Manage risk profiles, runtime tuning, sandbox settings, and command policy.",
+    sectionKeys: ["risk_profiles", "runtime_profiles"],
+    icon: ShieldCheck,
+    emptyTitle: "No runtime or safety sections",
+    emptyBody: "This gateway did not report risk profile or runtime profile sections.",
+  },
+  channels: {
+    id: "channels",
+    label: "Channels",
+    description: "Configure chat channels, webhooks, tokens, aliases, and agent routing.",
+    sectionKeys: ["channels"],
+    icon: Network,
+    emptyTitle: "No channel sections",
+    emptyBody: "This gateway did not report channel config sections.",
+  },
+  "tools-skills": {
+    id: "tools-skills",
+    label: "Tools & Skills",
+    description: "Configure tools, skills, skill bundles, MCP servers, and tool runtimes.",
+    sectionKeys: ["tools", "skills", "skill_bundles", "mcp"],
+    icon: Wrench,
+    emptyTitle: "No tools or skills sections",
+    emptyBody: "This gateway did not report tools, skills, bundles, or MCP sections.",
+  },
+};
+
+const OVERVIEW_CARDS: Array<
+  | { kind: "category"; categoryId: ConfigCategoryId }
+  | {
+      kind: "link";
+      target: string;
+      label: string;
+      description: string;
+      sectionKeys: string[];
+      icon: LucideIcon;
+    }
+> = [
+  { kind: "category", categoryId: "models-providers" },
+  { kind: "category", categoryId: "agents" },
+  { kind: "category", categoryId: "runtime-safety" },
+  { kind: "category", categoryId: "channels" },
+  {
+    kind: "link",
+    target: "memory",
+    label: "Memory",
+    description: "Configure memory backends and choose active memory per agent or profile.",
+    sectionKeys: ["memory"],
+    icon: Database,
+  },
+  { kind: "category", categoryId: "tools-skills" },
+  {
+    kind: "link",
+    target: "integrations",
+    label: "Integrations",
+    description: "Browse integration status and jump into the right gateway configuration.",
+    sectionKeys: ["channels", "providers.models", "mcp", "plugins"],
+    icon: Boxes,
+  },
+];
 
 const GROUP_ICONS: Record<string, LucideIcon> = {
   Foundation: Sparkles,
@@ -88,9 +177,18 @@ const GROUP_ICONS: Record<string, LucideIcon> = {
   Other: Layers3,
 };
 
-export function ConfigPanel({ focusSection }: { focusSection?: string | null }) {
+export function ConfigPanel({
+  focusSection,
+  categoryId = null,
+  onNavigate,
+}: {
+  focusSection?: string | null;
+  categoryId?: ConfigCategoryId | null;
+  onNavigate?: (section: string) => void;
+}) {
+  const category = categoryId ? CONFIG_CATEGORIES[categoryId] : null;
   const [state, setState] = useState<LoadState>({ kind: "loading" });
-  const [mode, setMode] = useState<PanelMode>(focusSection ? "sections" : "overview");
+  const [mode, setMode] = useState<PanelMode>(categoryId || focusSection ? "sections" : "overview");
   const [activeKey, setActiveKey] = useState<string | null>(focusSection ?? null);
   const [filter, setFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -101,20 +199,23 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
     setState({ kind: "loading" });
     try {
       const data = await apiConfigSections();
+      const selectableSections = category
+        ? data.sections.filter((section) => sectionMatchesCategory(section, category))
+        : data.sections;
       setState({ kind: "ready", sections: data.sections });
       setActiveKey((current) => {
-        if (focusSection && data.sections.some((s) => s.key === focusSection)) {
+        if (focusSection && selectableSections.some((s) => s.key === focusSection)) {
           return focusSection;
         }
-        if (current && data.sections.some((s) => s.key === current)) {
+        if (current && selectableSections.some((s) => s.key === current)) {
           return current;
         }
-        return data.sections[0]?.key ?? null;
+        return selectableSections[0]?.key ?? null;
       });
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e) });
     }
-  }, [focusSection]);
+  }, [category, focusSection]);
 
   useEffect(() => {
     void loadSections();
@@ -122,25 +223,64 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
 
   useEffect(() => {
     if (!focusSection || state.kind !== "ready") return;
-    if (state.sections.some((s) => s.key === focusSection)) {
+    const selectableSections = category
+      ? state.sections.filter((section) => sectionMatchesCategory(section, category))
+      : state.sections;
+    if (selectableSections.some((s) => s.key === focusSection)) {
       setMode("sections");
       setActiveKey(focusSection);
       setTarget(null);
     }
-  }, [focusSection, state]);
+  }, [category, focusSection, state]);
+
+  useEffect(() => {
+    setMode(category ? "sections" : focusSection ? "sections" : "overview");
+    setTarget(null);
+    setFilter("");
+    setStatusFilter("all");
+  }, [categoryId, focusSection, category]);
 
   const sections = state.kind === "ready" ? state.sections : [];
-  const activeSection = sections.find((s) => s.key === activeKey) ?? null;
+  const visibleSections = category
+    ? sections.filter((section) => sectionMatchesCategory(section, category))
+    : sections;
+  const activeSection = visibleSections.find((s) => s.key === activeKey) ?? null;
   const filteredGroups = useMemo(
-    () => groupSections(filterSections(filterSectionsByStatus(sections, statusFilter), filter)),
-    [filter, sections, statusFilter],
+    () =>
+      groupSections(filterSections(filterSectionsByStatus(visibleSections, statusFilter), filter)),
+    [filter, statusFilter, visibleSections],
   );
-  const sectionStats = useMemo(() => getSectionStats(sections), [sections]);
+  const sectionStats = useMemo(() => getSectionStats(visibleSections), [visibleSections]);
 
   function chooseSection(section: ConfigSectionInfo) {
     setMode("sections");
     setActiveKey(section.key);
     setTarget(null);
+  }
+
+  if (category) {
+    return (
+      <ConfigCategoryWorkspace
+        category={category}
+        state={state}
+        sections={visibleSections}
+        activeSection={activeSection}
+        target={target}
+        reloadKey={reloadKey}
+        mode={mode}
+        onSection={chooseSection}
+        onTarget={setTarget}
+        onRefresh={loadSections}
+        onAdvanced={() => {
+          setMode("advanced");
+          setTarget(null);
+        }}
+        onSaved={() => {
+          setReloadKey((n) => n + 1);
+          void loadSections();
+        }}
+      />
+    );
   }
 
   return (
@@ -217,7 +357,7 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {state.kind === "loading" && <LoadingInline label="Loading config sections..." />}
           {state.kind === "error" && <ErrorBox message={state.message} />}
           {state.kind === "ready" &&
@@ -274,13 +414,14 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
       </aside>
 
       <main className="min-w-0 overflow-hidden">
-        {mode === "overview" ? (
+        {mode === "overview" && !category ? (
           <ConfigOverview
             sections={sections}
             state={state}
             stats={sectionStats}
             onRefresh={loadSections}
             onChoose={chooseSection}
+            onNavigate={onNavigate}
             onAdvanced={() => {
               setMode("advanced");
               setTarget(null);
@@ -305,12 +446,140 @@ export function ConfigPanel({ focusSection }: { focusSection?: string | null }) 
   );
 }
 
+function ConfigCategoryWorkspace({
+  category,
+  state,
+  sections,
+  activeSection,
+  target,
+  reloadKey,
+  mode,
+  onSection,
+  onTarget,
+  onRefresh,
+  onAdvanced,
+  onSaved,
+}: {
+  category: ConfigCategory;
+  state: LoadState;
+  sections: ConfigSectionInfo[];
+  activeSection: ConfigSectionInfo | null;
+  target: FormTarget | null;
+  reloadKey: number;
+  mode: PanelMode;
+  onSection: (section: ConfigSectionInfo) => void;
+  onTarget: (target: FormTarget | null) => void;
+  onRefresh: () => void;
+  onAdvanced: () => void;
+  onSaved: () => void;
+}) {
+  const Icon = category.icon;
+  const stats = getSectionStats(sections);
+  const orderedSections = orderSectionsForCategory(sections, category);
+  const showingAdvanced = mode === "advanced";
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <header className="shrink-0 border-b border-white/10 px-6 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
+              <Icon size={17} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-lg font-semibold text-neutral-100">
+                  {category.label}
+                </h2>
+                <Badge label={`${stats.ready} ready`} />
+                <Badge label={`${sections.length} sections`} />
+              </div>
+              <p className="mt-1 max-w-3xl text-xs leading-relaxed text-neutral-500">
+                {category.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
+            >
+              <RefreshCw size={12} />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={onAdvanced}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs ${
+                showingAdvanced
+                  ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                  : "border-white/10 text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-300"
+              }`}
+            >
+              <Code2 size={12} />
+              Advanced
+            </button>
+          </div>
+        </div>
+
+        {orderedSections.length > 1 && (
+          <div className="mt-4 flex flex-wrap gap-1">
+            {orderedSections.map((section) => (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => onSection(section)}
+                className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition ${
+                  !showingAdvanced && activeSection?.key === section.key
+                    ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-100"
+                    : "border-white/10 text-neutral-400 hover:border-white/15 hover:text-neutral-100"
+                }`}
+              >
+                <SectionStateDot section={section} />
+                <span>{categorySectionLabel(category, section)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <main className="min-h-0 flex-1 overflow-hidden">
+        {state.kind === "loading" ? (
+          <LoadingInline label={`Loading ${category.label.toLowerCase()}...`} />
+        ) : state.kind === "error" ? (
+          <div className="p-5">
+            <ErrorBox message={state.message} />
+          </div>
+        ) : showingAdvanced ? (
+          <AdvancedConfigEditor />
+        ) : sections.length === 0 ? (
+          <EmptyState
+            icon={<IconNode icon={category.icon} size={28} />}
+            title={category.emptyTitle}
+            body={category.emptyBody}
+          />
+        ) : (
+          <SectionExplorer
+            section={activeSection ?? orderedSections[0] ?? null}
+            target={target}
+            reloadKey={reloadKey}
+            onTarget={onTarget}
+            onSaved={onSaved}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
 function ConfigOverview({
   sections,
   state,
   stats,
   onRefresh,
   onChoose,
+  onNavigate,
   onAdvanced,
 }: {
   sections: ConfigSectionInfo[];
@@ -318,11 +587,10 @@ function ConfigOverview({
   stats: SectionStats;
   onRefresh: () => void;
   onChoose: (section: ConfigSectionInfo) => void;
+  onNavigate?: (section: string) => void;
   onAdvanced: () => void;
 }) {
-  const primarySections = PRIMARY_SECTION_KEYS.map((key) =>
-    sections.find((section) => section.key === key),
-  ).filter(Boolean) as ConfigSectionInfo[];
+  const areaCards = OVERVIEW_CARDS.map((card) => overviewCardFor(card, sections));
   const needsAttention = sections
     .filter((section) => !section.ready)
     .sort(
@@ -333,7 +601,7 @@ function ConfigOverview({
   const groups = groupSections(sections);
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto zc-scrollbar">
       <div className="mx-auto max-w-6xl space-y-5 px-6 py-5">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -393,25 +661,23 @@ function ConfigOverview({
           />
         </div>
 
-        {primarySections.length > 0 && (
-          <section>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-neutral-100">Common gateway setup</h3>
-              <span className="text-[10px] uppercase tracking-wide text-neutral-600">
-                Recommended
-              </span>
-            </div>
-            <div className="grid gap-3 lg:grid-cols-3">
-              {primarySections.map((section) => (
-                <QuickSetupCard
-                  key={section.key}
-                  section={section}
-                  onClick={() => onChoose(section)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        <section>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-neutral-100">Configuration entry points</h3>
+            <span className="text-[10px] uppercase tracking-wide text-neutral-600">
+              Common workflows
+            </span>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {areaCards.map((card) => (
+              <OverviewEntryCard
+                key={card.target}
+                card={card}
+                onClick={() => onNavigate?.(card.target)}
+              />
+            ))}
+          </div>
+        </section>
 
         {needsAttention.length > 0 && (
           <section>
@@ -489,8 +755,21 @@ function StatCard({
   );
 }
 
-function QuickSetupCard({ section, onClick }: { section: ConfigSectionInfo; onClick: () => void }) {
-  const Icon = iconForGroup(section.group);
+interface OverviewCardView {
+  target: string;
+  label: string;
+  description: string;
+  sections: ConfigSectionInfo[];
+  stats: SectionStats;
+  icon: LucideIcon;
+}
+
+function OverviewEntryCard({ card, onClick }: { card: OverviewCardView; onClick: () => void }) {
+  const Icon = card.icon;
+  const detail =
+    card.sections.length > 0
+      ? `${card.stats.ready} ready / ${card.sections.length} sections`
+      : "Open console";
   return (
     <button
       type="button"
@@ -501,18 +780,59 @@ function QuickSetupCard({ section, onClick }: { section: ConfigSectionInfo; onCl
         <span className="flex h-9 w-9 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
           <Icon size={16} />
         </span>
-        <SectionStatusBadge section={section} />
+        <Badge label={card.stats.needs === 0 && card.sections.length > 0 ? "ready" : "open"} />
       </span>
-      <span className="mt-3 block text-sm font-semibold text-neutral-100">{section.label}</span>
+      <span className="mt-3 block text-sm font-semibold text-neutral-100">{card.label}</span>
       <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-500">
-        {section.help || section.key}
+        {card.description}
       </span>
       <span className="mt-auto flex items-center gap-1 pt-3 font-mono text-[10px] text-neutral-500 group-hover:text-cyan-300">
-        {section.key}
+        {detail}
         <ChevronRight size={12} />
       </span>
     </button>
   );
+}
+
+function overviewCardFor(
+  card:
+    | { kind: "category"; categoryId: ConfigCategoryId }
+    | {
+        kind: "link";
+        target: string;
+        label: string;
+        description: string;
+        sectionKeys: string[];
+        icon: LucideIcon;
+      },
+  sections: ConfigSectionInfo[],
+): OverviewCardView {
+  if (card.kind === "category") {
+    const category = CONFIG_CATEGORIES[card.categoryId];
+    const related = sections.filter((section) => sectionMatchesCategory(section, category));
+    return {
+      target: category.id,
+      label: category.label,
+      description: category.description,
+      sections: related,
+      stats: getSectionStats(related),
+      icon: category.icon,
+    };
+  }
+
+  const related = sections.filter((section) => sectionMatchesKeys(section, card.sectionKeys));
+  return {
+    target: card.target,
+    label: card.label,
+    description: card.description,
+    sections: related,
+    stats: getSectionStats(related),
+    icon: card.icon,
+  };
+}
+
+function IconNode({ icon: Icon, size }: { icon: LucideIcon; size: number }) {
+  return <Icon size={size} />;
 }
 
 function GroupCard({
@@ -628,12 +948,15 @@ function PickerSection({
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [selectedItem, setSelectedItem] = useState<PickerItem | null>(null);
+  const [newItemName, setNewItemName] = useState("");
+  const [creatingItem, setCreatingItem] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     setFilter("");
+    setNewItemName("");
     setSelectedItem(null);
     void apiConfigPicker(section.key)
       .then((resp) => {
@@ -677,6 +1000,34 @@ function PickerSection({
     section.shape === "typed_family_map" || section.shape === undefined || section.shape === null;
   const oneTier = section.shape === "one_tier_alias_map";
 
+  async function createOneTierItem() {
+    const clean = newItemName.trim();
+    if (!clean) return;
+    setCreatingItem(true);
+    setError(null);
+    try {
+      const result = await apiConfigSelectItem(section.key, clean);
+      const nextItem: PickerItem = { key: clean, label: clean, badge: "configured" };
+      setItems((current) =>
+        current.some((item) => item.key === clean)
+          ? current.map((item) => (item.key === clean ? { ...item, badge: "configured" } : item))
+          : [...current, nextItem],
+      );
+      setSelectedItem(nextItem);
+      setNewItemName("");
+      onSaved();
+      onTarget({
+        prefix: result.fields_prefix,
+        title: clean,
+        subtitle: result.created ? "Created new entry" : section.help,
+      });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setCreatingItem(false);
+    }
+  }
+
   return (
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
       <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
@@ -694,8 +1045,41 @@ function PickerSection({
             placeholder="Filter choices..."
             className="mt-3 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
           />
+          {oneTier && (
+            <div className="mt-3 rounded-md border border-dashed border-white/10 bg-white/[0.025] p-2">
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium text-neutral-300">
+                <Plus size={12} className="text-cyan-300" />
+                {createEntryLabel(section)}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void createOneTierItem();
+                  }}
+                  placeholder={entryNamePlaceholder(section)}
+                  className="min-w-0 flex-1 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => void createOneTierItem()}
+                  disabled={!newItemName.trim() || creatingItem}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-sky-400 px-2.5 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {creatingItem ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Plus size={12} />
+                  )}
+                  Create
+                </button>
+              </div>
+            </div>
+          )}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {loading && <LoadingInline label="Loading picker..." />}
           {error && <ErrorBox message={error} />}
           {!loading && !error && filtered.length === 0 && (
@@ -752,7 +1136,11 @@ function PickerSection({
             />
           )
         ) : oneTier ? (
-          <OneTierEmptyPanel section={section} onTarget={onTarget} onSaved={onSaved} />
+          <EmptyState
+            icon={<Plus size={28} />}
+            title={`Create or select ${entryNoun(section)}`}
+            body={`Use the list on the left to add a ${entryNoun(section)} or open an existing one.`}
+          />
         ) : (
           <EmptyState
             icon={<Plus size={28} />}
@@ -760,60 +1148,6 @@ function PickerSection({
             body="Select a row to create, choose, or inspect its config fields."
           />
         )}
-      </div>
-    </div>
-  );
-}
-
-function OneTierEmptyPanel({
-  section,
-  onTarget,
-  onSaved,
-}: {
-  section: ConfigSectionInfo;
-  onTarget: (target: FormTarget) => void;
-  onSaved: () => void;
-}) {
-  const [alias, setAlias] = useState("default");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function createAlias() {
-    const clean = alias.trim();
-    if (!clean) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await apiConfigSelectItem(section.key, clean);
-      onSaved();
-      onTarget({
-        prefix: result.fields_prefix,
-        title: clean,
-        subtitle: result.created ? "Created new entry" : section.help,
-      });
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="h-full overflow-auto p-5">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <SectionHeader
-          title={section.label}
-          code={section.key}
-          body={section.help || "Create the first named entry for this section."}
-        />
-        <AliasCreator
-          alias={alias}
-          busy={busy}
-          label="Create entry"
-          onAlias={setAlias}
-          onSubmit={() => void createAlias()}
-        />
-        {error && <ErrorBox message={error} />}
       </div>
     </div>
   );
@@ -875,7 +1209,7 @@ function TypedAliasPanel({
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-3xl space-y-4">
         <SectionHeader title={item.label} code={item.key} body={item.description} />
         {loading ? (
@@ -911,6 +1245,8 @@ function TypedAliasPanel({
           alias={alias}
           busy={busy}
           label="Create or open alias"
+          buttonLabel="Open"
+          placeholder="default"
           onAlias={setAlias}
           onSubmit={() => void openAlias(alias.trim() || "default")}
         />
@@ -931,7 +1267,6 @@ function OneTierAliasPanel({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
-  const [alias, setAlias] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -956,13 +1291,14 @@ function OneTierAliasPanel({
   }
 
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-3xl space-y-4">
         <SectionHeader title={item.label} code={item.key} body={item.description} />
         <button
           type="button"
           onClick={() => void openAlias(item.key)}
-          className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-left text-sm text-neutral-200 hover:border-cyan-400/50 hover:text-cyan-100"
+          disabled={busy}
+          className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.035] px-4 py-3 text-left text-sm text-neutral-200 hover:border-cyan-400/50 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span>
             <span className="block font-medium">Open configured entry</span>
@@ -970,15 +1306,8 @@ function OneTierAliasPanel({
               {section.key}.{item.key}
             </span>
           </span>
-          <ChevronRight size={14} />
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
         </button>
-        <AliasCreator
-          alias={alias}
-          busy={busy}
-          label="Create another entry"
-          onAlias={setAlias}
-          onSubmit={() => void openAlias(alias)}
-        />
         {error && <ErrorBox message={error} />}
       </div>
     </div>
@@ -994,7 +1323,7 @@ function BackendPanel({
   onSelect: (alias?: string) => void;
 }) {
   return (
-    <div className="h-full overflow-auto p-5">
+    <div className="h-full overflow-auto p-5 zc-scrollbar">
       <div className="mx-auto max-w-3xl space-y-4">
         <SectionHeader title={item.label} code={item.key} body={item.description} />
         <button
@@ -1156,7 +1485,7 @@ function ConfigFieldForm({
       {activeTab === "setup" && setupTargets.length > 0 ? (
         <SetupDoctorTab prefix={target.prefix} title={target.title} onConfigSaved={onSaved} />
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto p-5">
+        <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
           {loading && <LoadingInline label="Loading fields..." />}
           {error && <ErrorBox message={error} />}
           {!loading && !error && entries.length === 0 && (
@@ -1493,7 +1822,7 @@ function AdvancedConfigEditor() {
             {skillsAvailable === true && <Badge label="skills" />}
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           {loading && <LoadingInline label="Loading raw paths..." />}
           {filtered.map((entry) => (
             <button
@@ -1518,7 +1847,7 @@ function AdvancedConfigEditor() {
       </aside>
       <main className="min-w-0 overflow-hidden">
         {!selected ? (
-          <div className="h-full overflow-auto p-5">
+          <div className="h-full overflow-auto p-5 zc-scrollbar">
             <div className="mx-auto max-w-4xl space-y-4">
               <EmptyState
                 icon={<Code2 size={28} />}
@@ -1625,7 +1954,7 @@ function AdvancedConfigEditor() {
                 Delete
               </button>
             </header>
-            <div className="min-h-0 flex-1 overflow-auto p-5">
+            <div className="min-h-0 flex-1 overflow-auto p-5 zc-scrollbar">
               {error && <ErrorBox message={error} />}
               <textarea
                 value={draft}
@@ -1644,13 +1973,17 @@ function AdvancedConfigEditor() {
 function AliasCreator({
   alias,
   busy,
+  buttonLabel,
   label,
+  placeholder,
   onAlias,
   onSubmit,
 }: {
   alias: string;
   busy: boolean;
+  buttonLabel: string;
   label: string;
+  placeholder: string;
   onAlias: (alias: string) => void;
   onSubmit: () => void;
 }) {
@@ -1662,7 +1995,7 @@ function AliasCreator({
           type="text"
           value={alias}
           onChange={(e) => onAlias(e.target.value)}
-          placeholder="default"
+          placeholder={placeholder}
           className="min-w-0 flex-1 rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
         />
         <button
@@ -1672,7 +2005,7 @@ function AliasCreator({
           className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
         >
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-          Open
+          {buttonLabel}
         </button>
       </div>
     </section>
@@ -1808,6 +2141,59 @@ function filterSectionsByStatus(sections: ConfigSectionInfo[], statusFilter: Sta
   return sections;
 }
 
+function sectionMatchesCategory(section: ConfigSectionInfo, category: ConfigCategory) {
+  return sectionMatchesKeys(section, category.sectionKeys);
+}
+
+function sectionMatchesKeys(section: ConfigSectionInfo, keys: string[]) {
+  return keys.some((key) => section.key === key || section.key.startsWith(`${key}.`));
+}
+
+function orderSectionsForCategory(sections: ConfigSectionInfo[], category: ConfigCategory) {
+  return [...sections].sort((a, b) => {
+    const aRank = categoryKeyRank(a.key, category.sectionKeys);
+    const bRank = categoryKeyRank(b.key, category.sectionKeys);
+    return aRank - bRank || a.label.localeCompare(b.label);
+  });
+}
+
+function categoryKeyRank(sectionKey: string, keys: string[]) {
+  const idx = keys.findIndex((key) => sectionKey === key || sectionKey.startsWith(`${key}.`));
+  return idx >= 0 ? idx : keys.length;
+}
+
+function categorySectionLabel(category: ConfigCategory, section: ConfigSectionInfo) {
+  if (category.id === "models-providers" && section.key === "providers.models") {
+    return "Providers";
+  }
+  if (category.id === "agents" && section.key === "agents") return "Agent aliases";
+  if (category.id === "agents" && section.key === "peer_groups") return "Peer groups";
+  if (category.id === "runtime-safety" && section.key === "risk_profiles") {
+    return "Risk profiles";
+  }
+  if (category.id === "runtime-safety" && section.key === "runtime_profiles") {
+    return "Runtime profiles";
+  }
+  if (category.id === "channels" && section.key === "channels") return "Channel aliases";
+  if (category.id === "tools-skills" && section.key === "tools") return "Tools";
+  if (category.id === "tools-skills" && section.key === "skills") return "Skills";
+  if (category.id === "tools-skills" && section.key === "skill_bundles") {
+    return "Skill bundles";
+  }
+  if (category.id === "tools-skills" && section.key === "mcp") return "MCP servers";
+  return section.label;
+}
+
+function entryNoun(section: ConfigSectionInfo) {
+  if (section.key === "risk_profiles") return "risk profile";
+  if (section.key === "agents" || section.key.startsWith("agents.")) return "agent";
+  if (section.key === "channels" || section.key.startsWith("channels.")) return "channel";
+  if (section.key === "providers.models" || section.key.startsWith("providers.models.")) {
+    return "provider";
+  }
+  return section.shape === "typed_family_map" ? "alias" : "entry";
+}
+
 function groupRank(group: string) {
   const idx = GROUP_ORDER.indexOf(group as (typeof GROUP_ORDER)[number]);
   return idx >= 0 ? idx : GROUP_ORDER.length;
@@ -1923,6 +2309,16 @@ function dottedToPointer(path: string) {
 function leafLabel(path: string) {
   const leaf = path.split(".").pop() || path;
   return leaf.replace(/[-_]/g, " ");
+}
+
+function createEntryLabel(section: ConfigSectionInfo) {
+  if (section.key === "risk_profiles") return "Create new risk profile";
+  return "Create new entry";
+}
+
+function entryNamePlaceholder(section: ConfigSectionInfo) {
+  if (section.key === "risk_profiles") return "profile name, e.g. dev";
+  return "entry name";
 }
 
 function formatRawValue(value: unknown) {

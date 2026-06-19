@@ -531,7 +531,7 @@ export function ChatPanel({
         </header>
 
         {remoteCode && remoteEntries && remoteEntries.length > 0 && (
-          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 px-3 py-1.5 text-[10px]">
+          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 px-3 py-1.5 text-[10px] zc-scrollbar">
             {remoteEntries
               .filter((entry) => entry.isDir)
               .slice(0, 24)
@@ -555,8 +555,8 @@ export function ChatPanel({
         <div
           className={
             hasMessages
-              ? "flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm"
-              : "flex flex-1 items-center justify-center overflow-y-auto px-6 py-10"
+              ? "flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm zc-scrollbar"
+              : "flex flex-1 items-center justify-center overflow-y-auto px-6 py-10 zc-scrollbar"
           }
         >
           {!hasMessages && (
@@ -689,7 +689,7 @@ function FilePreviewDialog({
             <X size={12} />
           </button>
         </header>
-        <div className="min-h-0 flex-1 overflow-auto p-3">
+        <div className="min-h-0 flex-1 overflow-auto p-3 zc-scrollbar">
           {preview.loading ? (
             <div className="flex items-center gap-2 text-xs text-neutral-500">
               <Loader2 size={13} className="animate-spin" />
@@ -764,12 +764,12 @@ function MessageRow({
               )}
             </div>
             {t.args !== undefined && (
-              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-500">
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-500 zc-scrollbar">
                 {JSON.stringify(t.args, null, 2)}
               </pre>
             )}
             {t.result !== undefined && (
-              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-400">
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-400 zc-scrollbar">
                 {typeof t.result === "string" ? t.result : JSON.stringify(t.result, null, 2)}
               </pre>
             )}
@@ -792,7 +792,7 @@ function MessageRow({
               {message.approval.preview ? (
                 <DiffPreviewBlock preview={message.approval.preview} />
               ) : (
-                <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400">
+                <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400 zc-scrollbar">
                   {message.approval.arguments_summary}
                 </pre>
               )}
@@ -868,7 +868,7 @@ function DiffPreviewBlock({
           </button>
         )}
       </div>
-      <pre className="max-h-72 overflow-auto p-2 text-[10px] leading-relaxed">
+      <pre className="max-h-72 overflow-auto p-2 text-[10px] leading-relaxed zc-scrollbar">
         {lines.map((line, idx) => (
           <div
             key={idx}
