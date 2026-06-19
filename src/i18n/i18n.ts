@@ -1,14 +1,14 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { createElement, type ReactNode } from "react";
-import { messages as enMessages } from "@/locales/en/messages";
+import { messages as enMessages } from "@/locales/en/messages.mjs";
 import { DEFAULT_LOCALE, type SupportedLocale } from "./locales";
 
-type CatalogModule = typeof import("@/locales/en/messages");
+type CatalogModule = typeof import("@/locales/en/messages.mjs");
 
 const catalogLoaders: Record<SupportedLocale, () => Promise<CatalogModule>> = {
   en: () => Promise.resolve({ messages: enMessages }),
-  "zh-CN": () => import("@/locales/zh-CN/messages"),
+  "zh-CN": () => import("@/locales/zh-CN/messages.mjs"),
 };
 
 i18n.load(DEFAULT_LOCALE, enMessages);
