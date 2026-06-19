@@ -230,6 +230,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::connection::set_active_connection::<tauri::Wry>,
         commands::connection::reactivate::<tauri::Wry>,
         commands::connection::connection_probe,
+        commands::config_summary::config_get_summaries,
         commands::gateway::discover_local_gateway,
         commands::gateway::ensure_token::<tauri::Wry>,
         commands::gateway::pair_with_code::<tauri::Wry>,

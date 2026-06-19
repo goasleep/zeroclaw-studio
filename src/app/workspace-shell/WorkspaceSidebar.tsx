@@ -115,7 +115,7 @@ function WorkspaceHeader({
     <header className="shrink-0 border-b border-white/10 p-3">
       <div className="flex items-center gap-2 text-xs text-neutral-500">
         <Server size={11} className="text-neutral-600" />
-        <span className="min-w-0 flex-1 truncate">{connectionName ?? "No runtime"}</span>
+        <span className="min-w-0 flex-1 truncate">{connectionName ?? "ZeroClaw"}</span>
         <span
           className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/[0.12]"}`}
         />
@@ -157,7 +157,7 @@ function ProjectList({
     <section className="shrink-0 border-b border-white/10 px-3 py-3">
       <div className="mb-2 flex items-center gap-1">
         <h2 className="min-w-0 flex-1 text-[10px] uppercase tracking-wide text-neutral-500">
-          Projects
+          Project
         </h2>
         <button
           type="button"
@@ -174,7 +174,7 @@ function ProjectList({
           onClick={onPickRoot}
           className="w-full px-2 py-1.5 text-left text-xs text-neutral-500 hover:text-cyan-300"
         >
-          Open a project
+          Open project
         </button>
       ) : (
         <div className="space-y-2">
@@ -203,7 +203,7 @@ function ProjectList({
                     type="button"
                     onClick={() => onNewThread(path)}
                     className="rounded p-1 text-neutral-600 opacity-0 transition hover:bg-white/[0.05] hover:text-cyan-300 group-hover:opacity-100"
-                    title="New project chat"
+                    title="New project session"
                   >
                     <MessageSquarePlus size={11} />
                   </button>
@@ -259,13 +259,13 @@ function ThreadNav({
     <section className="flex h-full min-h-0 flex-col p-3">
       <div className="mb-2 flex items-center gap-1">
         <h2 className="min-w-0 flex-1 text-[10px] uppercase tracking-wide text-neutral-500">
-          Chats
+          General Sessions
         </h2>
         <button
           type="button"
           onClick={onNewThread}
           className="rounded p-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
-          title="New chat"
+          title="New general session"
         >
           <MessageSquarePlus size={12} />
         </button>
@@ -273,7 +273,7 @@ function ThreadNav({
           type="button"
           onClick={onRefresh}
           className="rounded p-1 text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
-          title="Refresh chats"
+          title="Refresh sessions"
         >
           <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
         </button>
@@ -281,7 +281,7 @@ function ThreadNav({
       {error && <p className="mb-2 text-[10px] text-red-300">{error}</p>}
       {threads.length === 0 && !loading ? (
         <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs leading-relaxed text-neutral-500">
-          No chats yet.
+          No general sessions yet.
         </div>
       ) : (
         <div className="min-h-0 flex-1 space-y-1 overflow-y-scroll overscroll-contain pr-1 [scrollbar-gutter:stable] zc-scrollbar">
@@ -298,7 +298,7 @@ function ThreadNav({
         </div>
       )}
       <div className="mt-3 shrink-0 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-[10px] text-neutral-500">
-        Context
+        Attachments
         <span className="ml-1 text-neutral-300">{selectedCount}</span>
       </div>
     </section>
@@ -345,11 +345,11 @@ function ThreadButton({
           <button
             type="button"
             onClick={() => {
-              const name = window.prompt("Rename chat", thread.name);
+              const name = window.prompt("Rename session", thread.name);
               if (name?.trim()) onRename(name.trim());
             }}
             className="rounded p-0.5 text-neutral-500 hover:text-cyan-300"
-            title="Rename chat"
+            title="Rename session"
           >
             <Pencil size={9} />
           </button>
@@ -357,7 +357,7 @@ function ThreadButton({
             type="button"
             onClick={onDelete}
             className="rounded p-0.5 text-neutral-600 hover:text-red-300"
-            title="Delete chat"
+            title="Delete session"
           >
             <Trash2 size={9} />
           </button>
@@ -397,21 +397,21 @@ function ThreadButton({
         <button
           type="button"
           onClick={() => {
-            const name = window.prompt("Rename chat", thread.name);
+            const name = window.prompt("Rename session", thread.name);
             if (name?.trim()) onRename(name.trim());
           }}
           className="rounded px-1 py-0.5 text-neutral-500 hover:text-cyan-300"
-          title="Rename chat"
+          title="Rename session"
         >
           <Pencil size={10} />
         </button>
         <button
           type="button"
           onClick={() => {
-            if (window.confirm(`Delete "${thread.name}"?`)) onDelete();
+            if (window.confirm(`Delete session "${thread.name}"?`)) onDelete();
           }}
           className="rounded px-1 py-0.5 text-neutral-500 hover:text-red-300"
-          title="Delete chat"
+          title="Delete session"
         >
           <Trash2 size={10} />
         </button>

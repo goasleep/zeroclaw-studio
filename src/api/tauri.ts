@@ -45,6 +45,9 @@ export type {
   ChatError,
   ChatFileEntry,
   ChatMode,
+  AgentSummary,
+  ConfigSummaries,
+  ConfigSummaryError,
   ConnectionProbeResult,
   ChatSendRequest,
   ChatSessionInfo,
@@ -63,6 +66,8 @@ export type {
   SshConfig,
   SupervisorStatus,
   Transport,
+  RiskProfileSummary,
+  RuntimeProfileSummary,
   WorkspaceGitStatus,
   WorkspaceLocalState,
 } from "./bindings";
@@ -176,6 +181,8 @@ export const sshCloseTunnel = (id: string) => unwrap(commands.sshCloseTunnel(id)
 // ---- Gateway HTTP client commands ----
 
 export const gatewayRequest = (req: GatewayHttpRequest) => unwrap(commands.gatewayRequest(req));
+
+export const configGetSummaries = () => unwrap(commands.configGetSummaries());
 
 // ---- Workspace FS commands ----
 

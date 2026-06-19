@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
+  AlertTriangle,
   Brain,
   Check,
+  CheckCircle2,
   ChevronDown,
   CircleStop,
   Clipboard,
@@ -13,10 +15,10 @@ import {
   FileText,
   FilePlus2,
   FolderOpen,
-  GitBranch,
   GitCompare,
   Loader2,
   Paperclip,
+  Plus,
   RotateCcw,
   Send,
   Sparkles,
@@ -28,10 +30,12 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { useChat, type ChatMessage } from "./use-chat";
+import { useChat, type ChatMessage, type ChatModelOverride } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
 import { apiAgentWorkspaceList } from "@/api/tools";
+import { apiConfigList, type ConfigListEntry } from "@/api/config";
+import { apiQuickstartState } from "@/api/quickstart";
 import {
   chatCapabilities,
   prepareChatAttachments,
@@ -41,6 +45,7 @@ import {
 } from "@/api/tauri";
 import { readClipboardText } from "@/workspace/clipboard/clipboard";
 import { Dialog } from "@/ui/dialog";
+import { Select } from "@/ui/select";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
 
 interface ContextAttachmentDraft {
@@ -52,6 +57,13 @@ interface ContextAttachmentDraft {
   error?: string;
   embedBytes: boolean;
 }
+
+const MODEL_FOLLOWS_AGENT = "__agent__";
+
+type ConfiguredModelChoice = {
+  value: string;
+  model?: string;
+};
 
 function filenameFromPath(path: string) {
   return path.split(/[\\/]/).filter(Boolean).pop() || path;
@@ -90,11 +102,120 @@ function mimeFromPath(path: string) {
   return "application/octet-stream";
 }
 
+function modelOverrideFor(value: string): ChatModelOverride | null {
+  return value === MODEL_FOLLOWS_AGENT ? null : { modelProvider: value };
+}
+
+function configuredModelChoices(providerRefs: string[], entries: ConfigListEntry[]) {
+  const byRef = new Map<string, ConfiguredModelChoice>();
+  for (const ref of providerRefs) {
+    if (ref.trim()) byRef.set(ref, { value: ref });
+  }
+  for (const entry of entries) {
+    const parts = entry.path.split(".");
+    if (parts.length < 5 || parts[0] !== "providers" || parts[1] !== "models") continue;
+    const ref = `${parts[2]}.${parts[3]}`;
+    const existing = byRef.get(ref) ?? { value: ref };
+    if (parts.slice(4).join(".") === "model" && typeof entry.value === "string") {
+      existing.model = entry.value;
+    }
+    byRef.set(ref, existing);
+  }
+  return Array.from(byRef.values()).sort((a, b) => a.value.localeCompare(b.value));
+}
+
 function formatBytes(size?: number) {
   if (size === undefined) return "size checked on send";
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+type ToolCallView = ChatMessage["toolCalls"][number];
+
+const SUGGESTED_PROMPTS = [
+  "Review current changes",
+  "Explain this project",
+  "Find likely bugs",
+  "Run diagnostics",
+];
+
+function valueFromKeys(value: unknown, keys: string[]) {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  for (const key of keys) {
+    const current = record[key];
+    if (typeof current === "string" && current.trim()) return current.trim();
+  }
+  return null;
+}
+
+function compactText(value: unknown, max = 110) {
+  const raw = typeof value === "string" ? value : JSON.stringify(value);
+  const singleLine = raw.replace(/\s+/g, " ").trim();
+  return singleLine.length > max ? `${singleLine.slice(0, max - 3)}...` : singleLine;
+}
+
+function stringifyValue(value: unknown) {
+  if (value === undefined) return "";
+  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+}
+
+function formatToolCallSummary(toolCall: ToolCallView) {
+  const args = toolCall.args;
+  const command = valueFromKeys(args, ["command", "cmd", "shell", "script"]);
+  if (command) return command;
+  const path = valueFromKeys(args, ["path", "file", "filename", "target", "root"]);
+  if (path) return path;
+  const query = valueFromKeys(args, ["query", "pattern", "url"]);
+  if (query) return query;
+  if (args !== undefined) return compactText(args);
+  return toolCall.name;
+}
+
+function isErrorLikeOutput(output: unknown) {
+  const text = compactText(output, 180).toLowerCase();
+  return (
+    text.includes("error") ||
+    text.includes("failed") ||
+    text.includes("denied") ||
+    text.includes("not found")
+  );
+}
+
+function buildExecutionRows(toolCalls: ToolCallView[]) {
+  return toolCalls.map((toolCall, index) => ({
+    id: `${toolCall.name}-${index}`,
+    toolCall,
+    summary: formatToolCallSummary(toolCall),
+    status:
+      toolCall.result === undefined
+        ? "running"
+        : isErrorLikeOutput(toolCall.result)
+          ? "warning"
+          : "done",
+  }));
+}
+
+function contextSummary({
+  workspaceRoot,
+  gitStatus,
+  attachmentCount,
+}: {
+  workspaceRoot: string | null;
+  gitStatus: WorkspaceGitStatus | null;
+  attachmentCount: number;
+}) {
+  const scope = workspaceRoot ? filenameFromPath(workspaceRoot) : "general";
+  const git =
+    gitStatus?.is_repo && gitStatus.branch
+      ? `${gitStatus.branch} · ${gitStatus.changed_count} changed`
+      : gitStatus?.is_repo
+        ? `${gitStatus.changed_count} changed`
+        : "no git status";
+  return `Context: ${scope} · ${attachmentCount} attachment${
+    attachmentCount === 1 ? "" : "s"
+  } · ${git}`;
 }
 
 export function ChatPanel({
@@ -126,6 +247,7 @@ export function ChatPanel({
     workspaceRoot,
     workspaceDir: mode === "acp" ? appliedCwd || workspaceDir || null : null,
   });
+  const { selectSession, newSession, refreshSessions } = chat;
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -138,6 +260,8 @@ export function ChatPanel({
   const [gitStatus, setGitStatus] = useState<WorkspaceGitStatus | null>(null);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const [maxAttachmentBytes, setMaxAttachmentBytes] = useState<number | null>(null);
+  const [modelChoices, setModelChoices] = useState<ConfiguredModelChoice[]>([]);
+  const [selectedModelProvider, setSelectedModelProvider] = useState(MODEL_FOLLOWS_AGENT);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentDrafts = useMemo<ContextAttachmentDraft[]>(
     () =>
@@ -172,6 +296,29 @@ export function ChatPanel({
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      apiQuickstartState().catch(() => null),
+      apiConfigList("providers.models").catch(() => ({ entries: [] as ConfigListEntry[] })),
+    ]).then(([quickstart, config]) => {
+      if (cancelled) return;
+      setModelChoices(configuredModelChoices(quickstart?.model_providers ?? [], config.entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [active?.id]);
+
+  useEffect(() => {
+    if (
+      selectedModelProvider !== MODEL_FOLLOWS_AGENT &&
+      !modelChoices.some((choice) => choice.value === selectedModelProvider)
+    ) {
+      setSelectedModelProvider(MODEL_FOLLOWS_AGENT);
+    }
+  }, [modelChoices, selectedModelProvider]);
+
+  useEffect(() => {
     function focus() {
       textareaRef.current?.focus();
     }
@@ -180,30 +327,30 @@ export function ChatPanel({
   }, []);
 
   useEffect(() => {
-    function selectSession(e: Event) {
+    function handleSelectSession(e: Event) {
       const sessionId = (e as CustomEvent<string>).detail;
-      if (sessionId) chat.selectSession(sessionId);
+      if (sessionId) selectSession(sessionId);
     }
-    window.addEventListener("zeroclaw://select-session", selectSession);
-    return () => window.removeEventListener("zeroclaw://select-session", selectSession);
-  }, [chat.selectSession]);
+    window.addEventListener("zeroclaw://select-session", handleSelectSession);
+    return () => window.removeEventListener("zeroclaw://select-session", handleSelectSession);
+  }, [selectSession]);
 
   useEffect(() => {
-    function newSession() {
-      chat.newSession();
+    function startNewSession() {
+      newSession(modelOverrideFor(selectedModelProvider));
     }
 
-    function refreshSessions() {
-      void chat.refreshSessions();
+    function reloadSessions() {
+      void refreshSessions();
     }
 
-    window.addEventListener("zeroclaw://new-session", newSession);
-    window.addEventListener("zeroclaw://refresh-sessions", refreshSessions);
+    window.addEventListener("zeroclaw://new-session", startNewSession);
+    window.addEventListener("zeroclaw://refresh-sessions", reloadSessions);
     return () => {
-      window.removeEventListener("zeroclaw://new-session", newSession);
-      window.removeEventListener("zeroclaw://refresh-sessions", refreshSessions);
+      window.removeEventListener("zeroclaw://new-session", startNewSession);
+      window.removeEventListener("zeroclaw://refresh-sessions", reloadSessions);
     };
-  }, [chat.newSession, chat.refreshSessions]);
+  }, [newSession, refreshSessions, selectedModelProvider]);
 
   useEffect(() => {
     if (!workspaceRoot) {
@@ -331,21 +478,53 @@ export function ChatPanel({
     }
   }
 
+  function applySuggestedPrompt(prompt: string) {
+    setDraft(prompt);
+    window.requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
+  function changeModelProvider(value: string) {
+    setSelectedModelProvider(value);
+    if (!hasMessages) {
+      newSession(modelOverrideFor(value));
+    }
+  }
+
   const isCode = mode === "acp";
   const remoteCode = isCode && active && active.transport !== "local";
   const currentSession = chat.sessions.find((session) => session.session_id === chat.sessionId);
   const hasMessages = chat.messages.length > 0;
+  const selectedModelChoice = modelChoices.find((choice) => choice.value === selectedModelProvider);
+  const modelOptions = [
+    { value: MODEL_FOLLOWS_AGENT, label: "Agent default" },
+    ...modelChoices.map((choice) => ({
+      value: choice.value,
+      label: choice.model ? `${choice.value} · ${choice.model}` : choice.value,
+    })),
+  ];
   const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : "No project";
+  const sessionName = currentSession?.name ?? `New ${isCode ? "code" : "session"}`;
+  const gitLabel =
+    gitStatus?.is_repo && gitStatus.branch
+      ? `${gitStatus.branch} · ${gitStatus.changed_count} changed`
+      : gitStatus?.is_repo
+        ? `${gitStatus.changed_count} changed`
+        : "No git status";
+  const composerContext = contextSummary({
+    workspaceRoot,
+    gitStatus,
+    attachmentCount: attachmentDrafts.length,
+  });
   const renderComposer = (variant: "center" | "footer") => (
     <div
       className={
         variant === "center"
-          ? "rounded-2xl border border-white/10 bg-[#020818]/90 shadow-2xl shadow-black/30"
+          ? "rounded-xl border border-white/10 bg-[#020818]/90 shadow-2xl shadow-black/30"
           : ""
       }
     >
       <div className={variant === "center" ? "p-3" : undefined}>
-        {variant === "footer" && <GitContextSummary status={gitStatus} />}
+        <ContextSummaryBar label={composerContext} />
         <AttachmentStrip
           files={attachmentDrafts}
           maxAttachmentBytes={maxAttachmentBytes}
@@ -357,7 +536,7 @@ export function ChatPanel({
             {composerError}
           </div>
         )}
-        <div className={variant === "center" ? "flex min-h-36 flex-col" : "flex items-end gap-2"}>
+        <div className={variant === "center" ? "flex min-h-36 flex-col" : "flex flex-col gap-2"}>
           <textarea
             ref={textareaRef}
             value={draft}
@@ -370,23 +549,79 @@ export function ChatPanel({
             }}
             rows={variant === "center" ? 4 : 2}
             placeholder={
-              variant === "center"
-                ? "Do anything"
-                : `${isCode ? "Ask Code" : "Message"} ${agentAlias}...`
+              variant === "center" ? "Start this session..." : "Continue this session..."
             }
             className={
               variant === "center"
                 ? "min-h-20 flex-1 resize-none bg-transparent px-2 py-1 text-base text-neutral-100 outline-none placeholder:text-neutral-600"
-                : "flex-1 resize-none rounded border border-white/10 bg-[#020818]/90 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
+                : "min-h-16 w-full resize-none rounded border border-white/10 bg-[#020818]/90 px-3 py-2 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
             }
           />
           <div
             className={
               variant === "center"
                 ? "mt-2 flex items-center gap-2 border-t border-white/10 pt-2"
-                : "flex items-end gap-2"
+                : "flex items-center gap-2"
             }
           >
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setWorkspaceMenuOpen((open) => !open)}
+                className={`flex max-w-64 items-center gap-2 rounded border px-2 py-2 text-xs transition ${
+                  workspaceRoot
+                    ? "border-white/10 text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
+                    : "border-cyan-400/40 bg-cyan-400/10 text-cyan-200 hover:border-cyan-300"
+                }`}
+                title={workspaceRoot ?? "No project"}
+              >
+                <FolderOpen size={13} />
+                <span className="min-w-0 truncate">
+                  {workspaceRoot ? `Project: ${workspaceName}` : "Open project"}
+                </span>
+                <ChevronDown size={12} className="shrink-0" />
+              </button>
+              {workspaceMenuOpen && (
+                <div className="absolute bottom-11 left-0 z-20 w-72 overflow-hidden rounded-lg border border-white/10 bg-[#020818]/95 py-1 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => void selectWorkspaceRoot(null)}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
+                      !workspaceRoot
+                        ? "bg-white/[0.05] text-neutral-100"
+                        : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
+                    }`}
+                  >
+                    <FolderOpen size={12} className="text-neutral-500" />
+                    <span className="min-w-0 flex-1 truncate">General session</span>
+                  </button>
+                  {recentRoots.slice(0, 8).map((path) => (
+                    <button
+                      key={path}
+                      type="button"
+                      onClick={() => void selectWorkspaceRoot(path)}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
+                        workspaceRoot === path
+                          ? "bg-white/[0.05] text-neutral-100"
+                          : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
+                      }`}
+                      title={path}
+                    >
+                      <FolderOpen size={12} className="text-cyan-300" />
+                      <span className="min-w-0 flex-1 truncate">{filenameFromPath(path)}</span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => void pickWorkspaceRoot()}
+                    className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-xs text-cyan-300 hover:bg-white/[0.05]"
+                  >
+                    <FilePlus2 size={12} />
+                    <span className="min-w-0 flex-1 truncate">Open project...</span>
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => void pickFiles()}
@@ -403,61 +638,7 @@ export function ChatPanel({
             >
               <Clipboard size={12} />
             </button>
-            {variant === "center" && (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setWorkspaceMenuOpen((open) => !open)}
-                  className="flex max-w-64 items-center gap-2 rounded border border-transparent px-2 py-2 text-sm text-neutral-400 hover:border-white/10 hover:bg-white/[0.05] hover:text-neutral-200"
-                  title={workspaceRoot ?? "No project"}
-                >
-                  <FolderOpen size={13} />
-                  <span className="min-w-0 truncate">{workspaceName}</span>
-                  <ChevronDown size={12} className="shrink-0" />
-                </button>
-                {workspaceMenuOpen && (
-                  <div className="absolute bottom-11 left-0 z-20 w-72 overflow-hidden rounded-lg border border-white/10 bg-[#020818]/90 py-1 shadow-xl">
-                    <button
-                      type="button"
-                      onClick={() => void selectWorkspaceRoot(null)}
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
-                        !workspaceRoot
-                          ? "bg-white/[0.05] text-neutral-100"
-                          : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
-                      }`}
-                    >
-                      <FolderOpen size={12} className="text-neutral-500" />
-                      <span className="min-w-0 flex-1 truncate">No project</span>
-                    </button>
-                    {recentRoots.slice(0, 8).map((path) => (
-                      <button
-                        key={path}
-                        type="button"
-                        onClick={() => void selectWorkspaceRoot(path)}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${
-                          workspaceRoot === path
-                            ? "bg-white/[0.05] text-neutral-100"
-                            : "text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
-                        }`}
-                        title={path}
-                      >
-                        <FolderOpen size={12} className="text-cyan-300" />
-                        <span className="min-w-0 flex-1 truncate">{filenameFromPath(path)}</span>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => void pickWorkspaceRoot()}
-                      className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-left text-xs text-cyan-300 hover:bg-white/[0.05]"
-                    >
-                      <FilePlus2 size={12} />
-                      <span className="min-w-0 flex-1 truncate">Open project...</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            {variant === "center" && <div className="flex-1" />}
+            <div className="flex-1" />
             <button
               type="button"
               onClick={() => void submit()}
@@ -465,7 +646,7 @@ export function ChatPanel({
               className="flex items-center gap-1 rounded bg-sky-400 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-              {variant === "footer" && "Send"}
+              Send
             </button>
           </div>
         </div>
@@ -480,29 +661,77 @@ export function ChatPanel({
       onDrop={onDrop}
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-1.5 text-xs">
-          {isCode ? (
-            <TerminalSquare size={12} className="text-cyan-300" />
-          ) : (
-            <Sparkles size={12} className="text-cyan-300" />
-          )}
-          <span className="min-w-0 truncate text-neutral-300">
-            {currentSession?.name ?? `New ${isCode ? "code" : "chat"}`}
-          </span>
-          <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
-            {agentAlias}
-          </span>
-          <span
-            className={`ml-1 rounded px-1.5 py-0.5 text-[10px] ${
-              chat.connected
-                ? "bg-emerald-500/15 text-emerald-300"
-                : "bg-white/[0.08] text-neutral-500"
-            }`}
-          >
-            {chat.connected ? "ws ready" : "connecting..."}
-          </span>
+        <header className="shrink-0 border-b border-white/10 px-3 py-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2">
+            <FolderOpen
+              size={12}
+              className={workspaceRoot ? "text-cyan-300" : "text-neutral-600"}
+            />
+            <span className="min-w-0 truncate font-medium text-neutral-100">
+              Project: {workspaceRoot ? workspaceName : "No project"}
+            </span>
+            <span className="shrink-0 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
+              {gitLabel}
+            </span>
+            <span className="shrink-0 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-400">
+              Agent: {agentAlias}
+            </span>
+            <Select
+              value={selectedModelProvider}
+              options={modelOptions}
+              onValueChange={changeModelProvider}
+              placeholder="Model"
+              className="h-6 max-w-64 border-white/10 bg-white/[0.04] py-0 text-[10px]"
+            />
+            <span
+              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
+                chat.connected
+                  ? "bg-emerald-500/15 text-emerald-300"
+                  : "bg-white/[0.08] text-neutral-500"
+              }`}
+            >
+              {chat.connected ? "Online" : "Connecting"}
+            </span>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => newSession(modelOverrideFor(selectedModelProvider))}
+              className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
+              title={
+                selectedModelChoice
+                  ? `New session with ${selectedModelChoice.value}`
+                  : "New session"
+              }
+            >
+              <Plus size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void chat.abort()}
+              className="flex items-center gap-1 text-neutral-400 hover:text-red-300"
+              title="Abort current turn"
+            >
+              <CircleStop size={12} />
+            </button>
+            <button
+              type="button"
+              onClick={chat.clear}
+              className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
+              title="Clear local view"
+            >
+              <RotateCcw size={12} />
+            </button>
+          </div>
+          <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-neutral-500">
+            {isCode ? (
+              <TerminalSquare size={11} className="text-cyan-300" />
+            ) : (
+              <Sparkles size={11} className="text-cyan-300" />
+            )}
+            <span className="min-w-0 truncate">Session: {sessionName}</span>
+          </div>
           {remoteCode && (
-            <div className="ml-2 flex min-w-0 flex-1 items-center gap-1">
+            <div className="mt-2 flex min-w-0 items-center gap-1">
               <input
                 value={cwd}
                 onChange={(e) => setCwd(e.target.value)}
@@ -527,23 +756,6 @@ export function ChatPanel({
               )}
             </div>
           )}
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => void chat.abort()}
-            className="flex items-center gap-1 text-neutral-400 hover:text-red-300"
-            title="Abort current turn"
-          >
-            <CircleStop size={12} />
-          </button>
-          <button
-            type="button"
-            onClick={chat.clear}
-            className="flex items-center gap-1 text-neutral-400 hover:text-cyan-300"
-            title="Clear local view"
-          >
-            <RotateCcw size={12} />
-          </button>
         </header>
 
         {remoteCode && remoteEntries && remoteEntries.length > 0 && (
@@ -577,10 +789,34 @@ export function ChatPanel({
         >
           {!hasMessages && (
             <div className="w-full max-w-4xl">
-              <h1 className="mb-7 text-center text-3xl font-medium tracking-normal text-neutral-100">
-                What should we build?
+              <h1 className="mb-6 text-center text-3xl font-medium tracking-normal text-neutral-100">
+                What do you want to work on in this session?
               </h1>
+              {!workspaceRoot && (
+                <div className="mx-auto mb-4 flex max-w-xl items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => void pickWorkspaceRoot()}
+                    className="flex items-center gap-2 rounded border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-sm font-medium text-cyan-200 hover:border-cyan-300"
+                  >
+                    <FolderOpen size={14} />
+                    Open Project
+                  </button>
+                </div>
+              )}
               {renderComposer("center")}
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => applySuggestedPrompt(prompt)}
+                    className="rounded border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400 hover:text-cyan-300"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {chat.messages.map((m) => (
@@ -662,22 +898,6 @@ function AttachmentStrip({
   );
 }
 
-function GitContextSummary({ status }: { status: WorkspaceGitStatus | null }) {
-  if (!status?.is_repo) return null;
-  return (
-    <div className="mb-2 flex flex-wrap items-center gap-2 rounded border border-white/10 bg-[#020818]/70 px-2 py-1.5 text-[10px] text-neutral-500">
-      <GitBranch size={11} className="text-cyan-300" />
-      <span className="font-mono text-neutral-300">{status.branch ?? "detached"}</span>
-      <span>{status.changed_count} changed</span>
-      {status.diff_stat && (
-        <span className="min-w-0 flex-1 truncate font-mono" title={status.diff_stat}>
-          {status.diff_stat}
-        </span>
-      )}
-    </div>
-  );
-}
-
 function FilePreviewDialog({
   preview,
   onClose,
@@ -726,6 +946,144 @@ function FilePreviewDialog({
   );
 }
 
+function ContextSummaryBar({ label }: { label: string }) {
+  return (
+    <div className="mb-2 flex min-w-0 items-center gap-2 rounded border border-white/10 bg-[#020818]/70 px-2 py-1.5 text-[10px] text-neutral-500">
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </div>
+  );
+}
+
+function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {
+  const rows = buildExecutionRows(toolCalls);
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-lg border border-white/10 bg-[#020818]/55 text-xs">
+      <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2 text-neutral-400">
+        <Wrench size={12} className="text-cyan-300" />
+        <span className="font-medium text-neutral-300">Execution</span>
+      </div>
+      <div className="divide-y divide-white/[0.06]">
+        {rows.map(({ id, toolCall, summary, status }) => (
+          <div key={id} className="px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2">
+              {status === "running" ? (
+                <Loader2 size={12} className="shrink-0 animate-spin text-cyan-300" />
+              ) : status === "warning" ? (
+                <AlertTriangle size={12} className="shrink-0 text-amber-300" />
+              ) : (
+                <CheckCircle2 size={12} className="shrink-0 text-emerald-300" />
+              )}
+              <span className="shrink-0 font-mono text-[11px] text-neutral-300">
+                {toolCall.name}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-neutral-500" title={summary}>
+                {summary}
+              </span>
+            </div>
+            {(toolCall.args !== undefined || toolCall.result !== undefined) && (
+              <details className="mt-1 pl-5 text-[10px] text-neutral-500">
+                <summary className="cursor-pointer hover:text-neutral-300">raw details</summary>
+                {toolCall.args !== undefined && (
+                  <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
+                    {stringifyValue(toolCall.args)}
+                  </pre>
+                )}
+                {toolCall.result !== undefined && (
+                  <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-neutral-400 zc-scrollbar">
+                    {stringifyValue(toolCall.result)}
+                  </pre>
+                )}
+              </details>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApprovalCard({
+  approval,
+  toolCalls,
+  onApprove,
+}: {
+  approval: NonNullable<ChatMessage["approval"]>;
+  toolCalls: ToolCallView[];
+  onApprove: (request_id: string, decision: "approve" | "deny" | "always") => void;
+}) {
+  const recentArgs = [...toolCalls]
+    .reverse()
+    .find((toolCall) => toolCall.name === approval.tool)?.args;
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-lg border border-amber-500/40 bg-amber-500/10 text-xs">
+      <div className="border-b border-amber-500/20 px-3 py-2">
+        <p className="flex items-center gap-1 font-medium text-amber-200">
+          <GitCompare size={12} />
+          Approval required
+        </p>
+        <p className="mt-1 text-neutral-300">
+          Tool <code className="text-amber-300">{approval.tool}</code> requires approval before the
+          agent can continue.
+        </p>
+        {approval.timeout_secs !== undefined && (
+          <p className="mt-1 text-[10px] text-neutral-500">
+            Auto-denies after {approval.timeout_secs}s without a response.
+          </p>
+        )}
+      </div>
+      <div className="p-3">
+        <div className="mb-2 rounded border border-white/10 bg-[#020818]/75 p-2">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">Summary</div>
+          <pre className="whitespace-pre-wrap text-[11px] text-neutral-300 zc-scrollbar">
+            {approval.arguments_summary}
+          </pre>
+        </div>
+        {approval.preview && (
+          <div className="mb-2">
+            <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">Preview</div>
+            <DiffPreviewBlock preview={approval.preview} />
+          </div>
+        )}
+        {recentArgs !== undefined && (
+          <details className="mb-2 text-[10px] text-neutral-500">
+            <summary className="cursor-pointer hover:text-neutral-300">tool input</summary>
+            <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
+              {stringifyValue(recentArgs)}
+            </pre>
+          </details>
+        )}
+        <div className="sticky bottom-0 flex flex-wrap gap-2 bg-amber-950/20 pt-2">
+          <button
+            type="button"
+            onClick={() => onApprove(approval.request_id, "approve")}
+            className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-1 font-medium text-emerald-300 hover:bg-emerald-500/30"
+          >
+            <Check size={10} /> Approve once
+          </button>
+          <button
+            type="button"
+            onClick={() => onApprove(approval.request_id, "deny")}
+            className="flex items-center gap-1 rounded bg-red-500/15 px-2 py-1 text-red-300 hover:bg-red-500/25"
+          >
+            <Trash2 size={10} /> Reject
+          </button>
+          <button
+            type="button"
+            onClick={() => onApprove(approval.request_id, "always")}
+            className="rounded border border-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10"
+            title="Allow this tool for the current gateway session policy"
+          >
+            Always allow
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MessageRow({
   message,
   onApprove,
@@ -769,77 +1127,14 @@ function MessageRow({
           </details>
         )}
 
-        {message.toolCalls.map((t, i) => (
-          <div
-            key={i}
-            className="mb-2 rounded border border-white/10 bg-[#020818]/60 p-2 text-[11px]"
-          >
-            <div className="flex items-center gap-1.5 text-cyan-300">
-              <Wrench size={10} />
-              <span className="font-mono">{t.name}</span>
-              {t.result === undefined && (
-                <Loader2 size={10} className="animate-spin text-neutral-500" />
-              )}
-            </div>
-            {t.args !== undefined && (
-              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-500 zc-scrollbar">
-                {JSON.stringify(t.args, null, 2)}
-              </pre>
-            )}
-            {t.result !== undefined && (
-              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap text-neutral-400 zc-scrollbar">
-                {typeof t.result === "string" ? t.result : JSON.stringify(t.result, null, 2)}
-              </pre>
-            )}
-          </div>
-        ))}
+        <ExecutionStream toolCalls={message.toolCalls} />
 
         {message.approval && (
-          <div className="mb-2 overflow-hidden rounded-lg border border-amber-500/40 bg-amber-500/10 text-xs">
-            <div className="border-b border-amber-500/20 px-3 py-2">
-              <p className="flex items-center gap-1 font-medium text-amber-200">
-                <GitCompare size={12} />
-                Approval required
-              </p>
-              <p className="mt-1 text-neutral-300">
-                Tool <code className="text-amber-300">{message.approval.tool}</code> wants to change
-                local state. Review the preview before choosing a response.
-              </p>
-            </div>
-            <div className="p-3">
-              {message.approval.preview ? (
-                <DiffPreviewBlock preview={message.approval.preview} />
-              ) : (
-                <pre className="mb-2 overflow-x-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-[10px] text-neutral-400 zc-scrollbar">
-                  {message.approval.arguments_summary}
-                </pre>
-              )}
-              <div className="sticky bottom-0 flex gap-2 bg-amber-950/20 pt-2">
-                <button
-                  type="button"
-                  onClick={() => onApprove(message.approval!.request_id, "approve")}
-                  className="flex items-center gap-1 rounded bg-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/30"
-                >
-                  <Check size={10} /> approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onApprove(message.approval!.request_id, "always")}
-                  className="rounded bg-emerald-500/10 px-2 py-1 text-emerald-300 hover:bg-emerald-500/20"
-                  title="Always approve this request pattern for the current gateway policy"
-                >
-                  always approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onApprove(message.approval!.request_id, "deny")}
-                  className="flex items-center gap-1 rounded bg-red-500/15 px-2 py-1 text-red-300 hover:bg-red-500/25"
-                >
-                  <Trash2 size={10} /> deny
-                </button>
-              </div>
-            </div>
-          </div>
+          <ApprovalCard
+            approval={message.approval}
+            toolCalls={message.toolCalls}
+            onApprove={onApprove}
+          />
         )}
 
         {message.content && (

@@ -53,12 +53,16 @@ export type ChatOutbound =
       device_name?: string;
       capabilities?: string[];
       workspace_dir?: string;
+      model_provider?: string;
+      model?: string;
     };
 
 export interface ChatClientOpts {
   agentAlias: string;
   mode?: ChatMode;
   workspaceDir?: string | null;
+  modelProvider?: string | null;
+  model?: string | null;
   sessionId?: string;
   onFrame: (frame: ChatFrame) => void;
   onOpen?: () => void;
@@ -159,6 +163,8 @@ export class ChatClient {
       token: conn.auth.token ?? "",
       mode: this.opts.mode ?? "chat",
       workspace_dir: this.opts.workspaceDir ?? null,
+      model_provider: this.opts.modelProvider ?? null,
+      model: this.opts.model ?? null,
     }).catch((err) => {
       this.unlisten?.();
       this.unlisten = null;

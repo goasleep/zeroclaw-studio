@@ -26,6 +26,8 @@ pub struct ChatConnectOptions {
     pub token: String,
     pub mode: ChatMode,
     pub workspace_dir: Option<String>,
+    pub model_provider: Option<String>,
+    pub model: Option<String>,
 }
 
 pub async fn open<R: Runtime>(
@@ -43,6 +45,8 @@ pub async fn open<R: Runtime>(
         &opts.token,
         opts.mode,
         opts.workspace_dir.as_deref(),
+        opts.model_provider.as_deref(),
+        opts.model.as_deref(),
     )
     .map_err(|e| format!("bad gateway url: {e}"))?;
 
@@ -122,6 +126,8 @@ fn build_ws_url(
     token: &str,
     mode: ChatMode,
     workspace_dir: Option<&str>,
+    model_provider: Option<&str>,
+    model: Option<&str>,
 ) -> Result<url::Url, url::ParseError> {
     let base_url = url::Url::parse(base)?;
     let scheme = if base_url.scheme() == "https" {
@@ -146,6 +152,14 @@ fn build_ws_url(
     if let Some(dir) = workspace_dir.filter(|s| !s.trim().is_empty()) {
         ws_url.query_pairs_mut().append_pair("workspace_dir", dir);
     }
+    if let Some(provider) = model_provider.filter(|s| !s.trim().is_empty()) {
+        ws_url
+            .query_pairs_mut()
+            .append_pair("model_provider", provider);
+    }
+    if let Some(model) = model.filter(|s| !s.trim().is_empty()) {
+        ws_url.query_pairs_mut().append_pair("model", model);
+    }
     Ok(ws_url)
 }
 
@@ -161,6 +175,8 @@ mod tests {
             "sid",
             "zc_token",
             ChatMode::Chat,
+            None,
+            None,
             None,
         )
         .unwrap();
@@ -182,6 +198,8 @@ mod tests {
             "tok",
             ChatMode::Chat,
             None,
+            None,
+            None,
         )
         .unwrap();
         assert_eq!(url.scheme(), "wss");
@@ -196,10 +214,30 @@ mod tests {
             "tok",
             ChatMode::Acp,
             Some("/work/project"),
+            None,
+            None,
         )
         .unwrap();
         let query = url.query().unwrap();
         assert!(query.contains("chat_mode=acp"));
         assert!(query.contains("workspace_dir=%2Fwork%2Fproject"));
+    }
+
+    #[test]
+    fn build_ws_url_adds_model_provider_override() {
+        let url = build_ws_url(
+            "http://127.0.0.1:42617",
+            "code",
+            "sid",
+            "tok",
+            ChatMode::Chat,
+            None,
+            Some("openai.coder"),
+            Some("gpt-5"),
+        )
+        .unwrap();
+        let query = url.query().unwrap();
+        assert!(query.contains("model_provider=openai.coder"));
+        assert!(query.contains("model=gpt-5"));
     }
 }

@@ -175,7 +175,10 @@ export function ConnectionPicker({ onAdd }: Props) {
   }
 
   return (
-    <div className="relative z-10 flex h-12 items-center gap-3 border-b border-cyan-400/10 bg-[#020818]/80 px-4 text-sm shadow-sm backdrop-blur-xl">
+    <div
+      data-tauri-drag-region="deep"
+      className="relative z-10 flex h-12 select-none items-center gap-3 border-b border-cyan-400/10 bg-[#020818]/90 px-4 pl-[84px] text-sm shadow-sm backdrop-blur-xl"
+    >
       <div className="flex min-w-0 items-center gap-2">
         <div className="rounded-lg border border-cyan-400/25 bg-cyan-400/10 p-1.5 text-cyan-300">
           <Server size={15} />
@@ -208,7 +211,10 @@ export function ConnectionPicker({ onAdd }: Props) {
       </button>
 
       {open && (
-        <div className="zc-terminal-surface absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl">
+        <div
+          data-tauri-drag-region="false"
+          className="zc-terminal-surface absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl"
+        >
           <div className="border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-wide text-neutral-500">
             Runtimes
           </div>
@@ -289,7 +295,10 @@ export function ConnectionPicker({ onAdd }: Props) {
       )}
 
       {detailsOpen && active && (
-        <div className="zc-terminal-surface absolute right-4 top-11 z-50 w-[420px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl">
+        <div
+          data-tauri-drag-region="false"
+          className="zc-terminal-surface absolute right-4 top-11 z-50 w-[420px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl"
+        >
           <div className="border-b border-white/10 px-3 py-2 text-xs">
             <div className="font-medium text-neutral-100">{active.name}</div>
             <div className="mt-0.5 truncate font-mono text-[10px] text-neutral-500">
