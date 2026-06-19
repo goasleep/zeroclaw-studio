@@ -98,7 +98,7 @@ export function SetupCenterPanel() {
           </p>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
           <div className="space-y-1">
             {SETUP_ITEMS.map((item) => {
               const Icon = item.icon;

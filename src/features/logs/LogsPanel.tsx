@@ -49,7 +49,7 @@ export function LogsPanel() {
           Refresh
         </button>
       </header>
-      <div className="flex-1 overflow-auto bg-[#020818]/90 px-3 py-2 font-mono text-[11px]">
+      <div className="flex-1 overflow-auto bg-[#020818]/90 px-3 py-2 font-mono text-[11px] zc-scrollbar">
         {events.length === 0 ? (
           <p className="text-neutral-500">No log lines.</p>
         ) : (
