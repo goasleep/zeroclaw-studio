@@ -8,12 +8,14 @@ import {
   KeyRound,
   Layers3,
   Loader2,
+  Power,
   Plus,
   RefreshCw,
   Save,
   Search,
   Server,
   TriangleAlert,
+  UserRound,
 } from "lucide-react";
 import {
   apiConfigList,
@@ -32,6 +34,7 @@ import {
   defaultDraft,
   parseConfigDraft,
 } from "@/features/config/config-value-schema";
+import { Dialog } from "@/ui/dialog";
 import { Select } from "@/ui/select";
 import { Switch } from "@/ui/switch";
 
@@ -78,6 +81,11 @@ type FormTarget = {
   title: string;
   subtitle?: string;
   choice?: PickerItem;
+  activateOnSave?: {
+    usage: MemoryUsage;
+    backendKey: string;
+    alias: string;
+  };
 };
 
 const MEMORY_BACKEND_META: Record<string, { label: string; body: string; icon: ReactNode }> = {
@@ -115,8 +123,8 @@ const MEMORY_BACKEND_META: Record<string, { label: string; body: string; icon: R
 
 export function MemoryPanel() {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
-  const [filter, setFilter] = useState("");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedUsagePath, setSelectedUsagePath] = useState<string | null>(null);
   const [target, setTarget] = useState<FormTarget | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -176,19 +184,32 @@ export function MemoryPanel() {
         : emptyOverview(),
     [choices, state],
   );
-  const filteredChoices = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return choices;
-    return choices.filter((choice) =>
-      [choice.key, choice.label, choice.description, choice.badge]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q)),
+  const selectedUsage =
+    overview.usages.find((usage) => usage.path === selectedUsagePath) ?? overview.usages[0] ?? null;
+
+  useEffect(() => {
+    if (overview.usages.length === 0) {
+      setSelectedUsagePath(null);
+      return;
+    }
+    setSelectedUsagePath((current) =>
+      current && overview.usages.some((usage) => usage.path === current)
+        ? current
+        : overview.usages[0].path,
     );
-  }, [choices, filter]);
+  }, [overview.usages]);
+
+  useEffect(() => {
+    if (!selectedUsage?.backendKey) return;
+    setSelectedKey(selectedUsage.backendKey);
+    setTarget(null);
+  }, [selectedUsage?.backendKey, selectedUsage?.path]);
+
   const selectedChoice =
     choices.find((choice) => choice.key === selectedKey) ??
+    choices.find((choice) => choice.key === selectedUsage?.backendKey) ??
     choices.find((choice) => overview.summaries[choice.key]?.status === "active") ??
-    filteredChoices[0] ??
+    choices[0] ??
     null;
 
   if (state.kind === "loading") {
@@ -227,132 +248,516 @@ export function MemoryPanel() {
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
-        <header className="shrink-0 border-b border-white/10 p-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
-              <Database size={16} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h2 className="truncate text-sm font-semibold text-neutral-100">
-                  {state.section.label}
-                </h2>
-                <StatusBadge section={state.section} />
+    <div className="h-full overflow-auto bg-[#020818]/90 p-5 zc-scrollbar">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <section className="rounded-lg border border-white/10 bg-white/[0.025] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
+                <Database size={16} />
               </div>
-              <p className="mt-1 truncate font-mono text-[10px] text-neutral-500">
-                {state.section.key}
-              </p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate text-sm font-semibold text-neutral-100">
+                    {state.section.label}
+                  </h2>
+                  <StatusBadge section={state.section} />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Metric label="Current" value={overview.activeLabel} />
-            <Metric label="Configured" value={String(overview.configuredCount)} />
-          </div>
-
-          <CurrentMemoryNotice overview={overview} />
-
-          <ActiveMemoryPanel overview={overview} choices={choices} onSaved={() => void refresh()} />
-
-          <div className="relative mt-3">
-            <Search
-              size={13}
-              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+            <MemoryStatusPanel
+              overview={overview}
+              choices={choices}
+              selectedUsage={selectedUsage}
+              onUsageSelected={(path) => {
+                setSelectedUsagePath(path);
+                setTarget(null);
+              }}
+              onSaved={() => void refresh()}
             />
-            <input
-              type="search"
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              placeholder="Search backends..."
-              className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-1.5 pl-7 pr-2 text-xs text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
-            />
+
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="flex w-fit items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-[11px] text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
+            >
+              <RefreshCw size={11} />
+              Refresh
+            </button>
           </div>
+        </section>
 
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            className="mt-2 flex items-center gap-1 rounded px-1.5 py-1 text-[11px] text-neutral-400 hover:bg-white/[0.05] hover:text-cyan-300"
-          >
-            <RefreshCw size={11} />
-            Refresh
-          </button>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto p-2 zc-scrollbar">
-          {filteredChoices.length === 0 && (
-            <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.035] p-3 text-xs text-neutral-500">
-              No memory backends match this filter.
+        <main className="min-w-0">
+          {target ? (
+            <div className="min-h-[620px] overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+              <MemoryFieldForm
+                key={`${reloadKey}-${target.prefix}`}
+                target={target}
+                onBack={() => setTarget(null)}
+                onSaved={() => {
+                  setReloadKey((current) => current + 1);
+                  void refresh();
+                }}
+              />
+            </div>
+          ) : selectedChoice ? (
+            <MemoryHomePanel
+              section={state.section}
+              choices={choices}
+              overview={overview}
+              selectedUsage={selectedUsage}
+              selectedKey={selectedChoice.key}
+              onSelected={(key) => {
+                setSelectedKey(key);
+                setTarget(null);
+              }}
+              onTarget={setTarget}
+              onSaved={() => {
+                setReloadKey((current) => current + 1);
+                void refresh();
+              }}
+            />
+          ) : (
+            <div className="min-h-[420px] rounded-lg border border-white/10 bg-white/[0.02]">
+              <EmptyState
+                icon={<Database size={28} />}
+                title="Choose a memory option"
+                body="Pick where this workspace should save memories."
+              />
             </div>
           )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function MemoryStatusPanel({
+  overview,
+  choices,
+  selectedUsage,
+  onUsageSelected,
+  onSaved,
+}: {
+  overview: MemoryOverview;
+  choices: PickerItem[];
+  selectedUsage: MemoryUsage | null;
+  onUsageSelected: (path: string) => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [agentPickerOpen, setAgentPickerOpen] = useState(false);
+  const enabled = isUsageMemoryEnabled(selectedUsage);
+  const current = currentMemoryLabel(selectedUsage, choices);
+  const hasMultipleAgents = overview.usages.length > 1;
+
+  async function toggleMemory(nextEnabled: boolean) {
+    if (saving || nextEnabled === enabled) return;
+    if (!selectedUsage) {
+      setError("No agent memory setting is available yet.");
+      return;
+    }
+    const choice = nextEnabled
+      ? preferredEnabledChoice(choices, overview, selectedUsage)
+      : choices.find((item) => item.key === "none");
+    if (!choice) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      await saveActiveMemoryChoice(overview, choice, selectedUsage);
+      onSaved();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      <div className="min-w-[220px] flex-1 rounded-md border border-white/10 bg-[#020818]/70 px-3 py-2">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-neutral-500">
+              <UserRound size={11} className="text-cyan-300" />
+              Agent
+            </div>
+            <div className="mt-1 truncate text-sm font-semibold text-neutral-100">
+              {selectedUsage?.label ?? "No agent selected"}
+            </div>
+          </div>
+          {hasMultipleAgents && (
+            <button
+              type="button"
+              onClick={() => setAgentPickerOpen(true)}
+              className="shrink-0 rounded-md border border-white/10 px-2 py-1 text-[11px] text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-100"
+            >
+              Change
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="min-w-[260px] flex-[1.2] rounded-md border border-white/10 bg-[#020818]/70 px-3 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-wide text-neutral-500">Memory</div>
+            <div className="mt-1 truncate text-sm font-semibold text-neutral-100">
+              {current.title}
+            </div>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={(checked) => void toggleMemory(checked)}
+            label={saving ? "Saving" : enabled ? "On" : "Off"}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="w-full rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-[10px] text-red-300">
+          {error}
+        </div>
+      )}
+      <AgentPickerDialog
+        open={agentPickerOpen}
+        usages={overview.usages}
+        selectedUsage={selectedUsage}
+        onOpenChange={setAgentPickerOpen}
+        onSelect={(usage) => {
+          onUsageSelected(usage.path);
+          setAgentPickerOpen(false);
+        }}
+      />
+    </section>
+  );
+}
+
+function AgentPickerDialog({
+  open,
+  usages,
+  selectedUsage,
+  onOpenChange,
+  onSelect,
+}: {
+  open: boolean;
+  usages: MemoryUsage[];
+  selectedUsage: MemoryUsage | null;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (usage: MemoryUsage) => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
+
+  const filteredUsages = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return usages;
+    return usages.filter((usage) =>
+      [usage.label, usage.path, usage.backendKey, usage.alias]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    );
+  }, [query, usages]);
+
+  return (
+    <Dialog
+      open={open}
+      title="Choose agent"
+      onOpenChange={onOpenChange}
+      className="max-w-xl rounded-xl border border-white/10 bg-[#061126] shadow-2xl shadow-black/50"
+    >
+      <div className="border-b border-white/10 px-5 py-4">
+        <h2 className="text-sm font-semibold text-neutral-100">Choose agent</h2>
+        <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+          Memory changes will apply only to the selected agent.
+        </p>
+        <div className="relative mt-4">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"
+          />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search agents..."
+            className="w-full rounded-md border border-white/10 bg-[#020818]/90 py-2 pl-9 pr-3 text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
+          />
+        </div>
+      </div>
+
+      <div className="max-h-[420px] overflow-y-auto p-2 zc-scrollbar">
+        {filteredUsages.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.025] p-4 text-center text-xs text-neutral-500">
+            No agents match this search.
+          </div>
+        ) : (
           <div className="space-y-1">
-            {filteredChoices.map((choice) => {
-              const meta = memoryMeta(choice);
-              const summary = overview.summaries[choice.key];
+            {filteredUsages.map((usage) => {
+              const selected = usage.path === selectedUsage?.path;
               return (
                 <button
-                  key={choice.key}
+                  key={usage.path}
                   type="button"
-                  onClick={() => {
-                    setSelectedKey(choice.key);
-                    setTarget(null);
-                  }}
-                  className={`flex w-full items-start gap-2 rounded-md px-2 py-2 text-left transition ${
-                    selectedChoice?.key === choice.key
+                  onClick={() => onSelect(usage)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition ${
+                    selected
                       ? "bg-cyan-400/10 text-cyan-100"
                       : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
                   }`}
                 >
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-white/10 bg-[#020818]/80 text-cyan-300">
-                    {meta.icon}
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
+                    <UserRound size={14} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium">{meta.label}</span>
-                    <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
-                      {choice.key}
+                    <span className="block truncate text-sm font-medium">{usage.label}</span>
+                    <span className="mt-1 block truncate font-mono text-[10px] text-neutral-500">
+                      {usage.path}
                     </span>
                   </span>
-                  <BackendStateBadge status={summary?.status ?? "available"} />
-                  <ChevronRight size={12} className="mt-1 shrink-0" />
+                  <span className="shrink-0 rounded bg-white/[0.05] px-2 py-1 font-mono text-[10px] text-neutral-500">
+                    {usage.backendKey ?? "unset"}
+                  </span>
+                  {selected && <Check size={14} className="shrink-0 text-cyan-300" />}
                 </button>
               );
             })}
           </div>
-        </div>
-      </aside>
-
-      <main className="min-h-0 min-w-0 overflow-hidden">
-        {target ? (
-          <MemoryFieldForm
-            key={`${reloadKey}-${target.prefix}`}
-            target={target}
-            onBack={() => setTarget(null)}
-            onSaved={() => {
-              setReloadKey((current) => current + 1);
-              void refresh();
-            }}
-          />
-        ) : selectedChoice ? (
-          <BackendSetup
-            section={state.section}
-            choice={selectedChoice}
-            summary={overview.summaries[selectedChoice.key]}
-            onTarget={setTarget}
-            onSaved={() => {
-              setReloadKey((current) => current + 1);
-              void refresh();
-            }}
-          />
-        ) : (
-          <EmptyState
-            icon={<Database size={28} />}
-            title="Select a memory backend"
-            body="Choose a backend to configure its connection fields."
-          />
         )}
-      </main>
+      </div>
+    </Dialog>
+  );
+}
+
+function MemoryHomePanel({
+  section,
+  choices,
+  overview,
+  selectedUsage,
+  selectedKey,
+  onSelected,
+  onTarget,
+  onSaved,
+}: {
+  section: ConfigSectionInfo;
+  choices: PickerItem[];
+  overview: MemoryOverview;
+  selectedUsage: MemoryUsage | null;
+  selectedKey: string;
+  onSelected: (key: string) => void;
+  onTarget: (target: FormTarget) => void;
+  onSaved: () => void;
+}) {
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const selectedChoice = choices.find((choice) => choice.key === selectedKey) ?? choices[0] ?? null;
+  const orderedChoices = useMemo(() => sortMemoryChoices(choices), [choices]);
+
+  async function openChoiceFields(choice: PickerItem, activateOnSave: boolean) {
+    const summary = overview.summaries[choice.key];
+    const alias =
+      section.shape === "one_tier_alias_map" ? "" : defaultAliasFor(choice, summary, selectedUsage);
+    const meta = memoryMeta(choice);
+    setPendingKey(choice.key);
+    setError(null);
+    try {
+      const result =
+        section.shape === "one_tier_alias_map"
+          ? await apiConfigSelectItem(section.key, choice.key)
+          : section.shape === "typed_family_map" ||
+              section.shape === undefined ||
+              section.shape === null
+            ? await apiConfigSelectItem(section.key, choice.key, alias || "default")
+            : await apiConfigSelectItem(section.key, choice.key);
+      onTarget({
+        prefix: result.fields_prefix,
+        title: friendlyMemoryTitle(choice),
+        subtitle: result.created ? `Set up ${meta.label} memory.` : friendlyMemoryBody(choice),
+        choice,
+        activateOnSave:
+          activateOnSave && selectedUsage
+            ? {
+                usage: selectedUsage,
+                backendKey: choice.key,
+                alias,
+              }
+            : undefined,
+      });
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setPendingKey(null);
+    }
+  }
+
+  async function applyChoice(choice: PickerItem) {
+    if (!selectedUsage) {
+      setError("No agent memory setting is available yet.");
+      return;
+    }
+    setPendingKey(choice.key);
+    setError(null);
+    try {
+      await saveActiveMemoryChoice(overview, choice, selectedUsage);
+      onSaved();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setPendingKey(null);
+    }
+  }
+
+  return (
+    <div className="min-w-0">
+      <div className="max-w-5xl space-y-5">
+        <header>
+          <h2 className="text-base font-semibold text-neutral-100">Memory options</h2>
+        </header>
+
+        {error && <ErrorBox message={error} />}
+
+        <div className="grid gap-3 xl:grid-cols-2">
+          {orderedChoices.map((choice) => {
+            const summary = overview.summaries[choice.key];
+            const status = memoryStatusForUsage(choice, summary, selectedUsage);
+            return (
+              <MemoryChoiceCard
+                key={choice.key}
+                choice={choice}
+                status={status}
+                selected={choice.key === selectedKey}
+                pending={pendingKey === choice.key}
+                canSwitch={Boolean(selectedUsage)}
+                agentLabel={selectedUsage?.label ?? "this agent"}
+                onSelect={() => onSelected(choice.key)}
+                onUse={() => void applyChoice(choice)}
+                onConfigure={() => void openChoiceFields(choice, status !== "active")}
+              />
+            );
+          })}
+        </div>
+
+        {selectedChoice && (
+          <details className="rounded-lg border border-white/10 bg-white/[0.025]">
+            <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-neutral-300 hover:text-cyan-100">
+              Advanced backend setup
+            </summary>
+            <div className="border-t border-white/10">
+              <BackendSetup
+                section={section}
+                choice={selectedChoice}
+                summary={overview.summaries[selectedChoice.key]}
+                onTarget={onTarget}
+                onSaved={onSaved}
+              />
+            </div>
+          </details>
+        )}
+      </div>
     </div>
+  );
+}
+
+function MemoryChoiceCard({
+  choice,
+  status,
+  selected,
+  pending,
+  canSwitch,
+  agentLabel,
+  onSelect,
+  onUse,
+  onConfigure,
+}: {
+  choice: PickerItem;
+  status: BackendSummary["status"];
+  selected: boolean;
+  pending: boolean;
+  canSwitch: boolean;
+  agentLabel: string;
+  onSelect: () => void;
+  onUse: () => void;
+  onConfigure: () => void;
+}) {
+  const active = status === "active";
+  const configured = status === "configured";
+  const offChoice = choice.key === "none";
+  const actionLabel = active
+    ? offChoice
+      ? "Memory is off"
+      : "Edit settings"
+    : configured || offChoice
+      ? offChoice
+        ? "Turn off memory"
+        : `Use for ${agentLabel}`
+      : canSwitch
+        ? "Set up and use"
+        : "Set up";
+
+  return (
+    <section
+      className={`rounded-lg border p-3 transition ${
+        active
+          ? "border-emerald-400/30 bg-emerald-400/10"
+          : selected
+            ? "border-cyan-400/35 bg-cyan-400/10"
+            : "border-white/10 bg-white/[0.035]"
+      }`}
+    >
+      <button type="button" onClick={onSelect} className="flex w-full gap-3 text-left">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
+          {memoryMeta(choice).icon}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-100">
+              {friendlyMemoryTitle(choice)}
+            </span>
+            {choice.key === "sqlite" && <Badge label="recommended" />}
+            <BackendStateBadge status={status} />
+          </span>
+          <span className="mt-1.5 line-clamp-2 block text-xs leading-relaxed text-neutral-500">
+            {friendlyMemoryBody(choice)}
+          </span>
+        </span>
+      </button>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={
+            active && !offChoice ? onConfigure : configured || offChoice ? onUse : onConfigure
+          }
+          disabled={pending || (active && offChoice)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          {pending ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : active ? (
+            <Check size={12} />
+          ) : (
+            <Power size={12} />
+          )}
+          {actionLabel}
+        </button>
+        {configured && !active && !offChoice && (
+          <button
+            type="button"
+            onClick={onConfigure}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {pending ? <Loader2 size={12} className="animate-spin" /> : <ChevronRight size={12} />}
+            Edit settings
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -745,6 +1150,16 @@ function MemoryFieldForm({
         return;
       }
       await apiConfigPatch(ops);
+      if (target.activateOnSave) {
+        const { usage, backendKey, alias } = target.activateOnSave;
+        await apiConfigPatch([
+          {
+            op: usage.populated ? "replace" : "add",
+            path: dottedToPointer(usage.path),
+            value: formatMemorySelectorValue(usage.raw, backendKey, alias),
+          },
+        ]);
+      }
       setSaved(true);
       await load();
       onSaved();
@@ -1018,177 +1433,6 @@ function BackendStateBadge({ status }: { status: BackendSummary["status"] }) {
   return <Badge label="available" />;
 }
 
-function CurrentMemoryNotice({ overview }: { overview: MemoryOverview }) {
-  const active = overview.usages.filter((usage) => usage.backendKey);
-  return (
-    <section className="mt-3 rounded-md border border-white/10 bg-white/[0.035] p-3">
-      <div className="text-[10px] uppercase tracking-wide text-neutral-500">Current backend</div>
-      <div className="mt-1 truncate font-mono text-xs font-medium text-neutral-100">
-        {overview.activeLabel}
-      </div>
-      <div className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-        {active.length > 0
-          ? `${active.length} config reference${active.length === 1 ? "" : "s"} found`
-          : "No active memory_backend reference found"}
-      </div>
-    </section>
-  );
-}
-
-function ActiveMemoryPanel({
-  overview,
-  choices,
-  onSaved,
-}: {
-  overview: MemoryOverview;
-  choices: PickerItem[];
-  onSaved: () => void;
-}) {
-  const firstUsagePath = overview.usages[0]?.path ?? "";
-  const [usagePath, setUsagePath] = useState(firstUsagePath);
-  const selectedUsage =
-    overview.usages.find((usage) => usage.path === usagePath) ?? overview.usages[0] ?? null;
-  const [backendKey, setBackendKey] = useState(selectedUsage?.backendKey ?? choices[0]?.key ?? "");
-  const [alias, setAlias] = useState(selectedUsage?.alias ?? "");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setUsagePath(firstUsagePath);
-  }, [firstUsagePath]);
-
-  useEffect(() => {
-    setBackendKey(selectedUsage?.backendKey ?? choices[0]?.key ?? "");
-    setAlias(selectedUsage?.alias ?? "");
-  }, [choices, selectedUsage?.alias, selectedUsage?.backendKey, selectedUsage?.path]);
-
-  if (overview.usages.length === 0) {
-    return (
-      <section className="mt-3 rounded-md border border-white/10 bg-white/[0.025] px-3 py-3">
-        <h3 className="text-xs font-medium text-neutral-200">Active memory selector</h3>
-        <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-          No agent or profile currently exposes a memory selector. Configure backends here, then
-          bind one from an agent or profile.
-        </p>
-      </section>
-    );
-  }
-
-  const configuredAliases = backendKey
-    ? (overview.summaries[backendKey]?.configuredAliases ?? [])
-    : [];
-  const nextValue = formatMemorySelectorValue(selectedUsage?.raw ?? "", backendKey, alias);
-  const dirty = Boolean(selectedUsage && nextValue !== selectedUsage.raw);
-
-  async function save() {
-    if (!selectedUsage || !backendKey) return;
-    setSaving(true);
-    setSaved(false);
-    setError(null);
-    try {
-      const ops: PatchOp[] = [
-        {
-          op: selectedUsage.populated ? "replace" : "add",
-          path: dottedToPointer(selectedUsage.path),
-          value: nextValue,
-        },
-      ];
-      await apiConfigPatch(ops);
-      setSaved(true);
-      onSaved();
-      window.setTimeout(() => setSaved(false), 1200);
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <section className="mt-3 rounded-md border border-white/10 bg-white/[0.025] p-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-medium text-neutral-200">Active selector</h3>
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={!dirty || saving || !backendKey}
-          className="inline-flex shrink-0 items-center gap-1 rounded bg-sky-400 px-2 py-1 text-[10px] font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {saving ? (
-            <Loader2 size={11} className="animate-spin" />
-          ) : saved ? (
-            <Check size={11} />
-          ) : (
-            <Save size={11} />
-          )}
-          {saved ? "Saved" : "Save"}
-        </button>
-      </div>
-
-      <label className="mt-3 block text-[10px] uppercase tracking-wide text-neutral-500">
-        Usage
-      </label>
-      <select
-        value={selectedUsage?.path ?? ""}
-        onChange={(event) => setUsagePath(event.target.value)}
-        className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-100 outline-none focus:border-cyan-400"
-      >
-        {overview.usages.map((usage) => (
-          <option key={usage.path} value={usage.path}>
-            {usage.label}
-          </option>
-        ))}
-      </select>
-
-      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-        <label className="min-w-0 text-[10px] uppercase tracking-wide text-neutral-500">
-          Backend
-          <select
-            value={backendKey}
-            onChange={(event) => setBackendKey(event.target.value)}
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs normal-case tracking-normal text-neutral-100 outline-none focus:border-cyan-400"
-          >
-            {choices.map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {memoryMeta(choice).label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="min-w-0 text-[10px] uppercase tracking-wide text-neutral-500">
-          Alias
-          <input
-            value={alias}
-            onChange={(event) => setAlias(event.target.value)}
-            placeholder="default"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 font-mono text-xs normal-case tracking-normal text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400"
-          />
-        </label>
-      </div>
-
-      <div className="mt-2 truncate font-mono text-[10px] text-neutral-500">
-        {selectedUsage?.path}: {nextValue || "<unset>"}
-      </div>
-      {configuredAliases.length > 0 && (
-        <div className="mt-1 truncate text-[10px] text-neutral-500">
-          configured aliases: {configuredAliases.join(", ")}
-        </div>
-      )}
-      {error && <div className="mt-2 text-[10px] text-red-300">{error}</div>}
-    </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-white/10 bg-white/[0.035] px-2 py-2">
-      <div className="truncate text-sm font-semibold text-cyan-100">{value}</div>
-      <div className="mt-0.5 truncate text-[10px] text-neutral-500">{label}</div>
-    </div>
-  );
-}
-
 function EmptyState({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
     <div className="flex h-full items-center justify-center p-8 text-center">
@@ -1249,6 +1493,125 @@ function memoryMeta(choice: PickerItem) {
     body: choice.description || meta.body,
     icon: meta.icon,
   };
+}
+
+function friendlyMemoryTitle(choice: PickerItem) {
+  if (choice.key === "none") return "Memory off";
+  if (choice.key === "sqlite") return "Local memory";
+  if (choice.key === "lucid") return "Lucid sync";
+  if (choice.key === "markdown") return "Markdown files";
+  if (choice.key === "postgres") return "Remote database";
+  if (choice.key === "qdrant") return "Vector memory";
+  return memoryMeta(choice).label;
+}
+
+function friendlyMemoryBody(choice: PickerItem) {
+  if (choice.key === "none") return "Do not keep persistent memory for this workspace.";
+  if (choice.key === "sqlite")
+    return "Recommended. Saves memory on this device and works out of the box.";
+  if (choice.key === "lucid")
+    return "Syncs with the local lucid-memory CLI for structured, graph-oriented memory.";
+  if (choice.key === "markdown") return "Stores memory in readable files that are easy to inspect.";
+  if (choice.key === "postgres") return "Uses a shared database for deployed or team runtimes.";
+  if (choice.key === "qdrant") return "Uses vector search for semantic memory retrieval.";
+  return memoryMeta(choice).body;
+}
+
+function currentMemoryLabel(usage: MemoryUsage | null, choices: PickerItem[]) {
+  if (!usage) {
+    return {
+      title: "Memory is not selected",
+      body: "Choose an agent to see its memory setting.",
+    };
+  }
+
+  if (!usage.backendKey) {
+    return {
+      title: "Memory is not selected",
+      body: `Choose where memories are saved for ${usage.label}.`,
+    };
+  }
+
+  if (usage.backendKey === "none") {
+    return {
+      title: "Memory is off",
+      body: `${usage.label} will not save persistent memory.`,
+    };
+  }
+
+  const key = usage.backendKey;
+  const choice = choices.find((item) => item.key === key);
+  return {
+    title: choice ? friendlyMemoryTitle(choice) : key,
+    body: usage.alias
+      ? `${usage.label} is using ${key}.${usage.alias}.`
+      : `${usage.label} is using this memory option.`,
+  };
+}
+
+function isUsageMemoryEnabled(usage: MemoryUsage | null) {
+  return Boolean(usage?.backendKey && usage.backendKey !== "none");
+}
+
+function preferredEnabledChoice(
+  choices: PickerItem[],
+  overview: MemoryOverview,
+  usage: MemoryUsage,
+) {
+  const activeKey = usage.backendKey && usage.backendKey !== "none" ? usage.backendKey : null;
+  return (
+    choices.find((choice) => choice.key === activeKey) ??
+    choices.find(
+      (choice) => overview.summaries[choice.key]?.status === "configured" && choice.key !== "none",
+    ) ??
+    choices.find((choice) => choice.key === "sqlite") ??
+    choices.find((choice) => choice.key !== "none")
+  );
+}
+
+function memoryStatusForUsage(
+  choice: PickerItem,
+  summary: BackendSummary | undefined,
+  usage: MemoryUsage | null,
+): BackendSummary["status"] {
+  if (usage?.backendKey === choice.key) return "active";
+  if ((summary?.configuredAliases.length ?? 0) > 0) return "configured";
+  return "available";
+}
+
+function sortMemoryChoices(choices: PickerItem[]) {
+  const order = ["sqlite", "lucid", "markdown", "postgres", "qdrant", "none"];
+  return [...choices].sort((a, b) => {
+    const ai = order.indexOf(a.key);
+    const bi = order.indexOf(b.key);
+    const ar = ai >= 0 ? ai : order.length - 1;
+    const br = bi >= 0 ? bi : order.length - 1;
+    return ar - br || a.key.localeCompare(b.key);
+  });
+}
+
+function defaultAliasFor(choice: PickerItem, summary?: BackendSummary, usage?: MemoryUsage | null) {
+  if (choice.key === "none") return "";
+  if (usage?.backendKey === choice.key && usage.alias) return usage.alias;
+  if (summary?.configuredAliases.length === 1 && summary.configuredAliases[0] === choice.key)
+    return "";
+  const configuredAlias = summary?.configuredAliases.find((alias) => alias !== choice.key);
+  return summary?.activeAliases[0] ?? configuredAlias ?? "default";
+}
+
+async function saveActiveMemoryChoice(
+  overview: MemoryOverview,
+  choice: PickerItem,
+  usage: MemoryUsage,
+) {
+  const alias = defaultAliasFor(choice, overview.summaries[choice.key], usage);
+  await apiConfigPatch([
+    {
+      op: usage.populated ? "replace" : "add",
+      path: dottedToPointer(usage.path),
+      value: formatMemorySelectorValue(usage.raw, choice.key, alias),
+    },
+  ]);
 }
 
 function emptyOverview(): MemoryOverview {
