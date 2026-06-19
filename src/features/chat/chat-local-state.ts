@@ -1,5 +1,5 @@
 import type { ChatMode } from "@/api/ws-chat";
-import type { ChatMessage } from "./use-chat";
+import type { ChatMessage } from "./chat-types";
 import {
   chatLocalAssignSessionWorkspace,
   chatLocalClearTranscript,
