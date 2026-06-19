@@ -193,12 +193,16 @@ function buildExecutionRows(toolCalls: ToolCallView[]) {
 
 export function ChatPanel({
   agentAlias,
+  agents,
+  onAgentChange,
   mode = "chat",
   workspaceRoot = null,
   onWorkspaceRoot,
   workspaceDir,
 }: {
   agentAlias: string;
+  agents: string[];
+  onAgentChange: (agent: string) => void;
   mode?: ChatMode;
   workspaceRoot?: string | null;
   onWorkspaceRoot?: (path: string | null) => void;
@@ -469,6 +473,7 @@ export function ChatPanel({
   const currentSession = chat.sessions.find((session) => session.session_id === chat.sessionId);
   const hasMessages = chat.messages.length > 0;
   const selectedModelChoice = modelChoices.find((choice) => choice.value === selectedModelProvider);
+  const agentOptions = agents.map((agent) => ({ value: agent, label: agent }));
   const modelOptions = [
     { value: MODEL_FOLLOWS_AGENT, label: t`Agent default` },
     ...modelChoices.map((choice) => ({
@@ -545,8 +550,8 @@ export function ChatPanel({
           <div
             className={
               variant === "center"
-                ? "mt-2 flex items-center gap-2 border-t border-white/10 pt-2"
-                : "flex items-center gap-2"
+                ? "mt-2 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2"
+                : "flex flex-wrap items-center gap-2"
             }
           >
             <div className="relative">
@@ -624,6 +629,13 @@ export function ChatPanel({
               <Clipboard size={12} />
             </button>
             <div className="flex-1" />
+            <Select
+              value={agentAlias}
+              options={agentOptions}
+              onValueChange={onAgentChange}
+              placeholder={t`Agent`}
+              className="h-8 w-36 max-w-[44vw] border-white/10 bg-white/[0.04] py-0 text-[11px]"
+            />
             <button
               type="button"
               onClick={() => void submit()}

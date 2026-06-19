@@ -80,6 +80,17 @@ export function WorkspaceShell() {
     setPage("settings");
   }, []);
 
+  const selectAgent = useCallback(
+    (agent: string) => {
+      setActiveAgent(agent);
+      setActiveThreadId(null);
+      setPendingSessionId(null);
+      setPage("chat");
+      focusComposer();
+    },
+    [focusComposer],
+  );
+
   const openThread = useCallback(
     (thread: NormalizedSession, workspaceRoot: string | null) => {
       const agent = thread.agent_alias || activeAgent || agents[0];
@@ -255,6 +266,7 @@ export function WorkspaceShell() {
             onWorkspaceRoot={setChatScopeRoot}
             agents={agents}
             activeAgent={activeAgent}
+            onAgentChange={selectAgent}
             onAgentCreated={loadAgents}
           />
         </div>

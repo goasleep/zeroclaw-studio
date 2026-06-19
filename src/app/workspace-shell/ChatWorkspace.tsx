@@ -7,6 +7,7 @@ interface ChatWorkspaceProps {
   onWorkspaceRoot: (path: string | null) => void;
   agents: string[];
   activeAgent: string | null;
+  onAgentChange: (agent: string) => void;
   onAgentCreated: () => void;
 }
 
@@ -16,6 +17,7 @@ export function ChatWorkspace({
   onWorkspaceRoot,
   agents,
   activeAgent,
+  onAgentChange,
   onAgentCreated,
 }: ChatWorkspaceProps) {
   const isCode = mode === "acp";
@@ -33,7 +35,10 @@ export function ChatWorkspace({
       <div className="min-h-0 flex-1 overflow-hidden">
         {activeAgent && (
           <ChatPanel
+            key={activeAgent}
             agentAlias={activeAgent}
+            agents={agents}
+            onAgentChange={onAgentChange}
             mode={mode}
             workspaceDir={isCode ? workspaceRoot : null}
             workspaceRoot={workspaceRoot}
