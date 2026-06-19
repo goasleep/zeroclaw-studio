@@ -1,5 +1,5 @@
 import { DataPanel } from "@/features/_shared/DataPanel";
-import { apiCron } from "@/api/client";
+import { apiCron } from "@/api/tools";
 
 export function CronPanel() {
   return (

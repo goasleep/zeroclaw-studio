@@ -20,7 +20,8 @@ import {
   type Connection,
   type ConnectionProbeResult,
 } from "@/api/tauri";
-import { apiDoctor, apiHealth, apiLogs, apiStatus } from "@/api/client";
+import { apiLogs } from "@/api/logs";
+import { apiDoctor, apiHealth, apiStatus } from "@/api/tools";
 
 interface Props {
   onAdd: () => void;

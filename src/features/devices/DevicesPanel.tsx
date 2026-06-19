@@ -1,5 +1,5 @@
 import { DataPanel } from "@/features/_shared/DataPanel";
-import { apiDevices } from "@/api/client";
+import { apiDevices } from "@/api/tools";
 
 export function DevicesPanel() {
   return (

@@ -8,7 +8,7 @@ import {
   TriangleAlert,
   Wrench,
 } from "lucide-react";
-import { apiTools } from "@/api/client";
+import { apiTools } from "@/api/tools";
 
 type ToolInfo = { name: string; [k: string]: unknown };
 type LoadState =

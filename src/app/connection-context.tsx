@@ -20,7 +20,7 @@ import {
   setActiveConnection,
   upsertConnection,
 } from "@/api/tauri";
-import { cacheActiveConnection } from "@/api/client";
+import { cacheActiveConnection } from "@/api/base";
 import { listen } from "@tauri-apps/api/event";
 
 interface ConnectionContextValue {

@@ -9,7 +9,7 @@ import {
   Search,
   TriangleAlert,
 } from "lucide-react";
-import { apiChannels, apiIntegrations, type ChannelInfo, type IntegrationInfo } from "@/api/client";
+import { apiChannels, apiIntegrations, type ChannelInfo, type IntegrationInfo } from "@/api/tools";
 
 type LoadState =
   | { kind: "loading" }

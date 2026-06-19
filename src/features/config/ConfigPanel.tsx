@@ -23,7 +23,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
-  ApiError,
   apiConfigCreateMapKey,
   apiConfigDeleteMapKey,
   apiConfigDeleteProp,
@@ -43,7 +42,8 @@ import {
   type ConfigSectionInfo,
   type PatchOp,
   type PickerItem,
-} from "@/api/client";
+} from "@/api/config";
+import { ApiError } from "@/api/base";
 import { SetupDoctorTab } from "./SetupDoctorTab";
 import { setupTargetsForPrefix } from "./setup-targets";
 
