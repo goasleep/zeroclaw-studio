@@ -81,7 +81,7 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[360px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
         <header className="shrink-0 border-b border-white/10 p-3">
           <div className="relative">
             <Search
@@ -192,7 +192,7 @@ export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: str
         </div>
       </aside>
 
-      <main className="min-w-0 overflow-hidden">
+      <main className="min-h-0 min-w-0 overflow-hidden">
         <IntegrationDetail item={selectedItem} channels={channels} onConfigure={onConfigure} />
       </main>
     </div>

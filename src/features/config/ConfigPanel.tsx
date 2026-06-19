@@ -285,7 +285,7 @@ export function ConfigPanel({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[300px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/95">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/95">
         <div className="border-b border-white/10 p-3">
           <button
             type="button"
@@ -413,7 +413,7 @@ export function ConfigPanel({
         </div>
       </aside>
 
-      <main className="min-w-0 overflow-hidden">
+      <main className="min-h-0 min-w-0 overflow-hidden">
         {mode === "overview" && !category ? (
           <ConfigOverview
             sections={sections}
@@ -1030,7 +1030,7 @@ function PickerSection({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
         <header className="shrink-0 border-b border-white/10 p-3">
           <h2 className="truncate text-sm font-semibold text-neutral-100">{section.label}</h2>
           {section.help && (
@@ -1112,7 +1112,7 @@ function PickerSection({
         </div>
       </aside>
 
-      <div className="min-w-0 overflow-hidden">
+      <div className="min-h-0 min-w-0 overflow-hidden">
         {selectedItem ? (
           oneTier ? (
             <OneTierAliasPanel
@@ -1807,7 +1807,7 @@ function AdvancedConfigEditor() {
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10">
         <div className="border-b border-white/10 p-3">
           <input
             type="search"
@@ -1845,7 +1845,7 @@ function AdvancedConfigEditor() {
           ))}
         </div>
       </aside>
-      <main className="min-w-0 overflow-hidden">
+      <main className="min-h-0 min-w-0 overflow-hidden">
         {!selected ? (
           <div className="h-full overflow-auto p-5 zc-scrollbar">
             <div className="mx-auto max-w-4xl space-y-4">
