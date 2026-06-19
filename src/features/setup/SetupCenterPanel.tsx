@@ -87,7 +87,7 @@ export function SetupCenterPanel() {
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
         <header className="shrink-0 border-b border-white/10 p-4">
           <div className="flex items-center gap-2">
             <PackageCheck size={16} className="text-cyan-300" />
@@ -147,7 +147,7 @@ export function SetupCenterPanel() {
         )}
       </aside>
 
-      <main className="min-w-0 overflow-hidden">
+      <main className="min-h-0 min-w-0 overflow-hidden">
         <SetupDoctorTab
           key={target.prefix}
           prefix={target.prefix}

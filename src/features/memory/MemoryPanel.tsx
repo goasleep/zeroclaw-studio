@@ -219,7 +219,7 @@ export function MemoryPanel() {
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[340px_minmax(0,1fr)] overflow-hidden">
-      <aside className="flex min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
+      <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#020818]/90">
         <header className="shrink-0 border-b border-white/10 p-3">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/25 bg-cyan-400/10 text-cyan-300">
@@ -313,7 +313,7 @@ export function MemoryPanel() {
         </div>
       </aside>
 
-      <main className="min-w-0 overflow-hidden">
+      <main className="min-h-0 min-w-0 overflow-hidden">
         {target ? (
           <MemoryFieldForm
             key={`${reloadKey}-${target.prefix}`}
