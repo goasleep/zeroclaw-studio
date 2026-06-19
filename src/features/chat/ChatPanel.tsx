@@ -489,16 +489,6 @@ export function ChatPanel({
       : gitStatus?.is_repo
         ? t`${gitStatus.changed_count} changed`
         : t`No git status`;
-  const contextScope = workspaceRoot ? filenameFromPath(workspaceRoot) : t`general`;
-  const contextGit =
-    gitStatus?.is_repo && gitStatus.branch
-      ? t`${gitStatus.branch} · ${gitStatus.changed_count} changed`
-      : gitStatus?.is_repo
-        ? t`${gitStatus.changed_count} changed`
-        : t`no git status`;
-  const contextAttachments =
-    attachmentDrafts.length === 1 ? t`1 attachment` : t`${attachmentDrafts.length} attachments`;
-  const composerContext = t`Context: ${contextScope} · ${contextAttachments} · ${contextGit}`;
   const suggestedPrompts = [
     t`Review current changes`,
     t`Explain this project`,
@@ -514,7 +504,6 @@ export function ChatPanel({
       }
     >
       <div className={variant === "center" ? "p-3" : undefined}>
-        <ContextSummaryBar label={composerContext} />
         <AttachmentStrip
           files={attachmentDrafts}
           maxAttachmentBytes={maxAttachmentBytes}
@@ -944,14 +933,6 @@ function FilePreviewDialog({
         </div>
       </div>
     </Dialog>
-  );
-}
-
-function ContextSummaryBar({ label }: { label: string }) {
-  return (
-    <div className="mb-2 flex min-w-0 items-center gap-2 rounded border border-white/10 bg-[#020818]/70 px-2 py-1.5 text-[10px] text-neutral-500">
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-    </div>
   );
 }
 
