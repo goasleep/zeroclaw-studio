@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Trans } from "@lingui/react/macro";
 import { listen } from "@tauri-apps/api/event";
 import { ConnectionProvider, useConnections } from "@/app/connection-context";
 import { ConnectionPicker } from "@/app/ConnectionPicker";
@@ -15,6 +16,8 @@ import {
 import { useGlobalQuickInvoke } from "@/workspace/shortcuts/useGlobalQuickInvoke";
 import { useNotifications } from "@/workspace/notifications/useNotifications";
 import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
+import { setAppLocale } from "@/i18n/i18n";
+import { loadPreferences } from "@/workspace/preferences/preferences";
 
 type AddPath = "remote" | "local-attach" | "local-install" | null;
 
@@ -26,6 +29,12 @@ function Shell() {
   useGlobalQuickInvoke();
   useNotifications();
   useDeepLinks();
+
+  useEffect(() => {
+    void loadPreferences()
+      .then((preferences) => setAppLocale(preferences.language))
+      .catch(() => undefined);
+  }, []);
 
   // React to zeroclaw:// deep-link commands — for now, just log; future
   // phases route to specific agents/files.
@@ -82,7 +91,7 @@ function Shell() {
   if (loading) {
     return (
       <div className="zc-deep-space-bg flex h-full items-center justify-center text-sm text-slate-400">
-        Loading…
+        <Trans>Loading…</Trans>
       </div>
     );
   }
@@ -98,7 +107,7 @@ function Shell() {
           <WorkspaceShell />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-slate-400">
-            Select a connection above, or add one.
+            <Trans>Select a connection above, or add one.</Trans>
           </div>
         )}
       </main>

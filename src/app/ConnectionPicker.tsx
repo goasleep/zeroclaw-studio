@@ -1,6 +1,7 @@
 // Connection picker in the title bar.
 
 import { useEffect, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
 import {
   Check,
   ChevronDown,
@@ -27,43 +28,8 @@ interface Props {
   onAdd: () => void;
 }
 
-function transportLabel(c: Connection): string {
-  switch (c.transport) {
-    case "local":
-      return c.lifecycle === "managed" ? "Local" : "Local attach";
-    case "http":
-      return "Remote";
-    case "ssh":
-      return "SSH";
-    case "tailscale":
-      return "Tailscale";
-  }
-}
-
-function activationLabel(step: ActivationStep | null): string | null {
-  if (!step) return null;
-  switch (step.type) {
-    case "started":
-    case "probing":
-      return "Checking gateway…";
-    case "starting_gateway":
-      return "Starting gateway…";
-    case "awaiting_healthy":
-      return "Waiting for health…";
-    case "pairing":
-      return "Pairing…";
-    case "binary_missing":
-      return "No local zeroclaw installed";
-    case "needs_manual_pairing":
-      return "Needs manual pairing";
-    case "failed":
-      return step.message.slice(0, 80);
-    case "ready":
-      return null;
-  }
-}
-
 export function ConnectionPicker({ onAdd }: Props) {
+  const { t } = useLingui();
   const { connections, active, activate, health, activation, retry } = useConnections();
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -76,6 +42,51 @@ export function ConnectionPicker({ onAdd }: Props) {
 
   const healthy = health?.healthy ?? false;
   const showingActive = active && health?.connection_id === active.id ? healthy : false;
+
+  function transportLabel(c: Connection): string {
+    switch (c.transport) {
+      case "local":
+        return c.lifecycle === "managed" ? t`Local` : t`Local attach`;
+      case "http":
+        return t`Remote`;
+      case "ssh":
+        return t`SSH`;
+      case "tailscale":
+        return t`Tailscale`;
+    }
+  }
+
+  function activationLabel(step: ActivationStep | null): string | null {
+    if (!step) return null;
+    switch (step.type) {
+      case "started":
+      case "probing":
+        return t`Checking gateway…`;
+      case "starting_gateway":
+        return t`Starting gateway…`;
+      case "awaiting_healthy":
+        return t`Waiting for health…`;
+      case "pairing":
+        return t`Pairing…`;
+      case "binary_missing":
+        return t`No local zeroclaw installed`;
+      case "needs_manual_pairing":
+        return t`Needs manual pairing`;
+      case "failed":
+        return step.message.slice(0, 80);
+      case "ready":
+        return null;
+    }
+  }
+
+  function probeLabel(probe: ConnectionProbeResult | undefined) {
+    if (!probe) return t`probe pending`;
+    if (probe.status === "tunnel_inactive") {
+      return t`Tunnel inactive / activate to probe`;
+    }
+    const latency = probe.latency_ms == null ? "" : ` (${probe.latency_ms} ms)`;
+    return probe.reachable ? t`reachable${latency}` : `${probe.status}${latency}`;
+  }
 
   const stepLabel = activationLabel(activation);
   const inFlight =
@@ -130,19 +141,22 @@ export function ConnectionPicker({ onAdd }: Props) {
       const errors: string[] = [];
       await Promise.all([
         apiHealth()
-          .then((r) => rows.push({ label: "Gateway health", value: r.status }))
+          .then((r) => rows.push({ label: t`Gateway health`, value: r.status }))
           .catch((e) => errors.push(`health: ${formatError(e)}`)),
         apiStatus()
-          .then((r) => rows.push({ label: "Gateway version", value: r.version ?? "unknown" }))
+          .then((r) => rows.push({ label: t`Gateway version`, value: r.version ?? t`unknown` }))
           .catch((e) => errors.push(`status: ${formatError(e)}`)),
         runtimeStatus()
-          .then((r) => rows.push({ label: "Managed runtime", value: String(r) }))
+          .then((r) => rows.push({ label: t`Managed runtime`, value: String(r) }))
           .catch((e) => errors.push(`runtime: ${formatError(e)}`)),
         apiDoctor()
           .then((r) =>
             rows.push({
-              label: "Doctor",
-              value: `${r.results.length} result${r.results.length === 1 ? "" : "s"}`,
+              label: t`Doctor`,
+              value:
+                r.results.length === 1
+                  ? t`${r.results.length} result`
+                  : t`${r.results.length} results`,
             }),
           )
           .catch((e) => errors.push(`doctor: ${formatError(e)}`)),
@@ -154,8 +168,8 @@ export function ConnectionPicker({ onAdd }: Props) {
                 .includes("error"),
             );
             rows.push({
-              label: "Recent log error",
-              value: recentError?.message ?? "none",
+              label: t`Recent log error`,
+              value: recentError?.message ?? t`none`,
             });
           })
           .catch((e) => errors.push(`logs: ${formatError(e)}`)),
@@ -167,7 +181,7 @@ export function ConnectionPicker({ onAdd }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [active, detailsOpen]);
+  }, [active, detailsOpen, t]);
 
   async function choose(id: string | null) {
     setOpen(false);
@@ -187,7 +201,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           <div className="text-[11px] uppercase tracking-wide text-neutral-500">
             ZeroClaw Workspace
           </div>
-          <div className="text-xs text-neutral-300">Workspace runtime</div>
+          <div className="text-xs text-neutral-300">{t`Workspace runtime`}</div>
         </div>
       </div>
 
@@ -201,7 +215,7 @@ export function ConnectionPicker({ onAdd }: Props) {
             showingActive ? "bg-emerald-400" : "bg-white/[0.18]"
           }`}
         />
-        <span className="min-w-0 flex-1 truncate">{active ? active.name : "No connection"}</span>
+        <span className="min-w-0 flex-1 truncate">{active ? active.name : t`No connection`}</span>
         {active && (
           <span className="rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-neutral-400">
             {transportLabel(active)}
@@ -216,10 +230,10 @@ export function ConnectionPicker({ onAdd }: Props) {
           className="zc-terminal-surface absolute left-[210px] top-11 z-50 w-[360px] overflow-hidden rounded-xl shadow-2xl backdrop-blur-xl"
         >
           <div className="border-b border-white/10 px-3 py-2 text-[10px] uppercase tracking-wide text-neutral-500">
-            Runtimes
+            {t`Runtimes`}
           </div>
           {connections.length === 0 ? (
-            <div className="px-3 py-3 text-xs text-neutral-500">No saved connections yet.</div>
+            <div className="px-3 py-3 text-xs text-neutral-500">{t`No saved connections yet.`}</div>
           ) : (
             <div className="max-h-72 overflow-y-auto py-1 zc-scrollbar">
               {connections.map((c) => (
@@ -235,7 +249,7 @@ export function ConnectionPicker({ onAdd }: Props) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{c.name}</span>
                     <span className="block truncate font-mono text-[10px] text-neutral-500">
-                      {c.url || "pending tunnel"}
+                      {c.url || t`pending tunnel`}
                     </span>
                     <span className="mt-0.5 block truncate text-[10px] text-neutral-600">
                       {probeLabel(probes[c.id])}
@@ -257,7 +271,7 @@ export function ConnectionPicker({ onAdd }: Props) {
             className="flex w-full items-center gap-2 border-t border-white/10 px-3 py-2 text-xs text-cyan-300 hover:bg-cyan-400/10"
           >
             <Plus size={12} />
-            Add runtime
+            {t`Add runtime`}
           </button>
         </div>
       )}
@@ -290,7 +304,7 @@ export function ConnectionPicker({ onAdd }: Props) {
           title={active.url}
         >
           {showingActive ? <Wifi size={12} /> : <WifiOff size={12} />}
-          {showingActive ? "Online" : "Offline"}
+          {showingActive ? t`Online` : t`Offline`}
         </button>
       )}
 
@@ -302,14 +316,14 @@ export function ConnectionPicker({ onAdd }: Props) {
           <div className="border-b border-white/10 px-3 py-2 text-xs">
             <div className="font-medium text-neutral-100">{active.name}</div>
             <div className="mt-0.5 truncate font-mono text-[10px] text-neutral-500">
-              {active.url || "pending tunnel"}
+              {active.url || t`pending tunnel`}
             </div>
           </div>
           <div className="max-h-96 overflow-auto p-3 text-xs zc-scrollbar">
             {activeDetails.loading ? (
               <div className="flex items-center gap-2 text-neutral-500">
                 <Loader2 size={12} className="animate-spin" />
-                Checking connection...
+                {t`Checking connection...`}
               </div>
             ) : (
               <div className="space-y-2">
@@ -342,10 +356,10 @@ export function ConnectionPicker({ onAdd }: Props) {
           type="button"
           onClick={() => void retry()}
           className="flex items-center gap-1 rounded-lg border border-white/15 px-2 py-1 text-xs text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
-          title="Re-run activation"
+          title={t`Re-run activation`}
         >
           <RotateCw size={11} />
-          Retry
+          {t`Retry`}
         </button>
       )}
 
@@ -356,19 +370,10 @@ export function ConnectionPicker({ onAdd }: Props) {
         className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs text-neutral-200 transition hover:border-cyan-400 hover:text-cyan-300"
       >
         <Plus size={12} />
-        Add runtime
+        {t`Add runtime`}
       </button>
     </div>
   );
-}
-
-function probeLabel(probe: ConnectionProbeResult | undefined) {
-  if (!probe) return "probe pending";
-  if (probe.status === "tunnel_inactive") {
-    return "Tunnel inactive / activate to probe";
-  }
-  const latency = probe.latency_ms == null ? "" : ` (${probe.latency_ms} ms)`;
-  return probe.reachable ? `reachable${latency}` : `${probe.status}${latency}`;
 }
 
 function formatError(e: unknown) {

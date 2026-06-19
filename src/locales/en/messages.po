@@ -1,0 +1,555 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-06-19 21:26+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. placeholder {0}: detail.tool
+#: src/workspace/notifications/useNotifications.ts:45
+msgid "{0} is waiting for approval."
+msgstr "{0} is waiting for approval."
+
+#. placeholder {0}: thread.message_count
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:336
+msgid "{0} message"
+msgstr "{0} message"
+
+#. placeholder {0}: thread.message_count
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:337
+msgid "{0} messages"
+msgstr "{0} messages"
+
+#. placeholder {0}: detail.agent
+#: src/workspace/notifications/useNotifications.ts:51
+msgid "{0} responded."
+msgstr "{0} responded."
+
+#. placeholder {0}: r.results.length
+#: src/app/ConnectionPicker.tsx:158
+msgid "{0} result"
+msgstr "{0} result"
+
+#. placeholder {0}: r.results.length
+#: src/app/ConnectionPicker.tsx:159
+msgid "{0} results"
+msgstr "{0} results"
+
+#: src/app/workspace-shell/SettingsPage.tsx:267
+msgid "Activation"
+msgstr "Activation"
+
+#: src/app/WelcomeScreen.tsx:36
+msgid "Add remote"
+msgstr "Add remote"
+
+#: src/app/ConnectionPicker.tsx:276
+#: src/app/ConnectionPicker.tsx:375
+msgid "Add runtime"
+msgstr "Add runtime"
+
+#: src/app/workspace-shell/settings-sections.ts:33
+msgid "Agents"
+msgstr "Agents"
+
+#: src/app/workspace-shell/settings-sections.ts:29
+#: src/app/workspace-shell/SettingsPage.tsx:156
+msgid "App"
+msgstr "App"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:305
+msgid "Attachments"
+msgstr "Attachments"
+
+#: src/app/workspace-shell/SettingsPage.tsx:176
+msgid "Back to app"
+msgstr "Back to app"
+
+#: src/app/workspace-shell/SettingsPage.tsx:160
+msgid "Capabilities"
+msgstr "Capabilities"
+
+#: src/app/workspace-shell/settings-sections.ts:35
+msgid "Channels"
+msgstr "Channels"
+
+#: src/app/workspace-shell/SettingsPage.tsx:265
+msgid "Chat attachments"
+msgstr "Chat attachments"
+
+#: src/app/ConnectionPicker.tsx:328
+msgid "Checking connection..."
+msgstr "Checking connection..."
+
+#: src/app/ConnectionPicker.tsx:64
+msgid "Checking gateway…"
+msgstr "Checking gateway…"
+
+#: src/app/AddConnectionDialog.tsx:449
+#: src/app/WelcomeScreen.tsx:34
+msgid "Connect to a remote zeroclaw"
+msgstr "Connect to a remote zeroclaw"
+
+#: src/app/AddConnectionDialog.tsx:450
+#: src/app/WelcomeScreen.tsx:39
+msgid "Connect to local zeroclaw"
+msgstr "Connect to local zeroclaw"
+
+#: src/app/workspace-shell/SettingsPage.tsx:242
+msgid "Connection"
+msgstr "Connection"
+
+#: src/app/AddConnectionDialog.tsx:156
+#: src/app/AddConnectionDialog.tsx:288
+#: src/app/AddConnectionDialog.tsx:399
+msgid "Connection name"
+msgstr "Connection name"
+
+#: src/app/AddConnectionDialog.tsx:230
+#: src/app/AddConnectionDialog.tsx:312
+msgid "Create connection"
+msgstr "Create connection"
+
+#: src/app/AddConnectionDialog.tsx:425
+msgid "Create managed connection"
+msgstr "Create managed connection"
+
+#: src/app/workspace-shell/settings-sections.ts:39
+msgid "Cron"
+msgstr "Cron"
+
+#: src/app/workspace-shell/SettingsPage.tsx:338
+msgid "Deep link scheme"
+msgstr "Deep link scheme"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:372
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:426
+msgid "Delete session"
+msgstr "Delete session"
+
+#. placeholder {0}: thread.name
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:423
+msgid "Delete session \"{0}\"?"
+msgstr "Delete session \"{0}\"?"
+
+#: src/app/AddConnectionDialog.tsx:386
+msgid "Detect again"
+msgstr "Detect again"
+
+#: src/app/WelcomeScreen.tsx:41
+msgid "Detect local"
+msgstr "Detect local"
+
+#: src/app/workspace-shell/settings-sections.ts:42
+msgid "Devices"
+msgstr "Devices"
+
+#: src/app/AddConnectionDialog.tsx:140
+msgid "Direct URL"
+msgstr "Direct URL"
+
+#: src/app/ConnectionPicker.tsx:155
+#: src/app/workspace-shell/settings-sections.ts:41
+msgid "Doctor"
+msgstr "Doctor"
+
+#: src/app/workspace-shell/SettingsPage.tsx:264
+msgid "Folder"
+msgstr "Folder"
+
+#: src/app/AddConnectionDialog.tsx:395
+msgid "Found"
+msgstr "Found"
+
+#: src/app/workspace-shell/SettingsPage.tsx:158
+msgid "Gateway"
+msgstr "Gateway"
+
+#: src/app/ConnectionPicker.tsx:144
+msgid "Gateway health"
+msgstr "Gateway health"
+
+#: src/app/workspace-shell/settings-sections.ts:31
+msgid "Gateway Overview"
+msgstr "Gateway Overview"
+
+#: src/app/AddConnectionDialog.tsx:296
+#: src/app/AddConnectionDialog.tsx:407
+msgid "Gateway port"
+msgstr "Gateway port"
+
+#: src/app/AddConnectionDialog.tsx:166
+msgid "Gateway URL"
+msgstr "Gateway URL"
+
+#: src/app/ConnectionPicker.tsx:147
+msgid "Gateway version"
+msgstr "Gateway version"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:266
+msgid "General Sessions"
+msgstr "General Sessions"
+
+#: src/app/workspace-shell/SettingsPage.tsx:294
+msgid "Global shortcut"
+msgstr "Global shortcut"
+
+#: src/app/workspace-shell/SettingsPage.tsx:267
+msgid "idle"
+msgstr "idle"
+
+#: src/app/AddConnectionDialog.tsx:485
+msgid "Install + manage"
+msgstr "Install + manage"
+
+#: src/app/WelcomeScreen.tsx:46
+msgid "Install locally"
+msgstr "Install locally"
+
+#: src/app/WelcomeScreen.tsx:45
+msgid "Install the upstream zeroclaw binary on this machine and let the workspace manage it for you."
+msgstr "Install the upstream zeroclaw binary on this machine and let the workspace manage it for you."
+
+#: src/app/workspace-shell/settings-sections.ts:38
+msgid "Integrations"
+msgstr "Integrations"
+
+#: src/app/workspace-shell/SettingsPage.tsx:278
+msgid "Language"
+msgstr "Language"
+
+#: src/app/workspace-shell/SettingsPage.tsx:249
+msgid "Lifecycle"
+msgstr "Lifecycle"
+
+#: src/app/AddConnectionDialog.tsx:372
+#: src/app/App.tsx:94
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/app/ConnectionPicker.tsx:49
+msgid "Local"
+msgstr "Local"
+
+#: src/app/AddConnectionDialog.tsx:484
+#: src/app/ConnectionPicker.tsx:49
+msgid "Local attach"
+msgstr "Local attach"
+
+#: src/app/workspace-shell/SettingsPage.tsx:273
+msgid "Local Preferences"
+msgstr "Local Preferences"
+
+#: src/app/workspace-shell/settings-sections.ts:40
+msgid "Logs"
+msgstr "Logs"
+
+#: src/app/AddConnectionDialog.tsx:359
+msgid "Looking for an installed zeroclaw…"
+msgstr "Looking for an installed zeroclaw…"
+
+#: src/app/WelcomeScreen.tsx:35
+msgid "Manage a homelab, cloud VM, or Raspberry Pi. Works with direct URL, SSH tunnel, or Tailscale. No local install required."
+msgstr "Manage a homelab, cloud VM, or Raspberry Pi. Works with direct URL, SSH tunnel, or Tailscale. No local install required."
+
+#: src/app/ConnectionPicker.tsx:150
+msgid "Managed runtime"
+msgstr "Managed runtime"
+
+#: src/app/workspace-shell/settings-sections.ts:36
+msgid "Memory"
+msgstr "Memory"
+
+#: src/app/workspace-shell/settings-sections.ts:32
+msgid "Models & Providers"
+msgstr "Models & Providers"
+
+#: src/app/workspace-shell/SettingsPage.tsx:246
+msgid "Name"
+msgstr "Name"
+
+#: src/app/ConnectionPicker.tsx:74
+msgid "Needs manual pairing"
+msgstr "Needs manual pairing"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:272
+msgid "New general session"
+msgstr "New general session"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:209
+msgid "New project session"
+msgstr "New project session"
+
+#: src/app/workspace-shell/SettingsPage.tsx:254
+msgid "No active connection."
+msgstr "No active connection."
+
+#: src/app/ConnectionPicker.tsx:218
+msgid "No connection"
+msgstr "No connection"
+
+#: src/app/workspace-shell/SettingsPage.tsx:264
+msgid "No folder open"
+msgstr "No folder open"
+
+#: src/app/AddConnectionDialog.tsx:275
+msgid "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
+msgstr "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:288
+msgid "No general sessions yet."
+msgstr "No general sessions yet."
+
+#: src/app/ConnectionPicker.tsx:72
+msgid "No local zeroclaw installed"
+msgstr "No local zeroclaw installed"
+
+#: src/app/ConnectionPicker.tsx:237
+msgid "No saved connections yet."
+msgstr "No saved connections yet."
+
+#: src/app/AddConnectionDialog.tsx:368
+msgid "No zeroclaw binary found. Run this in your terminal:"
+msgstr "No zeroclaw binary found. Run this in your terminal:"
+
+#: src/app/ConnectionPicker.tsx:172
+msgid "none"
+msgstr "none"
+
+#: src/app/workspace-shell/SettingsPage.tsx:311
+msgid "Notifications"
+msgstr "Notifications"
+
+#: src/app/workspace-shell/SettingsPage.tsx:314
+msgid "Notify on hidden-window approvals and completed turns."
+msgstr "Notify on hidden-window approvals and completed turns."
+
+#: src/app/ConnectionPicker.tsx:309
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Offline"
+msgstr "Offline"
+
+#: src/app/ConnectionPicker.tsx:309
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Online"
+msgstr "Online"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:169
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:180
+msgid "Open project"
+msgstr "Open project"
+
+#: src/app/workspace-shell/SettingsPage.tsx:162
+msgid "Operations"
+msgstr "Operations"
+
+#: src/app/AddConnectionDialog.tsx:283
+msgid "Pairing is disabled — no auth needed."
+msgstr "Pairing is disabled — no auth needed."
+
+#: src/app/AddConnectionDialog.tsx:282
+msgid "Pairing is required — workspace will auto-pair after you save."
+msgstr "Pairing is required — workspace will auto-pair after you save."
+
+#: src/app/ConnectionPicker.tsx:70
+msgid "Pairing…"
+msgstr "Pairing…"
+
+#: src/app/ConnectionPicker.tsx:254
+#: src/app/ConnectionPicker.tsx:321
+#: src/app/workspace-shell/SettingsPage.tsx:250
+msgid "pending tunnel"
+msgstr "pending tunnel"
+
+#: src/app/WelcomeScreen.tsx:60
+msgid "Pick how you want to reach a ZeroClaw gateway. You can have any number of connections — local, remote, or both. Local install is optional."
+msgstr "Pick how you want to reach a ZeroClaw gateway. You can have any number of connections — local, remote, or both. Local install is optional."
+
+#: src/app/ConnectionPicker.tsx:83
+msgid "probe pending"
+msgstr "probe pending"
+
+#: src/app/AddConnectionDialog.tsx:270
+msgid "Probing localhost:{DEFAULT_PORT}…"
+msgstr "Probing localhost:{DEFAULT_PORT}…"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:163
+msgid "Project"
+msgstr "Project"
+
+#: src/app/ConnectionPicker.tsx:361
+msgid "Re-run activation"
+msgstr "Re-run activation"
+
+#: src/app/ConnectionPicker.tsx:88
+msgid "reachable{latency}"
+msgstr "reachable{latency}"
+
+#: src/app/ConnectionPicker.tsx:171
+msgid "Recent log error"
+msgstr "Recent log error"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:280
+msgid "Refresh sessions"
+msgstr "Refresh sessions"
+
+#: src/app/AddConnectionDialog.tsx:482
+#: src/app/ConnectionPicker.tsx:51
+msgid "Remote"
+msgstr "Remote"
+
+#: src/app/AddConnectionDialog.tsx:207
+msgid "Remote gateway port"
+msgstr "Remote gateway port"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:360
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:364
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:412
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:416
+msgid "Rename session"
+msgstr "Rename session"
+
+#: src/app/ConnectionPicker.tsx:364
+msgid "Retry"
+msgstr "Retry"
+
+#: src/app/workspace-shell/settings-sections.ts:34
+msgid "Runtime & Safety"
+msgstr "Runtime & Safety"
+
+#: src/app/ConnectionPicker.tsx:233
+msgid "Runtimes"
+msgstr "Runtimes"
+
+#: src/app/workspace-shell/SettingsPage.tsx:266
+msgid "Saved runtimes"
+msgstr "Saved runtimes"
+
+#: src/ui/select.tsx:31
+msgid "Select"
+msgstr "Select"
+
+#: src/app/App.tsx:110
+msgid "Select a connection above, or add one."
+msgstr "Select a connection above, or add one."
+
+#: src/app/AddConnectionDialog.tsx:451
+#: src/app/WelcomeScreen.tsx:44
+msgid "Set up a new local zeroclaw"
+msgstr "Set up a new local zeroclaw"
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:102
+msgid "Settings"
+msgstr "Settings"
+
+#: src/app/workspace-shell/settings-sections.ts:30
+msgid "Setup Center"
+msgstr "Setup Center"
+
+#: src/app/ConnectionPicker.tsx:53
+msgid "SSH"
+msgstr "SSH"
+
+#: src/app/AddConnectionDialog.tsx:187
+msgid "SSH host"
+msgstr "SSH host"
+
+#: src/app/AddConnectionDialog.tsx:198
+msgid "SSH port (optional)"
+msgstr "SSH port (optional)"
+
+#: src/app/AddConnectionDialog.tsx:151
+msgid "SSH tunnel"
+msgstr "SSH tunnel"
+
+#: src/app/AddConnectionDialog.tsx:178
+msgid "SSH user"
+msgstr "SSH user"
+
+#: src/app/ConnectionPicker.tsx:66
+msgid "Starting gateway…"
+msgstr "Starting gateway…"
+
+#: src/app/workspace-shell/SettingsPage.tsx:247
+msgid "Status"
+msgstr "Status"
+
+#: src/app/ConnectionPicker.tsx:55
+msgid "Tailscale"
+msgstr "Tailscale"
+
+#: src/app/workspace-shell/settings-sections.ts:37
+msgid "Tools & Skills"
+msgstr "Tools & Skills"
+
+#: src/app/workspace-shell/SettingsPage.tsx:248
+msgid "Transport"
+msgstr "Transport"
+
+#: src/app/workspace-shell/SettingsPage.tsx:326
+msgid "Tray / menu bar"
+msgstr "Tray / menu bar"
+
+#: src/app/workspace-shell/SettingsPage.tsx:329
+msgid "Tray is available in this build; preference is stored locally."
+msgstr "Tray is available in this build; preference is stored locally."
+
+#: src/app/ConnectionPicker.tsx:85
+msgid "Tunnel inactive / activate to probe"
+msgstr "Tunnel inactive / activate to probe"
+
+#: src/app/ConnectionPicker.tsx:147
+msgid "unknown"
+msgstr "unknown"
+
+#: src/app/workspace-shell/SettingsPage.tsx:250
+msgid "URL"
+msgstr "URL"
+
+#: src/app/WelcomeScreen.tsx:40
+msgid "Use a zeroclaw binary that's already installed and (optionally) running on this machine. Auto-detected from PATH."
+msgstr "Use a zeroclaw binary that's already installed and (optionally) running on this machine. Auto-detected from PATH."
+
+#: src/app/AddConnectionDialog.tsx:217
+msgid "Uses your local ssh, ssh-agent, and ~/.ssh/config. The workspace opens an ssh -L port forward."
+msgstr "Uses your local ssh, ssh-agent, and ~/.ssh/config. The workspace opens an ssh -L port forward."
+
+#: src/app/ConnectionPicker.tsx:68
+msgid "Waiting for health…"
+msgstr "Waiting for health…"
+
+#: src/app/WelcomeScreen.tsx:57
+msgid "Welcome to ZeroClaw Workspace"
+msgstr "Welcome to ZeroClaw Workspace"
+
+#: src/app/workspace-shell/SettingsPage.tsx:261
+msgid "Workspace"
+msgstr "Workspace"
+
+#: src/app/ConnectionPicker.tsx:204
+msgid "Workspace runtime"
+msgstr "Workspace runtime"
+
+#: src/app/AddConnectionDialog.tsx:417
+msgid "Workspace will spawn zeroclaw gateway --port {port} when this connection is active, and shut it down when the workspace exits."
+msgstr "Workspace will spawn zeroclaw gateway --port {port} when this connection is active, and shut it down when the workspace exits."
+
+#: src/workspace/notifications/useNotifications.ts:44
+msgid "ZeroClaw approval needed"
+msgstr "ZeroClaw approval needed"
+
+#: src/workspace/notifications/useNotifications.ts:51
+msgid "ZeroClaw turn finished"
+msgstr "ZeroClaw turn finished"
+
+#: src/app/workspace-shell/SettingsPage.tsx:338
+msgid "zeroclaw:// registered"
+msgstr "zeroclaw:// registered"

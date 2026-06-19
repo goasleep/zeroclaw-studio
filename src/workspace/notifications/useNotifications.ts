@@ -2,12 +2,14 @@
 // completion when long-running turns finish.
 
 import { useEffect } from "react";
+import { msg } from "@lingui/core/macro";
 import {
   isPermissionGranted,
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { loadPreferences } from "@/workspace/preferences/preferences";
+import { i18n } from "@/i18n/i18n";
 
 let permissionState: "unknown" | "granted" | "denied" = "unknown";
 
@@ -38,12 +40,15 @@ export function useNotifications() {
     function onApproval(e: Event) {
       const detail = (e as CustomEvent<{ tool: string }>).detail;
       if (document.visibilityState === "visible") return;
-      void notify("ZeroClaw approval needed", `${detail.tool} is waiting for approval.`);
+      void notify(
+        i18n._(msg`ZeroClaw approval needed`),
+        i18n._(msg`${detail.tool} is waiting for approval.`),
+      );
     }
     function onDone(e: Event) {
       if (document.visibilityState === "visible") return;
       const detail = (e as CustomEvent<{ agent: string }>).detail;
-      void notify("ZeroClaw turn finished", `${detail.agent} responded.`);
+      void notify(i18n._(msg`ZeroClaw turn finished`), i18n._(msg`${detail.agent} responded.`));
     }
     window.addEventListener("zeroclaw://approval-request", onApproval);
     window.addEventListener("zeroclaw://chat-done", onDone);
