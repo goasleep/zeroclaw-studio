@@ -31,8 +31,9 @@ import rehypeHighlight from "rehype-highlight";
 import { useChat, type ChatMessage } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
-import { apiAgentWorkspaceList } from "@/api/client";
+import { apiAgentWorkspaceList } from "@/api/tools";
 import {
+  chatCapabilities,
   prepareChatAttachments,
   workspaceGitStatus,
   workspaceReadFile,
@@ -40,8 +41,6 @@ import {
 } from "@/api/tauri";
 import { readClipboardText } from "@/workspace/clipboard/clipboard";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
-
-const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 interface ContextAttachmentDraft {
   path: string;
@@ -137,6 +136,7 @@ export function ChatPanel({
   } | null>(null);
   const [gitStatus, setGitStatus] = useState<WorkspaceGitStatus | null>(null);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
+  const [maxAttachmentBytes, setMaxAttachmentBytes] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentDrafts = useMemo<ContextAttachmentDraft[]>(
     () =>
@@ -155,6 +155,20 @@ export function ChatPanel({
     setCwd(workspaceDir ?? "");
     setAppliedCwd(workspaceDir ?? "");
   }, [workspaceDir]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void chatCapabilities()
+      .then((capabilities) => {
+        if (!cancelled) setMaxAttachmentBytes(capabilities.max_attachment_bytes);
+      })
+      .catch(() => {
+        if (!cancelled) setMaxAttachmentBytes(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     function focus() {
@@ -333,6 +347,7 @@ export function ChatPanel({
         {variant === "footer" && <GitContextSummary status={gitStatus} />}
         <AttachmentStrip
           files={attachmentDrafts}
+          maxAttachmentBytes={maxAttachmentBytes}
           onClear={clearSelection}
           onPreview={(path) => void previewFile(path)}
         />
@@ -585,10 +600,12 @@ export function ChatPanel({
 
 function AttachmentStrip({
   files,
+  maxAttachmentBytes,
   onClear,
   onPreview,
 }: {
   files: ContextAttachmentDraft[];
+  maxAttachmentBytes: number | null;
   onClear: () => void;
   onPreview: (path: string) => void;
 }) {
@@ -637,7 +654,7 @@ function AttachmentStrip({
       </div>
       {files.length > 0 && (
         <p className="mt-1 text-[10px] text-neutral-600">
-          Files over {formatBytes(MAX_ATTACHMENT_BYTES)} are rejected during send.
+          Files over {formatBytes(maxAttachmentBytes ?? undefined)} are rejected during send.
         </p>
       )}
     </div>

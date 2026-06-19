@@ -39,6 +39,7 @@ async function unwrap<T, E>(result: Promise<Result<T, E>>): Promise<T> {
 export type {
   AuthConfig,
   AuthMode,
+  ChatCapabilities,
   ChatCloseRequest,
   ChatConnectRequest,
   ChatError,
@@ -126,6 +127,8 @@ export const chatConnect = (req: ChatConnectRequest) => unwrap(commands.chatConn
 export const chatSend = (req: ChatSendRequest) => unwrap(commands.chatSend(req));
 
 export const chatDisconnect = (req: ChatCloseRequest) => unwrap(commands.chatDisconnect(req));
+
+export const chatCapabilities = commands.chatCapabilities;
 
 export const prepareChatAttachments = (req: PrepareChatAttachmentsRequest) =>
   unwrap(commands.prepareChatAttachments(req)) as Promise<ChatFileEntry[]>;
