@@ -324,6 +324,48 @@ function ThreadButton({
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
+  if (compact) {
+    return (
+      <div
+        className={`group flex min-w-0 items-center rounded-md text-xs transition ${
+          active
+            ? "bg-cyan-400/10 text-cyan-100"
+            : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-200"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
+        >
+          <span className="min-w-0 flex-1 truncate">{thread.name}</span>
+          {active && <ChevronRight size={11} className="shrink-0" />}
+        </button>
+        <div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={() => {
+              const name = window.prompt("Rename chat", thread.name);
+              if (name?.trim()) onRename(name.trim());
+            }}
+            className="rounded p-0.5 text-neutral-500 hover:text-cyan-300"
+            title="Rename chat"
+          >
+            <Pencil size={9} />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded p-0.5 text-neutral-600 hover:text-red-300"
+            title="Delete chat"
+          >
+            <Trash2 size={9} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`group rounded-md border ${
