@@ -1,10 +1,12 @@
 import { DataPanel } from "@/features/_shared/DataPanel";
 import { apiCron } from "@/api/tools";
+import { queryKeys } from "@/api/query";
 
 export function CronPanel() {
   return (
     <DataPanel
       what="cron jobs"
+      queryKey={queryKeys.gateway.cron}
       load={apiCron}
       render={(data) => (
         <table className="w-full text-xs">

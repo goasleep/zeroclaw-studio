@@ -1,30 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Pause, Play, RefreshCw } from "lucide-react";
+import { queryKeys } from "@/api/query";
 import { apiLogs, type LogEvent } from "@/api/logs";
 
 export function LogsPanel() {
-  const [events, setEvents] = useState<LogEvent[]>([]);
   const [paused, setPaused] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function poll() {
-    setBusy(true);
-    try {
-      const r = await apiLogs();
-      setEvents(r.events ?? []);
-    } catch {
-      /* ignore */
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  useEffect(() => {
-    void poll();
-    if (paused) return;
-    const id = setInterval(() => void poll(), 3000);
-    return () => clearInterval(id);
-  }, [paused]);
+  const logsQuery = useQuery({
+    queryKey: queryKeys.gateway.logs(paused),
+    queryFn: () => apiLogs(),
+    refetchInterval: paused ? false : 3000,
+  });
+  const events: LogEvent[] = logsQuery.data?.events ?? [];
 
   return (
     <div className="flex h-full flex-col">
@@ -41,15 +28,21 @@ export function LogsPanel() {
         </button>
         <button
           type="button"
-          onClick={() => void poll()}
+          onClick={() => void logsQuery.refetch()}
           className="flex items-center gap-1 rounded border border-white/15 px-2 py-0.5 text-[10px] text-neutral-300 hover:border-cyan-400"
         >
-          {busy ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+          {logsQuery.isFetching ? (
+            <Loader2 size={10} className="animate-spin" />
+          ) : (
+            <RefreshCw size={10} />
+          )}
           Refresh
         </button>
       </header>
       <div className="flex-1 overflow-auto bg-[#020818]/90 px-3 py-2 font-mono text-[11px] zc-scrollbar">
-        {events.length === 0 ? (
+        {logsQuery.isError ? (
+          <p className="text-red-300">{String(logsQuery.error)}</p>
+        ) : events.length === 0 ? (
           <p className="text-neutral-500">No log lines.</p>
         ) : (
           events.map((e, i) => (
