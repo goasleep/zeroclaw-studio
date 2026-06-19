@@ -35,6 +35,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+sessions/
 
 # CodeGraph / per-tool
 .codegraph/
