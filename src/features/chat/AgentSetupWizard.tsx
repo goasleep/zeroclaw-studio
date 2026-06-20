@@ -25,7 +25,16 @@ import {
   type QuickstartPeerGroup,
   type QuickstartState,
 } from "@/api/quickstart";
-import { DraftCard, Field, Input, ModeRow, Panel, Select, Shell, StepButton } from "./agent-setup-wizard/components";
+import {
+  DraftCard,
+  Field,
+  Input,
+  ModeRow,
+  Panel,
+  Select,
+  Shell,
+  StepButton,
+} from "./agent-setup-wizard/components";
 import {
   ALL_STEPS,
   REQUIRED_STEPS,

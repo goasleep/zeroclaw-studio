@@ -3,13 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { CheckCircle2, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import type { ChoiceMode, StepId } from "./types";
 
-export function Shell({
-  surface,
-  children,
-}: {
-  surface: "chat" | "config";
-  children: ReactNode;
-}) {
+export function Shell({ surface, children }: { surface: "chat" | "config"; children: ReactNode }) {
   const heightClass = surface === "config" ? "h-full" : "min-h-0 flex-1";
   return (
     <div className={`${heightClass} flex min-w-0 flex-col overflow-hidden bg-[#020818]/90`}>
@@ -122,7 +116,15 @@ export function DraftCard({ children, onRemove }: { children: ReactNode; onRemov
   );
 }
 
-export function Field({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
+export function Field({
+  label,
+  help,
+  children,
+}: {
+  label: string;
+  help?: string;
+  children: ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-[11px] font-medium text-neutral-400">{label}</span>

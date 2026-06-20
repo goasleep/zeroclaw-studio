@@ -93,7 +93,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const setRoot = useCallback(
     async (path: string) => {
       if (!connectionId) throw new Error("No active connection");
-      const canonicalPath = active && !isLocalRuntime ? await validateWorkspaceRoot(active, path) : path;
+      const canonicalPath =
+        active && !isLocalRuntime ? await validateWorkspaceRoot(active, path) : path;
       const state = await workspaceOpenRoot(connectionId, canonicalPath);
       setRootState(state.current_root);
       setRecentRoots(state.recent_roots);

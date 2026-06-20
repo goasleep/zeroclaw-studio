@@ -14,9 +14,7 @@ export interface ContextAttachmentDraft {
   size?: number;
 }
 
-export type ClipboardAttachment = Required<
-  Pick<FileEntry, "data_b64" | "filename" | "mime_type">
-> &
+export type ClipboardAttachment = Required<Pick<FileEntry, "data_b64" | "filename" | "mime_type">> &
   Pick<FileEntry, "size" | "source"> & {
     id: string;
     source: "clipboard";

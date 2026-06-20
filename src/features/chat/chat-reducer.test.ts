@@ -119,5 +119,4 @@ describe("session helpers", () => {
     expect(isVisibleSession({ ...base, message_count: 1 })).toBe(true);
     expect(isVisibleSession(base)).toBe(true);
   });
-
 });

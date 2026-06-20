@@ -52,9 +52,7 @@ export function useSessionService(
 
   const loadMessages = useCallback(async (sessionId: string) => {
     const transcript = await apiSessionMessages(sessionId);
-    return transcript.messages
-      .map(fromSessionMessage)
-      .filter((m): m is ChatMessage => m !== null);
+    return transcript.messages.map(fromSessionMessage).filter((m): m is ChatMessage => m !== null);
   }, []);
 
   const renameSession = useCallback(

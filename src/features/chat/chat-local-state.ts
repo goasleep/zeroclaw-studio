@@ -79,7 +79,13 @@ async function importLegacyChatState(connectionId: string) {
       const scope = parseLegacyScopedKey(key, LEGACY_SESSION_PREFIX);
       const sessionId = localStorage.getItem(key);
       if (scope && sessionId) {
-        await chatLocalSetSelectedSession(connectionId, null, scope.mode, scope.agentAlias, sessionId);
+        await chatLocalSetSelectedSession(
+          connectionId,
+          null,
+          scope.mode,
+          scope.agentAlias,
+          sessionId,
+        );
         migrated.push(key);
       }
       continue;
