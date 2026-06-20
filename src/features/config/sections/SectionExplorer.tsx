@@ -12,12 +12,16 @@ export function SectionExplorer({
   reloadKey,
   onTarget,
   onSaved,
+  focusTarget,
+  onFocusConsumed,
 }: {
   section: ConfigSectionInfo | null;
   target: FormTarget | null;
   reloadKey: number;
   onTarget: (target: FormTarget | null) => void;
   onSaved: () => void;
+  focusTarget?: string | null;
+  onFocusConsumed?: () => void;
 }) {
   const { t } = useLingui();
   if (!section) {
@@ -55,5 +59,13 @@ export function SectionExplorer({
     );
   }
 
-  return <PickerSection section={section} onTarget={onTarget} onSaved={onSaved} />;
+  return (
+    <PickerSection
+      section={section}
+      onTarget={onTarget}
+      onSaved={onSaved}
+      focusTarget={focusTarget}
+      onFocusConsumed={onFocusConsumed}
+    />
+  );
 }

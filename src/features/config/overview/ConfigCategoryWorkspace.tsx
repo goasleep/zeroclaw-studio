@@ -45,6 +45,8 @@ export function ConfigCategoryWorkspace({
   onOverview,
   onAdvanced,
   onSaved,
+  focusTarget,
+  onFocusConsumed,
 }: {
   category: ConfigCategory;
   state: LoadState;
@@ -59,6 +61,8 @@ export function ConfigCategoryWorkspace({
   onOverview: () => void;
   onAdvanced: () => void;
   onSaved: () => void;
+  focusTarget?: string | null;
+  onFocusConsumed?: () => void;
 }) {
   const { t, i18n } = useLingui();
   const Icon = category.icon;
@@ -184,6 +188,8 @@ export function ConfigCategoryWorkspace({
             reloadKey={reloadKey}
             onTarget={onTarget}
             onSaved={onSaved}
+            focusTarget={focusTarget}
+            onFocusConsumed={onFocusConsumed}
           />
         )}
       </main>

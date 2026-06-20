@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Code2, Loader2, Save, Wrench } from "lucide-react";
-import { apiConfigList, apiConfigPatch, type ConfigListEntry, type PatchOp } from "@/api/config";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronRight, Code2, Loader2, Save, Wrench } from "lucide-react";
+import { apiConfigList, type ConfigListEntry } from "@/api/config";
 import { Select } from "@/ui/select";
 import { Switch } from "@/ui/switch";
 import { EmptyState, ErrorBox, Badge, LoadingInline } from "@/ui/feedback";
-import { configDraftError, defaultDraft, parseConfigDraft } from "../config-value-schema";
+import { defaultDraft } from "../config-value-schema";
+import { useConfigDrafts } from "../config-drafts";
 import { SetupDoctorTab } from "../SetupDoctorTab";
 import { setupTargetsForPrefix } from "../setup-targets";
 import type { FormTarget } from "../types";
 import { TaskBadge } from "../sections/section-status";
 import {
-  dottedToPointer,
+  entryHasValue,
   errorMessage,
   formTasksForPrefix,
   groupFields,
@@ -28,6 +29,18 @@ export function ConfigFieldForm({
   backLabel?: string;
   onSaved: () => void;
 }) {
+  const configDrafts = useConfigDrafts();
+  const {
+    getDraftsForPrefix,
+    registerForm,
+    savePrefix,
+    stageField,
+    validationErrors: globalValidationErrors,
+    resetVersion,
+    savedVersion,
+    saving: globalSaving,
+  } = configDrafts;
+  const lastSavedVersionRef = useRef(savedVersion);
   const [entries, setEntries] = useState<ConfigListEntry[]>([]);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [seed, setSeed] = useState<Record<string, string>>({});
@@ -49,14 +62,15 @@ export function ConfigFieldForm({
       for (const entry of data.entries) nextSeed[entry.path] = defaultDraft(entry);
       setEntries(data.entries);
       setSeed(nextSeed);
-      setDraft(nextSeed);
+      setDraft(getDraftsForPrefix(target.prefix, nextSeed));
+      registerForm(target.prefix, target.title, data.entries, nextSeed);
       setValidationErrors({});
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setLoading(false);
     }
-  }, [target.prefix]);
+  }, [getDraftsForPrefix, registerForm, target.prefix, target.title]);
 
   useEffect(() => {
     void load();
@@ -77,24 +91,10 @@ export function ConfigFieldForm({
     setValidationErrors({});
     setSaved(false);
     try {
-      const errors: Record<string, string> = {};
-      const ops: PatchOp[] = [];
-      for (const entry of dirtyEntries) {
-        try {
-          ops.push({
-            op: entry.populated || entry.is_secret ? "replace" : "add",
-            path: dottedToPointer(entry.path),
-            value: parseConfigDraft(entry, draft[entry.path] ?? "").value,
-          });
-        } catch (e) {
-          errors[entry.path] = configDraftError(e) ?? errorMessage(e);
-        }
-      }
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors);
+      const ok = await savePrefix(target.prefix);
+      if (!ok) {
         return;
       }
-      await apiConfigPatch(ops);
       setSaved(true);
       await load();
       onSaved();
@@ -106,9 +106,34 @@ export function ConfigFieldForm({
     }
   }
 
+  useEffect(() => {
+    setDraft(seed);
+    setValidationErrors({});
+  }, [resetVersion, seed]);
+
+  useEffect(() => {
+    if (lastSavedVersionRef.current === savedVersion) return;
+    lastSavedVersionRef.current = savedVersion;
+    void load();
+  }, [savedVersion, load]);
+
+  function updateField(entry: ConfigListEntry, value: string) {
+    setDraft((current) => ({
+      ...current,
+      [entry.path]: value,
+    }));
+    stageField(target.prefix, target.title, entry, seed[entry.path] ?? "", value);
+  }
+
+  const combinedValidationErrors = {
+    ...globalValidationErrors,
+    ...validationErrors,
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <header className="shrink-0 border-b border-white/10 px-5 py-4">
+        <ConfigBreadcrumbs target={target} />
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +161,7 @@ export function ConfigFieldForm({
             <button
               type="button"
               onClick={() => void save()}
-              disabled={dirtyEntries.length === 0 || saving}
+              disabled={dirtyEntries.length === 0 || saving || globalSaving}
               className="flex shrink-0 items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving ? (
@@ -207,13 +232,8 @@ export function ConfigFieldForm({
                         entry={entry}
                         value={draft[entry.path] ?? ""}
                         dirty={draft[entry.path] !== seed[entry.path]}
-                        error={validationErrors[entry.path]}
-                        onChange={(value) =>
-                          setDraft((current) => ({
-                            ...current,
-                            [entry.path]: value,
-                          }))
-                        }
+                        error={combinedValidationErrors[entry.path]}
+                        onChange={(value) => updateField(entry, value)}
                       />
                     ))}
                   </div>
@@ -249,6 +269,74 @@ function ConfigTaskSummary({ prefix, entries }: { prefix: string; entries: Confi
   );
 }
 
+const CONFIG_ROOTS = [
+  { key: "providers.models", label: "Model providers" },
+  { key: "agents", label: "Agents" },
+  { key: "peer_groups", label: "Peer groups" },
+  { key: "risk_profiles", label: "Risk profiles" },
+  { key: "runtime_profiles", label: "Runtime profiles" },
+  { key: "channels", label: "Channels" },
+  { key: "tools", label: "Tools" },
+  { key: "skills", label: "Skills" },
+  { key: "skill_bundles", label: "Skill bundles" },
+  { key: "mcp", label: "MCP" },
+];
+
+function ConfigBreadcrumbs({ target }: { target: FormTarget }) {
+  const crumbs = configBreadcrumbs(target);
+  if (crumbs.length <= 1) return null;
+  return (
+    <nav
+      aria-label="Config breadcrumb"
+      className="mb-2 flex min-w-0 flex-wrap items-center gap-1 text-[11px] text-neutral-500"
+    >
+      {crumbs.map((crumb, index) => (
+        <span key={`${crumb.label}-${index}`} className="inline-flex min-w-0 items-center gap-1">
+          {index > 0 && <ChevronRight size={11} className="shrink-0 text-neutral-700" />}
+          {crumb.target && index < crumbs.length - 1 ? (
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("zeroclaw://open-config-target", { detail: crumb.target }),
+                )
+              }
+              className="min-w-0 truncate rounded px-1 py-0.5 hover:bg-white/[0.05] hover:text-cyan-300"
+            >
+              {crumb.label}
+            </button>
+          ) : (
+            <span className="min-w-0 truncate px-1 py-0.5 text-neutral-300">{crumb.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function configBreadcrumbs(target: FormTarget) {
+  const root = CONFIG_ROOTS.filter(
+    (candidate) => target.prefix === candidate.key || target.prefix.startsWith(`${candidate.key}.`),
+  ).sort((a, b) => b.key.length - a.key.length)[0];
+  if (!root) {
+    return [
+      { label: "Config", target: "gateway-overview" },
+      { label: target.title || target.prefix },
+    ];
+  }
+  const tail =
+    target.prefix === root.key ? [] : target.prefix.slice(root.key.length + 1).split(".");
+  return [
+    { label: "Config", target: root.key },
+    { label: root.label, target: root.key },
+    ...tail.map((part, index) => ({
+      label: index === tail.length - 1 ? target.title || part : part,
+      target:
+        index < tail.length - 1 ? `${root.key}.${tail.slice(0, index + 1).join(".")}` : undefined,
+    })),
+  ];
+}
+
 function FieldRow({
   entry,
   value,
@@ -263,13 +351,16 @@ function FieldRow({
   onChange: (value: string) => void;
 }) {
   const label = leafLabel(entry.path);
+  const dependency = dependencyAction(entry, value);
   return (
     <div className="grid gap-3 px-4 py-3 text-xs lg:grid-cols-[230px_minmax(0,1fr)]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-medium text-neutral-200">{label}</span>
           {dirty && <Badge label="edited" />}
-          {entry.is_secret && <Badge label="secret" />}
+          {fieldBadges(entry).map((badge) => (
+            <Badge key={badge} label={badge} />
+          ))}
           {entry.is_env_overridden && <Badge label="env" />}
         </div>
         <div className="mt-1 truncate font-mono text-[10px] text-neutral-500">{entry.path}</div>
@@ -281,7 +372,13 @@ function FieldRow({
       </div>
       <div className="min-w-0">
         <FieldInput entry={entry} value={value} onChange={onChange} />
+        {entry.is_secret && entry.populated && value.length === 0 && (
+          <p className="mt-1 text-[11px] text-neutral-500">
+            Secret is already set. Type a new value only when you want to replace it.
+          </p>
+        )}
         {error && <p className="mt-1 text-[11px] text-red-300">{error}</p>}
+        {dependency && <MissingDependencyHint action={dependency} />}
       </div>
     </div>
   );
@@ -370,5 +467,92 @@ function FieldInput({
       onChange={(e) => onChange(e.target.value)}
       className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-cyan-400"
     />
+  );
+}
+
+function fieldBadges(entry: ConfigListEntry) {
+  const badges: string[] = [];
+  if (entry.is_secret) badges.push("Secret");
+  badges.push(fieldImportance(entry));
+  return badges;
+}
+
+function fieldImportance(entry: ConfigListEntry) {
+  const leaf = entry.path.split(".").pop() ?? "";
+  if (
+    [
+      "enabled",
+      "model",
+      "api_key",
+      "model_provider",
+      "risk_profile",
+      "runtime_profile",
+      "approval_mode",
+    ].includes(leaf)
+  ) {
+    return "Required";
+  }
+  if (
+    [
+      "allowed_commands",
+      "sandbox_mode",
+      "agentic",
+      "max_iterations",
+      "timeout_secs",
+      "max_cost_usd",
+      "max_tool_iterations",
+      "shell_timeout_secs",
+      "max_actions_per_hour",
+      "parallel_tools",
+    ].includes(leaf)
+  ) {
+    return "Advanced";
+  }
+  return "Optional";
+}
+
+function dependencyAction(entry: ConfigListEntry, value: string) {
+  const leaf = entry.path.split(".").pop() ?? "";
+  if (entryHasValue(entry) || valueHasContent(value, entry)) return null;
+  if (leaf === "model_provider") {
+    return { label: "Create model provider", target: "providers.models" };
+  }
+  if (leaf === "risk_profile") {
+    return { label: "Create risk profile", target: "risk_profiles" };
+  }
+  if (leaf === "runtime_profile") {
+    return { label: "Create runtime profile", target: "runtime_profiles" };
+  }
+  if (leaf === "channels") {
+    return { label: "Configure channels", target: "channels" };
+  }
+  return null;
+}
+
+function valueHasContent(value: string, entry: ConfigListEntry) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "<unset>") return false;
+  if ((entry.kind === "string-array" || entry.kind === "object-array") && trimmed === "[]") {
+    return false;
+  }
+  return true;
+}
+
+function MissingDependencyHint({ action }: { action: { label: string; target: string } }) {
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-amber-300/20 bg-amber-300/[0.06] px-2 py-1.5 text-[11px] text-amber-100">
+      <span className="text-amber-200">Dependency not configured.</span>
+      <button
+        type="button"
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent("zeroclaw://open-config-target", { detail: action.target }),
+          )
+        }
+        className="rounded border border-amber-300/25 px-1.5 py-0.5 text-amber-100 hover:border-amber-300/50 hover:bg-amber-300/10"
+      >
+        {action.label}
+      </button>
+    </div>
   );
 }

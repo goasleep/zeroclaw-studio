@@ -7,6 +7,7 @@ export type SettingsSection =
   | "gateway-config"
   | "models-providers"
   | "agents"
+  | "agent-workspace"
   | "runtime-safety"
   | "channels"
   | "memory"

@@ -155,9 +155,18 @@ export const apiConfigDrift = () =>
   apiFetch<{ drifted?: unknown[]; [k: string]: unknown }>("/api/config/drift");
 
 export const apiConfigReloadStatus = () =>
-  apiFetch<{ status?: string; last_reload_at?: string; [k: string]: unknown }>(
-    "/api/config/reload-status",
-  );
+  apiFetch<{
+    status?: string;
+    pending_reload?: boolean;
+    pendingReload?: boolean;
+    last_reload_at?: string;
+    [k: string]: unknown;
+  }>("/api/config/reload-status");
+
+export const apiAdminReload = () =>
+  apiFetch<{ ok?: boolean; [k: string]: unknown }>("/admin/reload", { method: "POST" });
+
+export const apiGatewayHealth = () => apiFetch<{ ok?: boolean; [k: string]: unknown }>("/health");
 
 export const apiSkillBundles = () => apiFetch<{ bundles: SkillBundle[] }>("/api/skills/bundles");
 

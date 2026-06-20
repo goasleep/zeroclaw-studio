@@ -9,6 +9,7 @@ import { AdvancedConfigEditor } from "./advanced/AdvancedConfigEditor";
 import { CONFIG_CATEGORIES, configGroupLabel } from "./config-categories";
 import { ConfigOverview } from "./overview/ConfigOverview";
 import { ConfigCategoryWorkspace } from "./overview/ConfigCategoryWorkspace";
+import { CONFIG_SAVED_EVENT } from "./config-drafts";
 import { SectionExplorer } from "./sections/SectionExplorer";
 import { SectionStateDot, SectionStatusBadge } from "./sections/section-status";
 import type { ConfigCategoryId, FormTarget, LoadState, PanelMode, StatusFilter } from "./types";
@@ -47,6 +48,7 @@ export function ConfigPanel({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [target, setTarget] = useState<FormTarget | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [activeFocusTarget, setActiveFocusTarget] = useState<string | null>(focusSection ?? null);
 
   const loadSections = useCallback(async () => {
     setState({ kind: "loading" });
@@ -57,9 +59,8 @@ export function ConfigPanel({
         : data.sections;
       setState({ kind: "ready", sections: data.sections });
       setActiveKey((current) => {
-        if (focusSection && selectableSections.some((s) => s.key === focusSection)) {
-          return focusSection;
-        }
+        const focusKey = sectionKeyForFocusTarget(activeFocusTarget, selectableSections);
+        if (focusKey) return focusKey;
         if (current && selectableSections.some((s) => s.key === current)) {
           return current;
         }
@@ -68,23 +69,46 @@ export function ConfigPanel({
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e) });
     }
-  }, [category, focusSection]);
+  }, [activeFocusTarget, category]);
+
+  const handleSaved = useCallback(() => {
+    setReloadKey((n) => n + 1);
+    void loadSections();
+  }, [loadSections]);
+
+  const handleFocusConsumed = useCallback(() => {
+    setActiveFocusTarget(null);
+  }, []);
+
+  useEffect(() => {
+    setActiveFocusTarget(focusSection ?? null);
+  }, [focusSection]);
 
   useEffect(() => {
     void loadSections();
   }, [loadSections]);
 
   useEffect(() => {
-    if (!focusSection || state.kind !== "ready") return;
+    if (!activeFocusTarget || state.kind !== "ready") return;
     const selectableSections = category
       ? state.sections.filter((section) => sectionMatchesCategory(section, category))
       : state.sections;
-    if (selectableSections.some((s) => s.key === focusSection)) {
+    const focusKey = sectionKeyForFocusTarget(activeFocusTarget, selectableSections);
+    if (focusKey) {
       setMode("sections");
-      setActiveKey(focusSection);
+      setActiveKey(focusKey);
       setTarget(null);
+      if (activeFocusTarget === focusKey) setActiveFocusTarget(null);
     }
-  }, [category, focusSection, state]);
+  }, [activeFocusTarget, category, state]);
+
+  useEffect(() => {
+    function onConfigSaved() {
+      handleSaved();
+    }
+    window.addEventListener(CONFIG_SAVED_EVENT, onConfigSaved);
+    return () => window.removeEventListener(CONFIG_SAVED_EVENT, onConfigSaved);
+  }, [handleSaved]);
 
   useEffect(() => {
     setMode(
@@ -119,11 +143,6 @@ export function ConfigPanel({
     setTarget(null);
   }
 
-  function handleSaved() {
-    setReloadKey((n) => n + 1);
-    void loadSections();
-  }
-
   if (category) {
     return (
       <ConfigCategoryWorkspace
@@ -146,6 +165,8 @@ export function ConfigPanel({
           setTarget(null);
         }}
         onSaved={handleSaved}
+        focusTarget={activeFocusTarget}
+        onFocusConsumed={handleFocusConsumed}
       />
     );
   }
@@ -280,9 +301,25 @@ export function ConfigPanel({
             reloadKey={reloadKey}
             onTarget={setTarget}
             onSaved={handleSaved}
+            focusTarget={activeFocusTarget}
+            onFocusConsumed={handleFocusConsumed}
           />
         )}
       </main>
     </div>
+  );
+}
+
+function sectionKeyForFocusTarget(
+  target: string | null | undefined,
+  sections: ConfigSectionInfo[],
+) {
+  if (!target) return null;
+  const exact = sections.find((section) => section.key === target);
+  if (exact) return exact.key;
+  return (
+    sections
+      .filter((section) => target.startsWith(`${section.key}.`))
+      .sort((a, b) => b.key.length - a.key.length)[0]?.key ?? null
   );
 }

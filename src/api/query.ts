@@ -21,6 +21,13 @@ export const queryKeys = {
     dir: (path: string | null) => ["workspace", "dir", path] as const,
     git: (root: string | null) => ["workspace", "git", root] as const,
   },
+  agentWorkspace: {
+    agents: ["agent-workspace", "agents"] as const,
+    dir: (alias: string | null, path?: string | null) =>
+      ["agent-workspace", "dir", alias, path ?? null] as const,
+    file: (alias: string | null, path?: string | null) =>
+      ["agent-workspace", "file", alias, path ?? null] as const,
+  },
   sessions: {
     all: ["sessions"] as const,
     messages: (sessionId: string | null) => ["sessions", "messages", sessionId] as const,

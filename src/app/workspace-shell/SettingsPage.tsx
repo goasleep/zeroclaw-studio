@@ -3,6 +3,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
+import { AgentWorkspacePanel } from "@/features/agent-workspace/AgentWorkspacePanel";
+import { ConfigDraftProvider, ConfigDraftStatusBar } from "@/features/config/config-drafts";
 import { ConfigPanel, type ConfigCategoryId } from "@/features/config/ConfigPanel";
 import { CronPanel } from "@/features/cron/CronPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
@@ -20,6 +22,7 @@ import {
   type AppPreferences,
 } from "@/workspace/preferences/preferences";
 import { SETTINGS_SECTIONS, type SettingsGroup } from "./settings-sections";
+import { settingsSectionForConfigTarget } from "./settings-routing";
 import type { SettingsSection } from "./types";
 
 const SETTINGS_GROUPS: SettingsGroup[] = ["App", "Gateway", "Capabilities", "Operations"];
@@ -30,6 +33,7 @@ interface SettingsPageProps {
   onSection: (section: SettingsSection) => void;
   onBackToChat: () => void;
   onConfigFocusSection: (section: string | null) => void;
+  agentWorkspaceFocusAlias?: string | null;
 }
 
 export function SettingsPage({
@@ -38,6 +42,7 @@ export function SettingsPage({
   onSection,
   onBackToChat,
   onConfigFocusSection,
+  agentWorkspaceFocusAlias = null,
 }: SettingsPageProps) {
   const effectiveSection = normalizeSettingsSection(section);
 
@@ -59,35 +64,41 @@ export function SettingsPage({
         onBackToChat={onBackToChat}
       />
       <main className="flex min-w-0 flex-col overflow-hidden border-l border-white/10">
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {effectiveSection === "app" && <AppSettings />}
-          {effectiveSection === "setup-center" && <SetupCenterPanel />}
-          {effectiveSection === "gateway-overview" && (
-            <ConfigPanel
-              focusSection={configFocusSection}
-              onNavigate={(target) =>
-                selectSection(normalizeSettingsSection(target as SettingsSection))
-              }
-            />
-          )}
-          {isConfigCategorySection(effectiveSection) && (
-            <ConfigPanel
-              categoryId={effectiveSection}
-              focusSection={configFocusSection}
-              onNavigate={(target) =>
-                selectSection(normalizeSettingsSection(target as SettingsSection))
-              }
-            />
-          )}
-          {effectiveSection === "memory" && <MemoryPanel />}
-          {effectiveSection === "cron" && <CronPanel />}
-          {effectiveSection === "integrations" && (
-            <IntegrationsPanel onConfigure={(targetSection) => openConfigTarget(targetSection)} />
-          )}
-          {effectiveSection === "logs" && <LogsPanel />}
-          {effectiveSection === "doctor" && <DoctorPanel />}
-          {effectiveSection === "devices" && <DevicesPanel />}
-        </div>
+        <ConfigDraftProvider>
+          <ConfigDraftStatusBar />
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {effectiveSection === "app" && <AppSettings />}
+            {effectiveSection === "setup-center" && <SetupCenterPanel />}
+            {effectiveSection === "gateway-overview" && (
+              <ConfigPanel
+                focusSection={configFocusSection}
+                onNavigate={(target) =>
+                  selectSection(normalizeSettingsSection(target as SettingsSection))
+                }
+              />
+            )}
+            {isConfigCategorySection(effectiveSection) && (
+              <ConfigPanel
+                categoryId={effectiveSection}
+                focusSection={configFocusSection}
+                onNavigate={(target) =>
+                  selectSection(normalizeSettingsSection(target as SettingsSection))
+                }
+              />
+            )}
+            {effectiveSection === "agent-workspace" && (
+              <AgentWorkspacePanel focusAlias={agentWorkspaceFocusAlias} />
+            )}
+            {effectiveSection === "memory" && <MemoryPanel />}
+            {effectiveSection === "cron" && <CronPanel />}
+            {effectiveSection === "integrations" && (
+              <IntegrationsPanel onConfigure={(targetSection) => openConfigTarget(targetSection)} />
+            )}
+            {effectiveSection === "logs" && <LogsPanel />}
+            {effectiveSection === "doctor" && <DoctorPanel />}
+            {effectiveSection === "devices" && <DevicesPanel />}
+          </div>
+        </ConfigDraftProvider>
       </main>
     </section>
   );
@@ -107,36 +118,6 @@ function isConfigCategorySection(section: SettingsSection): section is ConfigCat
     section === "channels" ||
     section === "tools-skills"
   );
-}
-
-function settingsSectionForConfigTarget(targetSection: string): SettingsSection {
-  if (targetSection === "providers.models" || targetSection.startsWith("providers.models.")) {
-    return "models-providers";
-  }
-  if (targetSection === "agents" || targetSection.startsWith("agents.")) return "agents";
-  if (targetSection === "peer_groups" || targetSection.startsWith("peer_groups.")) {
-    return "agents";
-  }
-  if (targetSection === "risk_profiles" || targetSection.startsWith("risk_profiles.")) {
-    return "runtime-safety";
-  }
-  if (targetSection === "runtime_profiles" || targetSection.startsWith("runtime_profiles.")) {
-    return "runtime-safety";
-  }
-  if (targetSection === "channels" || targetSection.startsWith("channels.")) return "channels";
-  if (
-    targetSection === "tools" ||
-    targetSection.startsWith("tools.") ||
-    targetSection === "skills" ||
-    targetSection.startsWith("skills.") ||
-    targetSection === "skill_bundles" ||
-    targetSection.startsWith("skill_bundles.") ||
-    targetSection === "mcp" ||
-    targetSection.startsWith("mcp.")
-  ) {
-    return "tools-skills";
-  }
-  return "gateway-overview";
 }
 
 function SettingsNav({

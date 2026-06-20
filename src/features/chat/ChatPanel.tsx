@@ -468,6 +468,18 @@ export function ChatPanel({
     }
   }
 
+  function openAgentConfig() {
+    if (!agentAlias) return;
+    window.dispatchEvent(new CustomEvent("zeroclaw://open-agent-config", { detail: agentAlias }));
+  }
+
+  function openAgentWorkspace() {
+    if (!agentAlias) return;
+    window.dispatchEvent(
+      new CustomEvent("zeroclaw://open-agent-workspace", { detail: agentAlias }),
+    );
+  }
+
   const isCode = mode === "acp";
   const remoteCode = isCode && active && active.transport !== "local";
   const currentSession = chat.sessions.find((session) => session.session_id === chat.sessionId);
@@ -662,6 +674,26 @@ export function ChatPanel({
             <span className="shrink-0 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-400">
               {t`Agent:`} {agentAlias}
             </span>
+            <button
+              type="button"
+              onClick={openAgentConfig}
+              disabled={!agentAlias}
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-white/10 text-neutral-500 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+              title={t`Open agent config`}
+              aria-label={t`Open agent config`}
+            >
+              <Wrench size={11} />
+            </button>
+            <button
+              type="button"
+              onClick={openAgentWorkspace}
+              disabled={!agentAlias}
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-white/10 text-neutral-500 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+              title={t`Open agent workspace`}
+              aria-label={t`Open agent workspace`}
+            >
+              <FolderOpen size={11} />
+            </button>
             <Select
               value={selectedModelProvider}
               options={modelOptions}

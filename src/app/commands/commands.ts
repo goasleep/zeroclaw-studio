@@ -70,6 +70,12 @@ export const APP_COMMANDS = {
     menu: "Settings",
     section: "agents",
   },
+  settingsOpenAgentWorkspace: {
+    id: "settings.openAgentWorkspace",
+    label: "Agent Workspace",
+    menu: "Settings",
+    section: "agent-workspace",
+  },
   settingsOpenRuntimeSafety: {
     id: "settings.openRuntimeSafety",
     label: "Runtime & Safety",
