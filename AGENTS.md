@@ -93,6 +93,10 @@ bindings.
   commands directly.
 - For frontend work, follow the existing Tailwind/Radix/lucide style and verify
   important UI changes in the app/browser.
+- When changing user-visible behavior, update the relevant README or docs in
+  the same change. This is especially important for chat/session semantics,
+  gateway compatibility, setup flows, native capabilities, release behavior,
+  and security/data-boundary changes.
 - For Rust work, keep `cargo fmt --all -- --check`, clippy with `-D warnings`,
   and tests green.
 - If a change touches the gateway HTTP/WS/SSE contract, update
