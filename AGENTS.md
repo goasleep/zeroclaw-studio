@@ -4,9 +4,13 @@ Project instructions for AI coding assistants working in this repository.
 
 ## Project Snapshot
 
-`zeroclaw-studio` is an early-stage Tauri 2 desktop app with a React/Vite
-frontend. It connects to local-managed, local-attached, and remote ZeroClaw
-gateways over HTTP, WebSocket, and SSE.
+`zeroclaw-studio` is the ZeroClaw Studio product: an early-stage Tauri 2
+desktop app with a React/Vite frontend. It connects to local-managed,
+local-attached, and remote ZeroClaw gateways over HTTP, WebSocket, and SSE.
+
+Release builds include a pinned, app-private `zeroclaw` sidecar for the bundled
+inner runtime. Fresh installs should work without a user-installed `zeroclaw`
+CLI, while local-attached and remote gateway workflows remain first-class.
 
 Use `pnpm` for Node tasks. The package manager is pinned in `package.json`
 (`pnpm@10.28.0`), Node is pinned by `.nvmrc`, and Rust is pinned by
