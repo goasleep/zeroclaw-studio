@@ -13,37 +13,43 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/features/devices/DevicesPanel.tsx:20
+#: src/features/devices/DevicesPanel.tsx:22
 msgid "(unnamed)"
 msgstr "（未命名）"
 
 #. placeholder {0}: gitStatus.branch
 #. placeholder {1}: gitStatus.changed_count
-#: src/features/chat/ChatPanel.tsx:483
-#: src/features/chat/ChatPanel.tsx:490
+#: src/features/chat/ChatPanel.tsx:498
 msgid "{0} · {1} changed"
 msgstr "{0} · {1} 项变更"
 
-#. placeholder {0}: attachmentDrafts.length
+#. placeholder {0}: agents.length
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:245
+msgid "{0} agents"
+msgstr ""
+
 #. placeholder {0}: files.length
-#: src/features/chat/ChatPanel.tsx:495
-#: src/features/chat/ChatPanel.tsx:842
+#: src/features/chat/AttachmentTray.tsx:36
 msgid "{0} attachments"
 msgstr "{0} 个附件"
 
 #. placeholder {0}: gitStatus.changed_count
-#: src/features/chat/ChatPanel.tsx:485
-#: src/features/chat/ChatPanel.tsx:492
+#: src/features/chat/ChatPanel.tsx:500
 msgid "{0} changed"
 msgstr "{0} 项变更"
 
 #. placeholder {0}: stats.completed
-#: src/features/config/ConfigPanel.tsx:1124
+#: src/features/config/overview/ConfigOverview.tsx:103
 msgid "{0} configured"
 msgstr "{0} 个已配置"
 
+#. placeholder {0}: peerGroups.length
+#: src/features/chat/AgentSetupWizard.tsx:247
+msgid "{0} groups"
+msgstr ""
+
 #. placeholder {0}: filtered.length
-#: src/features/integrations/IntegrationsPanel.tsx:109
+#: src/features/integrations/IntegrationsPanel.tsx:111
 msgid "{0} integrations"
 msgstr "{0} 个集成"
 
@@ -64,29 +70,29 @@ msgid "{0} is waiting for approval."
 msgstr "{0} 正在等待批准。"
 
 #. placeholder {0}: events.length
-#: src/features/logs/LogsPanel.tsx:21
+#: src/features/logs/LogsPanel.tsx:23
 msgid "{0} lines"
 msgstr "{0} 行"
 
 #. placeholder {0}: thread.message_count
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:336
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:335
 msgid "{0} message"
 msgstr "{0} 条消息"
 
 #. placeholder {0}: channel.message_count
 #. placeholder {0}: thread.message_count
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:337
-#: src/features/integrations/IntegrationsPanel.tsx:310
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:336
+#: src/features/integrations/IntegrationsPanel.tsx:312
 msgid "{0} messages"
 msgstr "{0} 条消息"
 
 #. placeholder {0}: stats.quickstart
-#: src/features/config/ConfigPanel.tsx:1138
+#: src/features/config/overview/ConfigOverview.tsx:117
 msgid "{0} quickstart"
 msgstr "{0} 个快速开始"
 
 #. placeholder {0}: stats.ready
-#: src/features/config/ConfigPanel.tsx:632
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:88
 msgid "{0} ready"
 msgstr "{0} 个就绪"
 
@@ -94,12 +100,14 @@ msgstr "{0} 个就绪"
 #. placeholder {0}: sectionStats.ready
 #. placeholder {1}: card.sections.length
 #. placeholder {1}: sections.length
-#: src/features/config/ConfigPanel.tsx:441
-#: src/features/config/ConfigPanel.tsx:1251
+#: src/features/config/ConfigPanel.tsx:196
+#: src/features/config/overview/ConfigOverview.tsx:230
 msgid "{0} ready / {1} sections"
 msgstr "{0} 个就绪 / {1} 个区域"
 
+#. placeholder {0}: approval.tool
 #. placeholder {0}: detail.agent
+#: src/features/chat/MessageList.tsx:196
 #: src/workspace/notifications/useNotifications.ts:51
 msgid "{0} responded."
 msgstr "{0} 已回复。"
@@ -116,11 +124,16 @@ msgstr "{0} 项结果"
 
 #. placeholder {0}: filteredGroups.reduce((sum, group) => sum + group.items.length, 0)
 #. placeholder {0}: sections.length
-#: src/features/config/ConfigPanel.tsx:480
-#: src/features/config/ConfigPanel.tsx:633
-#: src/features/config/ConfigPanel.tsx:1090
+#: src/features/config/ConfigPanel.tsx:212
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:89
+#: src/features/config/overview/ConfigOverview.tsx:69
 msgid "{0} sections"
 msgstr "{0} 个区域"
+
+#. placeholder {0}: channels.length
+#: src/features/chat/AgentSetupWizard.tsx:240
+msgid "{0} selected"
+msgstr ""
 
 #. placeholder {0}: CAPABILITY_LABELS[capabilityId]
 #: src/features/config/SetupDoctorTab.tsx:387
@@ -128,12 +141,12 @@ msgid "{0} setup"
 msgstr "{0} 设置"
 
 #. placeholder {0}: filtered.length
-#: src/features/tools/ToolsPanel.tsx:56
+#: src/features/tools/ToolsPanel.tsx:58
 msgid "{0} tools"
 msgstr "{0} 个工具"
 
 #. placeholder {0}: stats.empty
-#: src/features/config/ConfigPanel.tsx:1131
+#: src/features/config/overview/ConfigOverview.tsx:110
 msgid "{0} untouched"
 msgstr "{0} 个未配置"
 
@@ -143,24 +156,23 @@ msgid "{0} will not save persistent memory."
 msgstr "{0} 不会保存持久记忆。"
 
 #: src/features/chat/AgentSetupWizard.tsx:752
-msgid "{label} mode"
-msgstr "{label} 模式"
+#~ msgid "{label} mode"
+#~ msgstr "{label} 模式"
 
 #. placeholder {0}: sections.length
-#: src/features/config/ConfigPanel.tsx:1346
+#: src/features/config/overview/ConfigOverview.tsx:321
 msgid "{ready} ready / {0} sections"
 msgstr "{ready} 个就绪 / {0} 个区域"
 
-#: src/features/config/ConfigPanel.tsx:844
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:302
 msgid "{readyCount} ready"
 msgstr "{readyCount} 个就绪"
 
-#: src/features/chat/ChatPanel.tsx:495
-#: src/features/chat/ChatPanel.tsx:842
+#: src/features/chat/AttachmentTray.tsx:36
 msgid "1 attachment"
 msgstr "1 个附件"
 
-#: src/features/chat/ChatPanel.tsx:697
+#: src/features/chat/SessionControls.tsx:70
 msgid "Abort current turn"
 msgstr "中止当前回合"
 
@@ -168,7 +180,7 @@ msgstr "中止当前回合"
 msgid "Actions"
 msgstr "操作"
 
-#: src/app/workspace-shell/SettingsPage.tsx:267
+#: src/app/workspace-shell/SettingsPage.tsx:294
 msgid "Activation"
 msgstr "激活"
 
@@ -177,26 +189,35 @@ msgstr "激活"
 msgid "active"
 msgstr "已启用"
 
-#: src/features/integrations/IntegrationsPanel.tsx:405
+#: src/features/integrations/IntegrationsPanel.tsx:407
 msgid "Active"
 msgstr "已启用"
 
+#: src/features/chat/AgentSetupWizard.tsx:692
+#: src/features/chat/AgentSetupWizard.tsx:876
+msgid "Add"
+msgstr ""
+
 #. placeholder {0}: entryNoun(section)
-#: src/features/config/ConfigPanel.tsx:1744
+#: src/features/config/picker/PickerSection.tsx:397
 msgid "Add a {0} or open an existing one."
 msgstr "添加一个 {0}，或打开已有项。"
 
-#: src/features/config/ConfigPanel.tsx:189
+#: src/features/config/config-categories.ts:109
 msgid "Add capabilities, connect tools, and check setup."
 msgstr "添加能力、连接工具并检查设置。"
 
-#: src/features/chat/ChatPanel.tsx:614
+#: src/features/chat/ChatComposer.tsx:132
 msgid "Add file attachment"
 msgstr "添加文件附件"
 
 #: src/features/chat/AgentSetupWizard.tsx:580
-msgid "Add inline personality files when the gateway supports them."
-msgstr "网关支持时，可添加内联人格文件。"
+#~ msgid "Add inline personality files when the gateway supports them."
+#~ msgstr "网关支持时，可添加内联人格文件。"
+
+#: src/features/chat/AgentSetupWizard.tsx:882
+msgid "Add or attach a channel before creating peer groups."
+msgstr ""
 
 #: src/app/WelcomeScreen.tsx:36
 msgid "Add remote"
@@ -207,17 +228,17 @@ msgstr "添加远程"
 msgid "Add runtime"
 msgstr "添加运行时"
 
-#: src/features/config/ConfigPanel.tsx:829
-#: src/features/config/ConfigPanel.tsx:876
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:287
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:334
 msgid "Add server"
 msgstr "添加服务器"
 
-#: src/features/config/ConfigPanel.tsx:873
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:331
 msgid "Add your first MCP server"
 msgstr "添加第一个 MCP 服务器"
 
-#: src/features/config/ConfigPanel.tsx:666
-#: src/features/config/ConfigPanel.tsx:911
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:122
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:369
 msgid "Advanced"
 msgstr "高级"
 
@@ -225,56 +246,60 @@ msgstr "高级"
 msgid "Advanced backend setup"
 msgstr "高级后端设置"
 
-#: src/features/config/ConfigPanel.tsx:886
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:344
 msgid "Advanced fields"
 msgstr "高级字段"
 
-#: src/features/config/ConfigPanel.tsx:544
+#: src/features/config/ConfigPanel.tsx:276
 msgid "Advanced raw paths"
 msgstr "高级原始路径"
 
-#: src/features/chat/AgentSetupWizard.tsx:345
-#: src/features/config/ConfigPanel.tsx:228
+#: src/features/chat/ChatComposer.tsx:150
+#: src/features/config/config-categories.ts:148
 #: src/features/memory/MemoryPanel.tsx:390
 msgid "Agent"
 msgstr "Agent"
 
 #. placeholder {0}: channel.owning_agent
-#: src/features/integrations/IntegrationsPanel.tsx:308
+#: src/features/integrations/IntegrationsPanel.tsx:310
 msgid "agent {0}"
 msgstr "agent {0}"
 
-#: src/features/chat/AgentSetupWizard.tsx:346
+#: src/features/chat/AgentSetupWizard.tsx:813
 msgid "Agent alias"
 msgstr "Agent 别名"
 
-#: src/features/chat/AgentSetupWizard.tsx:257
+#: src/features/chat/AgentSetupWizard.tsx:478
 msgid "Agent created"
 msgstr "Agent 已创建"
 
-#: src/features/chat/ChatPanel.tsx:473
+#: src/features/chat/ModelOverrideSelect.tsx:22
 msgid "Agent default"
 msgstr "Agent 默认"
 
-#: src/features/chat/ChatPanel.tsx:662
-msgid "Agent:"
-msgstr "Agent："
+#: src/features/chat/AgentSetupWizard.tsx:812
+msgid "Agent identity"
+msgstr ""
 
-#: src/app/workspace-shell/settings-sections.ts:33
-#: src/features/config/ConfigPanel.tsx:164
-msgid "Agents"
-msgstr "代理"
-
-#: src/app/workspace-shell/settings-sections.ts:35
-#: src/features/agent-workspace/AgentWorkspacePanel.tsx:238
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:242
 msgid "Agent Workspace"
 msgstr "Agent 工作区"
 
-#: src/features/integrations/IntegrationsPanel.tsx:391
+#: src/features/chat/ChatPanel.tsx:662
+#~ msgid "Agent:"
+#~ msgstr "Agent："
+
+#: src/app/workspace-shell/settings-sections.ts:33
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:298
+#: src/features/config/config-categories.ts:84
+msgid "Agents"
+msgstr "代理"
+
+#: src/features/integrations/IntegrationsPanel.tsx:393
 msgid "AI models"
 msgstr "AI 模型"
 
-#: src/features/chat/AgentSetupWizard.tsx:455
+#: src/features/chat/AgentSetupWizard.tsx:768
 #: src/features/memory/MemoryPanel.tsx:1292
 msgid "Alias"
 msgstr "别名"
@@ -283,32 +308,33 @@ msgstr "别名"
 msgid "Aliases"
 msgstr "别名"
 
-#: src/features/config/ConfigPanel.tsx:460
+#: src/features/config/ConfigPanel.tsx:205
 msgid "All"
 msgstr "全部"
 
-#: src/features/integrations/IntegrationsPanel.tsx:387
+#: src/features/integrations/IntegrationsPanel.tsx:389
 msgid "All categories"
 msgstr "全部类别"
 
-#: src/features/doctor/DoctorPanel.tsx:43
+#: src/features/doctor/DoctorPanel.tsx:45
 msgid "All checks passed."
 msgstr "所有检查已通过。"
 
-#: src/features/integrations/IntegrationsPanel.tsx:403
+#: src/features/integrations/IntegrationsPanel.tsx:405
 msgid "All statuses"
 msgstr "全部状态"
 
-#: src/features/chat/ChatPanel.tsx:1068
+#: src/features/chat/MessageList.tsx:272
 msgid "Allow this tool for the current gateway session policy"
 msgstr "在当前网关会话策略中允许此工具"
 
-#: src/features/chat/ChatPanel.tsx:1070
+#: src/features/chat/MessageList.tsx:274
 msgid "Always allow"
 msgstr "始终允许"
 
 #: src/app/workspace-shell/settings-sections.ts:29
-#: src/app/workspace-shell/SettingsPage.tsx:156
+#: src/app/workspace-shell/SettingsPage.tsx:139
+#: src/app/workspace-shell/SettingsPage.tsx:228
 msgid "App"
 msgstr "应用"
 
@@ -317,42 +343,50 @@ msgstr "应用"
 msgid "Applied {0}"
 msgstr "已应用 {0}"
 
-#: src/features/chat/ChatPanel.tsx:733
+#: src/features/chat/ChatPanel.tsx:587
 #: src/features/config/SetupDoctorTab.tsx:348
 msgid "Apply"
 msgstr "应用"
 
 #. placeholder {0}: errorMessage(e)
-#: src/features/chat/AgentSetupWizard.tsx:218
+#: src/features/chat/AgentSetupWizard.tsx:456
 msgid "Apply failed: {0}"
 msgstr "应用失败：{0}"
 
 #: src/features/chat/AgentSetupWizard.tsx:636
-msgid "Apply Quickstart"
-msgstr "应用快速开始"
+#~ msgid "Apply Quickstart"
+#~ msgstr "应用快速开始"
 
-#: src/features/chat/AgentSetupWizard.tsx:633
+#: src/features/chat/AgentSetupWizard.tsx:988
+#: src/features/chat/MessageList.tsx:194
 msgid "Applying..."
 msgstr "正在应用..."
 
-#: src/features/chat/ChatPanel.tsx:1016
+#: src/features/chat/MessageList.tsx:204
 msgid "Approval required"
 msgstr "需要批准"
 
-#: src/features/chat/ChatPanel.tsx:1055
+#: src/features/chat/MessageList.tsx:257
 msgid "Approve once"
 msgstr "批准一次"
 
-#: src/features/config/ConfigPanel.tsx:1136
+#: src/features/config/overview/ConfigOverview.tsx:115
 msgid "Areas"
 msgstr "区域"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:305
+#: src/app/workspace-shell/SettingsPage.tsx:292
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:304
 msgid "Attachments"
 msgstr "附件"
 
+#. placeholder {0}: formatBytes(totalSize)
+#. placeholder {1}: formatBytes(totalLimit)
+#: src/features/chat/ChatPanel.tsx:381
+msgid "Attachments total {0} exceeds upload limit {1}."
+msgstr ""
+
 #. placeholder {0}: approval.timeout_secs
-#: src/features/chat/ChatPanel.tsx:1024
+#: src/features/chat/MessageList.tsx:212
 msgid "Auto-denies after {0}s without a response."
 msgstr "{0} 秒内无响应将自动拒绝。"
 
@@ -360,31 +394,48 @@ msgstr "{0} 秒内无响应将自动拒绝。"
 msgid "available"
 msgstr "可用"
 
-#: src/features/integrations/IntegrationsPanel.tsx:406
+#: src/features/integrations/IntegrationsPanel.tsx:408
 msgid "Available"
 msgstr "可用"
 
-#: src/features/config/ConfigPanel.tsx:795
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:253
 msgid "Available to manage"
 msgstr "可管理"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:344
 #: src/features/memory/MemoryPanel.tsx:1200
 msgid "Back"
 msgstr "返回"
 
-#: src/app/workspace-shell/SettingsPage.tsx:176
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:293
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:294
+msgid "Back to agents"
+msgstr ""
+
+#: src/app/workspace-shell/SettingsPage.tsx:159
 msgid "Back to app"
 msgstr "返回应用"
 
-#: src/features/chat/ChatPanel.tsx:741
+#: src/features/chat/AgentSetupWizard.tsx:530
+#: src/features/chat/AgentSetupWizard.tsx:535
+msgid "Back to sessions"
+msgstr ""
+
+#. placeholder {0}: formatBytes(maxAttachmentBytes)
+#. placeholder {1}: formatBytes(maxAttachmentRequestBytes)
+#: src/features/chat/AttachmentTray.tsx:80
+msgid "Before upload: each file up to {0}, total up to {1}."
+msgstr ""
+
+#: src/features/chat/ChatPanel.tsx:595
 msgid "Browse"
 msgstr "浏览"
 
-#: src/features/config/ConfigPanel.tsx:821
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:279
 msgid "Browse bundles"
 msgstr "浏览 bundle"
 
-#: src/features/config/ConfigPanel.tsx:1311
+#: src/features/config/overview/ConfigOverview.tsx:290
 msgid "Browse integration status and jump into the right gateway configuration."
 msgstr "浏览集成状态并跳转到对应的网关配置。"
 
@@ -392,15 +443,15 @@ msgstr "浏览集成状态并跳转到对应的网关配置。"
 msgid "Browser agent-browser"
 msgstr "Browser agent-browser"
 
-#: src/features/chat/ChatPanel.tsx:863
+#: src/features/chat/AttachmentTray.tsx:57
 msgid "bytes"
 msgstr "字节"
 
-#: src/app/workspace-shell/SettingsPage.tsx:160
+#: src/app/workspace-shell/SettingsPage.tsx:143
 msgid "Capabilities"
 msgstr "能力"
 
-#: src/features/integrations/IntegrationsPanel.tsx:256
+#: src/features/integrations/IntegrationsPanel.tsx:258
 msgid "Category"
 msgstr "类别"
 
@@ -408,38 +459,55 @@ msgstr "类别"
 msgid "Change"
 msgstr "更改"
 
+#: src/app/workspace-shell/SettingsPage.tsx:313
+msgid "Change the app interface language."
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:730
+#: src/features/chat/AgentSetupWizard.tsx:909
+msgid "Channel"
+msgstr ""
+
 #: src/features/chat/AgentSetupWizard.tsx:527
-msgid "Channel alias"
-msgstr "渠道别名"
+#~ msgid "Channel alias"
+#~ msgstr "渠道别名"
 
 #: src/app/workspace-shell/settings-sections.ts:35
-#: src/features/chat/AgentSetupWizard.tsx:405
-#: src/features/config/ConfigPanel.tsx:168
-#: src/features/integrations/IntegrationsPanel.tsx:265
+#: src/features/chat/AgentSetupWizard.tsx:681
+#: src/features/config/config-categories.ts:88
+#: src/features/integrations/IntegrationsPanel.tsx:267
 msgid "Channels"
 msgstr "渠道"
 
-#: src/features/integrations/IntegrationsPanel.tsx:389
+#: src/features/chat/AgentSetupWizard.tsx:805
+msgid "Channels reviewed: none."
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:805
+msgid "Channels reviewed."
+msgstr ""
+
+#: src/features/integrations/IntegrationsPanel.tsx:391
 msgid "Chat"
 msgstr "聊天"
 
 #: src/app/workspace-shell/SettingsPage.tsx:265
-msgid "Chat attachments"
-msgstr "聊天附件"
+#~ msgid "Chat attachments"
+#~ msgstr "聊天附件"
 
 #: src/features/setup/SetupCenterPanel.tsx:187
 msgid "Check Docker CLI, daemon reachability, and image pulls."
 msgstr "检查 Docker CLI、daemon 可达性和镜像拉取。"
 
-#: src/features/config/ConfigPanel.tsx:868
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:326
 msgid "Check now"
 msgstr "立即检查"
 
-#: src/features/config/ConfigPanel.tsx:865
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:323
 msgid "Check Python support"
 msgstr "检查 Python 支持"
 
-#: src/features/config/ConfigPanel.tsx:813
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:271
 msgid "Check setup"
 msgstr "检查设置"
 
@@ -459,11 +527,11 @@ msgstr "检查"
 msgid "Choose a memory option"
 msgstr "选择记忆选项"
 
-#: src/features/config/ConfigPanel.tsx:1392
+#: src/features/config/sections/SectionExplorer.tsx:32
 msgid "Choose a section to inspect its picker, aliases, and editable fields."
 msgstr "选择一个区域以查看选择器、别名和可编辑字段。"
 
-#: src/features/tools/ToolsPanel.tsx:128
+#: src/features/tools/ToolsPanel.tsx:130
 msgid "Choose a tool to inspect its metadata, schema, and available fields."
 msgstr "选择一个工具以查看其元数据、schema 和可用字段。"
 
@@ -476,15 +544,19 @@ msgstr "选择 Agent"
 msgid "Choose an agent to see its memory setting."
 msgstr "选择一个 agent 以查看其记忆设置。"
 
-#: src/features/integrations/IntegrationsPanel.tsx:206
+#: src/app/workspace-shell/ChatWorkspace.tsx:83
+msgid "Choose an existing session from the sidebar, or create an agent when you are ready to start a new one."
+msgstr ""
+
+#: src/features/integrations/IntegrationsPanel.tsx:208
 msgid "Choose an integration to inspect status, configured aliases, and the related config section."
 msgstr "选择一个集成以查看状态、已配置别名和相关配置区域。"
 
-#: src/features/config/ConfigPanel.tsx:1750
+#: src/features/config/picker/PickerSection.tsx:403
 msgid "Choose an option above to create, choose, or inspect its config fields."
 msgstr "选择上方选项以创建、选择或查看其配置字段。"
 
-#: src/features/config/ConfigPanel.tsx:857
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:315
 msgid "Choose skills folder"
 msgstr "选择 skills 文件夹"
 
@@ -493,20 +565,28 @@ msgstr "选择 skills 文件夹"
 msgid "Choose where memories are saved for {0}."
 msgstr "选择 {0} 的记忆保存位置。"
 
-#: src/features/chat/ChatPanel.tsx:848
+#: src/features/chat/AttachmentTray.tsx:42
 msgid "Clear attachments"
 msgstr "清除附件"
 
-#: src/features/chat/ChatPanel.tsx:705
+#: src/features/chat/SessionControls.tsx:78
 msgid "Clear local view"
 msgstr "清除本地视图"
 
-#: src/features/doctor/DoctorPanel.tsx:41
+#: src/features/doctor/DoctorPanel.tsx:43
 msgid "Click \"Run doctor\" to start."
 msgstr "点击“运行诊断”开始。"
 
-#: src/features/chat/AgentSetupWizard.tsx:537
-#: src/features/chat/AgentSetupWizard.tsx:547
+#: src/features/chat/AttachmentTray.tsx:57
+msgid "clipboard"
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:530
+msgid "Close"
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:927
+#: src/features/chat/AgentSetupWizard.tsx:939
 msgid "Comma or newline separated"
 msgstr "用逗号或换行分隔"
 
@@ -520,39 +600,43 @@ msgstr "命令已完成：{command}"
 msgid "Command exited {0}: {1}"
 msgstr "命令退出 {0}：{1}"
 
-#: src/features/config/ConfigPanel.tsx:1147
+#: src/features/config/overview/ConfigOverview.tsx:126
 msgid "Common workflows"
 msgstr "常用工作流"
 
-#: src/features/integrations/IntegrationsPanel.tsx:257
+#: src/features/chat/AgentSetupWizard.tsx:517
+msgid "Complete the same quickstart steps used by the CLI, then apply everything at once."
+msgstr ""
+
+#: src/features/integrations/IntegrationsPanel.tsx:259
 msgid "Config section"
 msgstr "配置区域"
 
-#: src/features/config/ConfigPanel.tsx:1192
+#: src/features/config/overview/ConfigOverview.tsx:171
 msgid "Configuration areas"
 msgstr "配置区域"
 
-#: src/features/config/ConfigPanel.tsx:1145
+#: src/features/config/overview/ConfigOverview.tsx:124
 msgid "Configuration entry points"
 msgstr "配置入口"
 
-#: src/features/integrations/IntegrationsPanel.tsx:241
+#: src/features/integrations/IntegrationsPanel.tsx:243
 msgid "Configure"
 msgstr "配置"
 
-#: src/features/config/ConfigPanel.tsx:181
+#: src/features/config/config-categories.ts:101
 msgid "Configure agent identities, prompts, default profiles, and peer groups."
 msgstr "配置 agent 身份、提示词、默认配置和 peer group。"
 
-#: src/features/config/ConfigPanel.tsx:187
+#: src/features/config/config-categories.ts:107
 msgid "Configure chat channels, webhooks, tokens, aliases, and agent routing."
 msgstr "配置聊天渠道、webhook、token、别名和 agent 路由。"
 
-#: src/features/config/ConfigPanel.tsx:1310
+#: src/features/config/overview/ConfigOverview.tsx:289
 msgid "Configure memory backends and choose active memory per agent or profile."
 msgstr "配置记忆后端，并为每个 agent 或 profile 选择启用的记忆。"
 
-#: src/features/config/ConfigPanel.tsx:1093
+#: src/features/config/overview/ConfigOverview.tsx:72
 msgid "Configure providers, runtime behavior, agents, tools, storage, and network settings from focused entry points."
 msgstr "从聚焦入口配置 provider、运行时行为、agent、工具、存储和网络设置。"
 
@@ -560,94 +644,108 @@ msgstr "从聚焦入口配置 provider、运行时行为、agent、工具、存�
 msgid "configured"
 msgstr "已配置"
 
-#: src/features/integrations/IntegrationsPanel.tsx:258
+#: src/features/integrations/IntegrationsPanel.tsx:260
 msgid "Configured aliases"
 msgstr "已配置别名"
 
-#: src/features/config/ConfigPanel.tsx:178
+#: src/features/config/config-categories.ts:98
 msgid "Connect a model service, add credentials, and make it available to agents."
 msgstr "连接模型服务、添加凭据，并让 agent 可用。"
 
-#: src/features/config/ConfigPanel.tsx:827
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:285
 msgid "Connect external tools and local services so agents can use them safely."
 msgstr "连接外部工具和本地服务，让 agent 能安全使用它们。"
 
-#: src/app/AddConnectionDialog.tsx:449
+#: src/app/AddConnectionDialog.tsx:453
 #: src/app/WelcomeScreen.tsx:34
 msgid "Connect to a remote zeroclaw"
 msgstr "连接到远程 zeroclaw"
 
-#: src/app/AddConnectionDialog.tsx:450
+#: src/app/AddConnectionDialog.tsx:454
 #: src/app/WelcomeScreen.tsx:39
 msgid "Connect to local zeroclaw"
 msgstr "连接到本地 zeroclaw"
 
-#: src/features/config/ConfigPanel.tsx:800
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:258
 msgid "Connected"
 msgstr "已连接"
 
 #: src/features/chat/ChatPanel.tsx:678
-msgid "Connecting"
-msgstr "连接中"
+#~ msgid "Connecting"
+#~ msgstr "连接中"
 
 #: src/app/workspace-shell/SettingsPage.tsx:242
 msgid "Connection"
 msgstr "连接"
 
-#: src/app/AddConnectionDialog.tsx:156
-#: src/app/AddConnectionDialog.tsx:288
-#: src/app/AddConnectionDialog.tsx:399
+#: src/app/AddConnectionDialog.tsx:160
+#: src/app/AddConnectionDialog.tsx:292
+#: src/app/AddConnectionDialog.tsx:403
 msgid "Connection name"
 msgstr "连接名称"
 
 #: src/features/chat/AgentSetupWizard.tsx:606
-msgid "Content"
-msgstr "内容"
+#~ msgid "Content"
+#~ msgstr "内容"
 
 #: src/features/chat/ChatPanel.tsx:496
-msgid "Context: {contextScope} · {contextAttachments} · {contextGit}"
-msgstr "上下文：{contextScope} · {contextAttachments} · {contextGit}"
+#~ msgid "Context: {contextScope} · {contextAttachments} · {contextGit}"
+#~ msgstr "上下文：{contextScope} · {contextAttachments} · {contextGit}"
 
-#: src/features/chat/ChatPanel.tsx:537
+#: src/features/chat/ChatComposer.tsx:104
 msgid "Continue this session..."
 msgstr "继续这个会话..."
 
-#: src/features/chat/ChatPanel.tsx:907
-#: src/features/chat/ChatPanel.tsx:1173
+#: src/features/chat/ChatPanel.tsx:684
+#: src/features/chat/MessageList.tsx:299
 msgid "Copy path"
 msgstr "复制路径"
 
-#: src/features/chat/ChatPanel.tsx:1142
+#: src/features/chat/MessageList.tsx:108
 msgid "cost"
 msgstr "费用"
 
-#: src/features/config/ConfigPanel.tsx:874
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:332
 msgid "Create a server entry when you want agents to use an external tool."
 msgstr "当你希望 agent 使用外部工具时，创建一个服务器条目。"
 
+#: src/app/workspace-shell/ChatWorkspace.tsx:91
+#: src/features/chat/AgentSetupWizard.tsx:515
+#: src/features/chat/AgentSetupWizard.tsx:991
+msgid "Create agent"
+msgstr ""
+
 #: src/features/chat/AgentSetupWizard.tsx:292
-msgid "Create an agent, provider, runtime, memory, channels, and peer groups in one apply step."
-msgstr "一次性创建 agent、provider、运行时、记忆、渠道和 peer group。"
+#~ msgid "Create an agent, provider, runtime, memory, channels, and peer groups in one apply step."
+#~ msgstr "一次性创建 agent、provider、运行时、记忆、渠道和 peer group。"
 
 #: src/features/memory/MemoryPanel.tsx:990
 msgid "Create another entry"
 msgstr "创建另一个条目"
 
-#: src/app/AddConnectionDialog.tsx:230
-#: src/app/AddConnectionDialog.tsx:312
+#: src/app/AddConnectionDialog.tsx:234
+#: src/app/AddConnectionDialog.tsx:316
 msgid "Create connection"
 msgstr "创建连接"
 
-#: src/app/AddConnectionDialog.tsx:425
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:462
+msgid "Create file"
+msgstr ""
+
+#: src/app/AddConnectionDialog.tsx:429
 msgid "Create managed connection"
 msgstr "创建托管连接"
+
+#: src/features/chat/agent-setup-wizard/components.tsx:223
+msgid "Create new"
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:920
 msgid "Create or open alias"
 msgstr "创建或打开别名"
 
 #. placeholder {0}: entryNoun(section)
-#: src/features/config/ConfigPanel.tsx:1743
+#: src/features/config/picker/PickerSection.tsx:396
 msgid "Create or select {0}"
 msgstr "创建或选择 {0}"
 
@@ -656,7 +754,7 @@ msgid "created"
 msgstr "已创建"
 
 #. placeholder {0}: entryNoun(section)
-#: src/features/config/ConfigPanel.tsx:1482
+#: src/features/config/picker/PickerSection.tsx:90
 msgid "Created {0} from picker"
 msgstr "已从选择器创建 {0}"
 
@@ -673,8 +771,8 @@ msgid "Created memory backend entry"
 msgstr "已创建记忆后端条目"
 
 #. placeholder {0}: entryNoun(section)
-#: src/features/config/ConfigPanel.tsx:1460
-#: src/features/config/ConfigPanel.tsx:1583
+#: src/features/config/picker/PickerSection.tsx:68
+#: src/features/config/picker/PickerSection.tsx:221
 msgid "Created new {0}"
 msgstr "已创建新的 {0}"
 
@@ -682,25 +780,46 @@ msgstr "已创建新的 {0}"
 msgid "Cron"
 msgstr "定时任务"
 
-#: src/features/cron/CronPanel.tsx:10
+#: src/features/cron/CronPanel.tsx:12
 msgid "cron jobs"
 msgstr "cron 任务"
 
-#: src/app/workspace-shell/SettingsPage.tsx:338
+#: src/app/workspace-shell/SettingsPage.tsx:245
+msgid "Current runtime selected in the title bar."
+msgstr ""
+
+#: src/app/workspace-shell/SettingsPage.tsx:336
+msgid "Dark"
+msgstr "深色"
+
+#: src/app/workspace-shell/SettingsPage.tsx:388
 msgid "Deep link scheme"
 msgstr "深度链接协议"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:372
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:426
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:428
+msgid "Delete"
+msgstr ""
+
+#. placeholder {0}: entry.path
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:391
+msgid "Delete {0}?"
+msgstr ""
+
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:215
+msgid "Delete {selectedFile}?"
+msgstr ""
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:371
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:425
 msgid "Delete session"
 msgstr "删除会话"
 
 #. placeholder {0}: thread.name
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:423
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:422
 msgid "Delete session \"{0}\"?"
 msgstr "删除会话“{0}”？"
 
-#: src/app/AddConnectionDialog.tsx:386
+#: src/app/AddConnectionDialog.tsx:390
 msgid "Detect again"
 msgstr "重新检测"
 
@@ -716,7 +835,7 @@ msgstr "检测 Python 并准备风险配置命令允许列表。"
 msgid "Detect sandbox backends and enable auto sandbox config."
 msgstr "检测 sandbox 后端并启用自动 sandbox 配置。"
 
-#: src/features/devices/DevicesPanel.tsx:10
+#: src/features/devices/DevicesPanel.tsx:12
 msgid "devices"
 msgstr "设备"
 
@@ -724,17 +843,21 @@ msgstr "设备"
 msgid "Devices"
 msgstr "设备"
 
-#: src/features/doctor/DoctorPanel.tsx:19
+#: src/features/doctor/DoctorPanel.tsx:21
 msgid "Diagnostics"
 msgstr "诊断"
 
-#: src/app/AddConnectionDialog.tsx:140
+#: src/app/AddConnectionDialog.tsx:144
 msgid "Direct URL"
 msgstr "直接 URL"
 
 #: src/features/memory/MemoryPanel.tsx:1551
 msgid "Disable persistent memory for stateless agents."
 msgstr "为无状态 agent 禁用持久记忆。"
+
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:174
+msgid "Discard unsaved changes?"
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:1600
 msgid "Do not keep persistent memory for this workspace."
@@ -753,7 +876,7 @@ msgstr "诊断"
 msgid "Doctor a stdio MCP server command and transport."
 msgstr "诊断 stdio MCP 服务器命令和传输。"
 
-#: src/features/chat/ChatPanel.tsx:843
+#: src/features/chat/AttachmentTray.tsx:37
 msgid "drop files here or use the file button"
 msgstr "将文件拖到这里，或使用文件按钮"
 
@@ -762,15 +885,17 @@ msgstr "将文件拖到这里，或使用文件按钮"
 msgid "Edit settings"
 msgstr "编辑设置"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:407
 #: src/features/memory/MemoryPanel.tsx:1519
 msgid "edited"
 msgstr "已编辑"
 
-#: src/workspace/files/FileTree.tsx:97
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:380
+#: src/workspace/files/FileTree.tsx:101
 msgid "Empty directory"
 msgstr "空目录"
 
-#: src/features/config/ConfigPanel.tsx:849
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:307
 msgid "Enable Skills"
 msgstr "启用 Skills"
 
@@ -782,77 +907,86 @@ msgstr "输入 secret 值"
 msgid "env"
 msgstr "环境变量"
 
-#: src/features/chat/ChatPanel.tsx:1146
+#: src/features/chat/MessageList.tsx:112
+#: src/features/chat/MessageList.tsx:238
 msgid "error"
 msgstr "错误"
 
-#: src/features/chat/ChatPanel.tsx:955
+#: src/features/chat/MessageList.tsx:135
 msgid "Execution"
 msgstr "执行"
 
 #: src/features/chat/AgentSetupWizard.tsx:765
-msgid "existing"
-msgstr "已有"
+#~ msgid "existing"
+#~ msgstr "已有"
+
+#: src/features/chat/agent-setup-wizard/components.tsx:260
+msgid "Existing"
+msgstr ""
 
 #: src/features/chat/ChatPanel.tsx:499
-msgid "Explain this project"
-msgstr "解释这个项目"
+#~ msgid "Explain this project"
+#~ msgstr "解释这个项目"
 
-#: src/features/chat/AgentSetupWizard.tsx:537
+#: src/features/chat/AgentSetupWizard.tsx:927
 msgid "External peers"
 msgstr "外部 peer"
 
 #: src/features/chat/AgentSetupWizard.tsx:596
-msgid "Filename"
-msgstr "文件名"
+#~ msgid "Filename"
+#~ msgstr "文件名"
 
-#: src/features/chat/ChatPanel.tsx:881
+#: src/app/workspace-shell/SettingsPage.tsx:276
+msgid "Files and runtime activity visible to the app."
+msgstr ""
+
+#: src/features/chat/AttachmentTray.tsx:79
 msgid "Files are checked during send."
 msgstr "发送时会检查文件。"
 
 #. placeholder {0}: formatBytes(maxAttachmentBytes)
 #: src/features/chat/ChatPanel.tsx:882
-msgid "Files over {0} are rejected during send."
-msgstr "发送时会拒绝超过 {0} 的文件。"
+#~ msgid "Files over {0} are rejected during send."
+#~ msgstr "发送时会拒绝超过 {0} 的文件。"
 
-#: src/features/config/ConfigPanel.tsx:1668
+#: src/features/config/picker/PickerSection.tsx:321
 msgid "Filter"
 msgstr "筛选"
 
 #. placeholder {0}: pickerSelectionOption(section)
-#: src/features/config/ConfigPanel.tsx:1679
+#: src/features/config/picker/PickerSection.tsx:332
 msgid "Filter {0}s..."
 msgstr "筛选 {0}..."
 
 #: src/features/chat/ChatPanel.tsx:500
-msgid "Find likely bugs"
-msgstr "查找可能的 bug"
+#~ msgid "Find likely bugs"
+#~ msgstr "查找可能的 bug"
 
-#: src/app/workspace-shell/SettingsPage.tsx:264
+#: src/app/workspace-shell/SettingsPage.tsx:285
 msgid "Folder"
 msgstr "文件夹"
 
-#: src/app/AddConnectionDialog.tsx:395
+#: src/app/AddConnectionDialog.tsx:399
 msgid "Found"
 msgstr "已找到"
 
-#: src/features/config/ConfigPanel.tsx:226
+#: src/features/config/config-categories.ts:146
 msgid "Foundation"
 msgstr "基础"
 
 #: src/features/chat/AgentSetupWizard.tsx:763
-msgid "fresh"
-msgstr "新建"
+#~ msgid "fresh"
+#~ msgstr "新建"
 
-#: src/app/workspace-shell/SettingsPage.tsx:158
+#: src/app/workspace-shell/SettingsPage.tsx:141
 msgid "Gateway"
 msgstr "网关"
 
-#: src/features/integrations/IntegrationsPanel.tsx:252
+#: src/features/integrations/IntegrationsPanel.tsx:254
 msgid "Gateway catalog"
 msgstr "网关目录"
 
-#: src/features/config/ConfigPanel.tsx:1089
+#: src/features/config/overview/ConfigOverview.tsx:68
 msgid "Gateway control center"
 msgstr "网关控制中心"
 
@@ -860,7 +994,7 @@ msgstr "网关控制中心"
 msgid "Gateway health"
 msgstr "网关健康状态"
 
-#: src/features/config/ConfigPanel.tsx:439
+#: src/features/config/ConfigPanel.tsx:194
 msgid "Gateway overview"
 msgstr "网关概览"
 
@@ -868,17 +1002,17 @@ msgstr "网关概览"
 msgid "Gateway Overview"
 msgstr "网关概览"
 
-#: src/app/AddConnectionDialog.tsx:296
-#: src/app/AddConnectionDialog.tsx:407
+#: src/app/AddConnectionDialog.tsx:300
+#: src/app/AddConnectionDialog.tsx:411
 msgid "Gateway port"
 msgstr "网关端口"
 
-#: src/features/tools/ToolsPanel.tsx:102
-#: src/features/tools/ToolsPanel.tsx:136
+#: src/features/tools/ToolsPanel.tsx:104
+#: src/features/tools/ToolsPanel.tsx:138
 msgid "Gateway tool"
 msgstr "网关工具"
 
-#: src/app/AddConnectionDialog.tsx:166
+#: src/app/AddConnectionDialog.tsx:170
 msgid "Gateway URL"
 msgstr "网关 URL"
 
@@ -887,39 +1021,43 @@ msgid "Gateway version"
 msgstr "网关版本"
 
 #: src/features/chat/ChatPanel.tsx:487
-msgid "general"
-msgstr "通用"
+#~ msgid "general"
+#~ msgstr "通用"
 
-#: src/features/chat/ChatPanel.tsx:581
+#: src/features/chat/ChatPanel.tsx:550
+msgid "General"
+msgstr ""
+
+#: src/features/chat/ChatComposer.tsx:218
 msgid "General session"
 msgstr "通用会话"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:266
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:265
 msgid "General Sessions"
 msgstr "通用会话"
 
-#: src/app/workspace-shell/SettingsPage.tsx:294
+#: src/app/workspace-shell/SettingsPage.tsx:348
 msgid "Global shortcut"
 msgstr "全局快捷键"
 
 #. placeholder {0}: channel.health
-#: src/features/integrations/IntegrationsPanel.tsx:316
+#: src/features/integrations/IntegrationsPanel.tsx:318
 msgid "health {0}"
 msgstr "健康状态 {0}"
 
-#: src/app/workspace-shell/SettingsPage.tsx:267
+#: src/app/workspace-shell/SettingsPage.tsx:294
 msgid "idle"
 msgstr "空闲"
 
-#: src/features/chat/AgentSetupWizard.tsx:547
+#: src/features/chat/AgentSetupWizard.tsx:939
 msgid "Ignore"
 msgstr "忽略"
 
-#: src/features/tools/ToolsPanel.tsx:163
+#: src/features/tools/ToolsPanel.tsx:165
 msgid "Inputs and schema"
 msgstr "输入和 schema"
 
-#: src/app/AddConnectionDialog.tsx:485
+#: src/app/AddConnectionDialog.tsx:489
 msgid "Install + manage"
 msgstr "安装并管理"
 
@@ -931,7 +1069,7 @@ msgstr "安装并验证 agent-browser 以及 Chrome for Testing。"
 msgid "Install locally"
 msgstr "本地安装"
 
-#: src/features/config/ConfigPanel.tsx:819
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:277
 msgid "Install or enable groups of skills from trusted sources."
 msgstr "从可信来源安装或启用多组 skills。"
 
@@ -944,12 +1082,22 @@ msgid "Install, configure, and verify local capabilities without opening raw con
 msgstr "无需先打开原始配置，即可安装、配置并验证本地能力。"
 
 #: src/app/workspace-shell/settings-sections.ts:38
-#: src/features/config/ConfigPanel.tsx:234
-#: src/features/config/ConfigPanel.tsx:1307
+#: src/features/config/config-categories.ts:154
+#: src/features/config/overview/ConfigOverview.tsx:286
 msgid "Integrations"
 msgstr "集成"
 
-#: src/app/workspace-shell/SettingsPage.tsx:278
+#: src/app/workspace-shell/SettingsPage.tsx:378
+msgid "Keep the desktop menu bar integration enabled."
+msgstr ""
+
+#. placeholder {0}: formatBytes(knownTotalSize)
+#. placeholder {1}: formatBytes(totalLimit)
+#: src/features/chat/AttachmentTray.tsx:77
+msgid "Known attachment total {0} exceeds upload limit {1}."
+msgstr ""
+
+#: src/app/workspace-shell/SettingsPage.tsx:312
 msgid "Language"
 msgstr "语言"
 
@@ -957,21 +1105,29 @@ msgstr "语言"
 msgid "Last updated when refreshed."
 msgstr "刷新时更新。"
 
-#: src/app/workspace-shell/SettingsPage.tsx:249
+#: src/app/workspace-shell/SettingsPage.tsx:261
 msgid "Lifecycle"
 msgstr "生命周期"
 
+#: src/app/workspace-shell/SettingsPage.tsx:337
+msgid "Light"
+msgstr "亮色"
+
 #. placeholder {0}: configCategoryLabel(category.id, i18n)
-#: src/features/config/ConfigPanel.tsx:708
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:164
 msgid "Loading {0}..."
 msgstr "正在加载 {0}..."
+
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:264
+msgid "Loading agents..."
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:898
 msgid "Loading aliases..."
 msgstr "正在加载别名..."
 
-#: src/features/config/ConfigPanel.tsx:494
-#: src/features/config/ConfigPanel.tsx:1116
+#: src/features/config/ConfigPanel.tsx:226
+#: src/features/config/overview/ConfigOverview.tsx:95
 msgid "Loading config sections..."
 msgstr "正在加载配置区域..."
 
@@ -979,7 +1135,11 @@ msgstr "正在加载配置区域..."
 msgid "Loading fields..."
 msgstr "正在加载字段..."
 
-#: src/features/integrations/IntegrationsPanel.tsx:125
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:376
+msgid "Loading files..."
+msgstr ""
+
+#: src/features/integrations/IntegrationsPanel.tsx:127
 msgid "Loading integrations..."
 msgstr "正在加载集成..."
 
@@ -987,22 +1147,23 @@ msgstr "正在加载集成..."
 msgid "Loading memory config..."
 msgstr "正在加载记忆配置..."
 
-#: src/features/chat/ChatPanel.tsx:923
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:438
+#: src/features/chat/ChatPanel.tsx:700
 msgid "Loading preview..."
 msgstr "正在加载预览..."
 
-#: src/features/chat/AgentSetupWizard.tsx:247
+#: src/features/chat/AgentSetupWizard.tsx:466
 msgid "Loading setup..."
 msgstr "正在加载设置..."
 
-#: src/features/tools/ToolsPanel.tsx:72
+#: src/features/tools/ToolsPanel.tsx:74
 msgid "Loading tools..."
 msgstr "正在加载工具..."
 
-#: src/app/AddConnectionDialog.tsx:372
-#: src/app/App.tsx:94
+#: src/app/AddConnectionDialog.tsx:376
+#: src/app/App.tsx:125
 #: src/features/_shared/DataPanel.tsx:42
-#: src/workspace/files/FileTree.tsx:94
+#: src/workspace/files/FileTree.tsx:98
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -1010,7 +1171,11 @@ msgstr "加载中…"
 msgid "Local"
 msgstr "本地"
 
-#: src/app/AddConnectionDialog.tsx:484
+#: src/app/workspace-shell/SettingsPage.tsx:231
+msgid "Local app state, workspace context, and preferences for this desktop client."
+msgstr ""
+
+#: src/app/AddConnectionDialog.tsx:488
 #: src/app/ConnectionPicker.tsx:49
 msgid "Local attach"
 msgstr "附加本地"
@@ -1024,8 +1189,8 @@ msgid "Local memory"
 msgstr "本地记忆"
 
 #: src/app/workspace-shell/SettingsPage.tsx:273
-msgid "Local Preferences"
-msgstr "本地偏好设置"
+#~ msgid "Local Preferences"
+#~ msgstr "本地偏好设置"
 
 #: src/features/memory/MemoryPanel.tsx:1557
 msgid "Local single-file memory for a workstation runtime."
@@ -1035,7 +1200,7 @@ msgstr "适合工作站运行时的本地单文件记忆。"
 msgid "Logs"
 msgstr "日志"
 
-#: src/app/AddConnectionDialog.tsx:359
+#: src/app/AddConnectionDialog.tsx:363
 msgid "Looking for an installed zeroclaw…"
 msgstr "正在查找已安装的 zeroclaw…"
 
@@ -1051,11 +1216,11 @@ msgstr "Lucid 同步"
 msgid "Manage a homelab, cloud VM, or Raspberry Pi. Works with direct URL, SSH tunnel, or Tailscale. No local install required."
 msgstr "管理家庭实验室、云虚拟机或 Raspberry Pi。支持直接 URL、SSH 隧道或 Tailscale。无需本地安装。"
 
-#: src/features/config/ConfigPanel.tsx:184
+#: src/features/config/config-categories.ts:104
 msgid "Manage risk profiles, runtime tuning, sandbox settings, and command policy."
 msgstr "管理风险配置、运行时调优、sandbox 设置和命令策略。"
 
-#: src/features/config/ConfigPanel.tsx:811
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:269
 msgid "Manage skills"
 msgstr "管理 skills"
 
@@ -1079,11 +1244,11 @@ msgstr "Markdown 文件"
 msgid "MCP server alias"
 msgstr "MCP 服务器别名"
 
-#: src/features/config/ConfigPanel.tsx:799
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:257
 msgid "MCP servers"
 msgstr "MCP 服务器"
 
-#: src/features/config/ConfigPanel.tsx:826
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:284
 msgid "MCP Servers"
 msgstr "MCP 服务器"
 
@@ -1092,8 +1257,8 @@ msgid "MCP stdio Doctor"
 msgstr "MCP stdio 诊断"
 
 #: src/app/workspace-shell/settings-sections.ts:36
-#: src/features/chat/AgentSetupWizard.tsx:393
-#: src/features/config/ConfigPanel.tsx:1307
+#: src/features/chat/AgentSetupWizard.tsx:665
+#: src/features/config/overview/ConfigOverview.tsx:286
 #: src/features/memory/MemoryPanel.tsx:411
 msgid "Memory"
 msgstr "记忆"
@@ -1124,38 +1289,45 @@ msgstr "记忆关闭"
 msgid "Memory options"
 msgstr "记忆选项"
 
-#: src/features/tools/ToolsPanel.tsx:175
+#: src/features/tools/ToolsPanel.tsx:177
 msgid "Metadata"
 msgstr "元数据"
 
-#: src/features/chat/AgentSetupWizard.tsx:317
-#: src/features/chat/ChatPanel.tsx:668
+#: src/features/chat/agent-setup-wizard/components.tsx:199
+msgid "Mode"
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:604
+#: src/features/chat/ModelOverrideSelect.tsx:33
 msgid "Model"
 msgstr "模型"
 
-#: src/features/config/ConfigPanel.tsx:162
+#: src/features/config/config-categories.ts:82
 msgid "Model Connections"
 msgstr "模型连接"
+
+#: src/features/chat/AgentSetupWizard.tsx:581
+msgid "Model provider"
+msgstr ""
 
 #: src/app/workspace-shell/settings-sections.ts:32
 msgid "Models & Providers"
 msgstr "模型和提供商"
 
-#: src/features/config/ConfigPanel.tsx:230
+#: src/features/config/config-categories.ts:150
 msgid "Multi-agent"
 msgstr "多 agent"
 
-#: src/app/workspace-shell/SettingsPage.tsx:246
-#: src/features/chat/AgentSetupWizard.tsx:517
-#: src/features/cron/CronPanel.tsx:17
+#: src/features/chat/AgentSetupWizard.tsx:897
+#: src/features/cron/CronPanel.tsx:19
 msgid "Name"
 msgstr "名称"
 
-#: src/features/config/ConfigPanel.tsx:461
+#: src/features/config/ConfigPanel.tsx:206
 msgid "Needs"
 msgstr "需要处理"
 
-#: src/features/config/ConfigPanel.tsx:1163
+#: src/features/config/overview/ConfigOverview.tsx:142
 msgid "Needs attention"
 msgstr "需要注意"
 
@@ -1163,73 +1335,98 @@ msgstr "需要注意"
 msgid "Needs manual pairing"
 msgstr "需要手动配对"
 
-#: src/features/config/ConfigPanel.tsx:1045
+#: src/features/config/sections/section-status.tsx:8
 #: src/features/memory/MemoryPanel.tsx:1513
 msgid "needs setup"
 msgstr "需要设置"
 
-#: src/features/config/ConfigPanel.tsx:800
-#: src/features/config/ConfigPanel.tsx:1129
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:258
+#: src/features/config/overview/ConfigOverview.tsx:108
 msgid "Needs setup"
 msgstr "需要设置"
 
-#: src/features/config/ConfigPanel.tsx:236
+#: src/features/config/config-categories.ts:156
 msgid "Network"
 msgstr "网络"
 
-#: src/features/chat/ChatPanel.tsx:480
+#: src/features/chat/ChatPanel.tsx:495
 msgid "New code"
 msgstr "新代码会话"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:272
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:200
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:315
+msgid "New file"
+msgstr ""
+
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:208
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:320
+msgid "New folder"
+msgstr ""
+
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:271
 msgid "New general session"
 msgstr "新建通用会话"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:209
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:208
 msgid "New project session"
 msgstr "新建项目会话"
 
-#: src/features/chat/ChatPanel.tsx:480
-#: src/features/chat/ChatPanel.tsx:688
+#: src/features/chat/ChatPanel.tsx:495
+#: src/features/chat/SessionControls.tsx:61
 msgid "New session"
 msgstr "新会话"
 
 #. placeholder {0}: selectedModelChoice.value
-#: src/features/chat/ChatPanel.tsx:687
+#: src/features/chat/SessionControls.tsx:61
 msgid "New session with {0}"
 msgstr "使用 {0} 新建会话"
 
-#: src/features/config/ConfigPanel.tsx:1045
+#: src/features/config/sections/section-status.tsx:8
 msgid "next"
 msgstr "下一步"
 
+#: src/features/chat/AgentSetupWizard.tsx:976
+msgid "Next"
+msgstr ""
+
 #. placeholder {0}: pickerSelectionOption(section)
-#: src/features/config/ConfigPanel.tsx:1721
+#: src/features/config/picker/PickerSection.tsx:374
 msgid "No {0}s match this filter."
 msgstr "没有符合筛选条件的 {0}。"
 
-#: src/app/workspace-shell/SettingsPage.tsx:254
-#: src/features/chat/ChatPanel.tsx:424
+#: src/app/workspace-shell/SettingsPage.tsx:265
+#: src/features/chat/ChatPanel.tsx:425
 msgid "No active connection."
 msgstr "没有活动连接。"
 
-#: src/features/tools/ToolsPanel.tsx:180
+#: src/features/chat/ChatPanel.tsx:351
+msgid "No active workspace."
+msgstr ""
+
+#: src/features/tools/ToolsPanel.tsx:182
 msgid "No additional metadata reported."
 msgstr "未报告其他元数据。"
+
+#: src/app/workspace-shell/ChatWorkspace.tsx:81
+msgid "No agent configured"
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:363
 #: src/features/memory/MemoryPanel.tsx:608
 msgid "No agent memory setting is available yet."
 msgstr "当前还没有可用的 agent 记忆设置。"
 
-#: src/features/config/ConfigPanel.tsx:198
+#: src/features/config/config-categories.ts:118
 msgid "No agent sections"
 msgstr "没有 agent 区域"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:304
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:373
 #: src/features/memory/MemoryPanel.tsx:393
 msgid "No agent selected"
 msgstr "未选择 agent"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:268
 #: src/features/memory/MemoryPanel.tsx:502
 msgid "No agents match this search."
 msgstr "没有符合搜索条件的 agent。"
@@ -1238,15 +1435,19 @@ msgstr "没有符合搜索条件的 agent。"
 msgid "No aliases configured."
 msgstr "尚未配置别名。"
 
-#: src/features/config/ConfigPanel.tsx:202
+#: src/features/config/config-categories.ts:122
 msgid "No channel sections"
 msgstr "没有渠道区域"
 
-#: src/features/chat/AgentSetupWizard.tsx:426
-msgid "No channels will be created."
-msgstr "不会创建渠道。"
+#: src/features/chat/AgentSetupWizard.tsx:698
+msgid "No channels will be created or attached."
+msgstr ""
 
-#: src/features/integrations/IntegrationsPanel.tsx:269
+#: src/features/chat/AgentSetupWizard.tsx:426
+#~ msgid "No channels will be created."
+#~ msgstr "不会创建渠道。"
+
+#: src/features/integrations/IntegrationsPanel.tsx:271
 msgid "No configured aliases reported for this channel type."
 msgstr "此渠道类型未报告已配置别名。"
 
@@ -1258,27 +1459,27 @@ msgstr "无连接"
 msgid "No editable memory fields"
 msgstr "没有可编辑的记忆字段"
 
-#: src/app/workspace-shell/SettingsPage.tsx:264
+#: src/app/workspace-shell/SettingsPage.tsx:288
 msgid "No folder open"
 msgstr "未打开文件夹"
 
-#: src/app/AddConnectionDialog.tsx:275
+#: src/app/AddConnectionDialog.tsx:279
 msgid "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
 msgstr "当前端口 {DEFAULT_PORT} 上没有运行中的网关。没关系，如果本地已安装 zeroclaw 二进制文件，保存此连接后工作区会自动启动它。"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:288
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:287
 msgid "No general sessions yet."
 msgstr "还没有通用会话。"
 
 #: src/features/chat/ChatPanel.tsx:493
-msgid "no git status"
-msgstr "无 Git 状态"
+#~ msgid "no git status"
+#~ msgstr "无 Git 状态"
 
 #: src/features/chat/ChatPanel.tsx:486
-msgid "No git status"
-msgstr "无 Git 状态"
+#~ msgid "No git status"
+#~ msgstr "无 Git 状态"
 
-#: src/features/integrations/IntegrationsPanel.tsx:136
+#: src/features/integrations/IntegrationsPanel.tsx:138
 msgid "No integrations match your filters."
 msgstr "没有符合筛选条件的集成。"
 
@@ -1290,7 +1491,7 @@ msgstr "没有条目。"
 msgid "No local zeroclaw installed"
 msgstr "未安装本地 zeroclaw"
 
-#: src/features/logs/LogsPanel.tsx:48
+#: src/features/logs/LogsPanel.tsx:50
 msgid "No log lines."
 msgstr "没有日志行。"
 
@@ -1298,21 +1499,24 @@ msgstr "没有日志行。"
 msgid "No memory"
 msgstr "无记忆"
 
-#: src/features/config/ConfigPanel.tsx:196
+#: src/features/config/config-categories.ts:116
 msgid "No model provider sections"
 msgstr "没有模型 provider 区域"
 
-#: src/features/chat/AgentSetupWizard.tsx:504
-msgid "No peer groups will be created."
-msgstr "不会创建 peer group。"
+#: src/features/chat/agent-setup-wizard/components.tsx:262
+msgid "No options"
+msgstr ""
 
-#: src/features/chat/ChatPanel.tsx:479
-#: src/features/chat/ChatPanel.tsx:561
-#: src/features/chat/ChatPanel.tsx:656
+#: src/features/chat/AgentSetupWizard.tsx:504
+#~ msgid "No peer groups will be created."
+#~ msgstr "不会创建 peer group。"
+
+#: src/features/chat/ChatComposer.tsx:198
+#: src/features/chat/ChatPanel.tsx:494
 msgid "No project"
 msgstr "无项目"
 
-#: src/features/config/ConfigPanel.tsx:200
+#: src/features/config/config-categories.ts:120
 msgid "No runtime or safety sections"
 msgstr "没有运行时或安全区域"
 
@@ -1324,32 +1528,54 @@ msgstr "还没有保存的连接。"
 msgid "No setup doctor"
 msgstr "无设置诊断"
 
-#: src/features/tools/ToolsPanel.tsx:83
+#: src/features/tools/ToolsPanel.tsx:85
 msgid "No tools match your search."
 msgstr "没有符合搜索条件的工具。"
 
-#: src/features/config/ConfigPanel.tsx:204
+#: src/features/config/config-categories.ts:124
 msgid "No tools or skills sections"
 msgstr "没有工具或 skills 区域"
 
-#: src/app/AddConnectionDialog.tsx:368
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:117
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:171
+msgid "No workspace selected for this runtime."
+msgstr ""
+
+#: src/app/AddConnectionDialog.tsx:372
 msgid "No zeroclaw binary found. Run this in your terminal:"
 msgstr "未找到 zeroclaw 二进制文件。请在终端运行："
 
 #: src/app/ConnectionPicker.tsx:172
-#: src/features/chat/AgentSetupWizard.tsx:360
+#: src/features/chat/AgentSetupWizard.tsx:241
 msgid "none"
 msgstr "无"
 
-#: src/features/config/ConfigPanel.tsx:795
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:253
 msgid "Not configured yet"
 msgstr "尚未配置"
 
-#: src/app/workspace-shell/SettingsPage.tsx:311
+#: src/features/chat/AgentSetupWizard.tsx:244
+msgid "Not named"
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:242
+msgid "Not reviewed"
+msgstr ""
+
+#: src/features/chat/AgentSetupWizard.tsx:228
+#: src/features/chat/AgentSetupWizard.tsx:231
+#: src/features/chat/AgentSetupWizard.tsx:233
+#: src/features/chat/AgentSetupWizard.tsx:234
+#: src/features/chat/AgentSetupWizard.tsx:235
+#: src/features/chat/AgentSetupWizard.tsx:799
+msgid "Not selected"
+msgstr ""
+
+#: src/app/workspace-shell/SettingsPage.tsx:366
 msgid "Notifications"
 msgstr "通知"
 
-#: src/app/workspace-shell/SettingsPage.tsx:314
+#: src/app/workspace-shell/SettingsPage.tsx:367
 msgid "Notify on hidden-window approvals and completed turns."
 msgstr "窗口隐藏时，对批准请求和已完成的轮次发送通知。"
 
@@ -1358,7 +1584,7 @@ msgid "Off"
 msgstr "关闭"
 
 #: src/app/ConnectionPicker.tsx:307
-#: src/app/workspace-shell/SettingsPage.tsx:247
+#: src/app/workspace-shell/SettingsPage.tsx:409
 msgid "Offline"
 msgstr "离线"
 
@@ -1367,74 +1593,84 @@ msgid "On"
 msgstr "开启"
 
 #: src/app/ConnectionPicker.tsx:307
-#: src/app/workspace-shell/SettingsPage.tsx:247
-#: src/features/chat/ChatPanel.tsx:678
+#: src/app/workspace-shell/SettingsPage.tsx:409
 msgid "Online"
 msgstr "在线"
 
-#: src/features/config/ConfigPanel.tsx:1263
+#: src/features/config/overview/ConfigOverview.tsx:242
 msgid "open"
 msgstr "打开"
+
+#: src/features/chat/SessionControls.tsx:41
+#: src/features/chat/SessionControls.tsx:42
+msgid "Open agent config"
+msgstr ""
+
+#: src/features/chat/SessionControls.tsx:51
+#: src/features/chat/SessionControls.tsx:52
+msgid "Open agent workspace"
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:980
 msgid "Open configured entry"
 msgstr "打开已配置条目"
 
-#: src/features/config/ConfigPanel.tsx:1252
+#: src/features/config/overview/ConfigOverview.tsx:231
 msgid "Open console"
 msgstr "打开控制台"
 
-#: src/features/config/ConfigPanel.tsx:860
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:318
 #: src/features/memory/MemoryPanel.tsx:1048
 msgid "Open fields"
 msgstr "打开字段"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:169
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:180
-#: src/features/chat/ChatPanel.tsx:565
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:163
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:178
+#: src/features/chat/ChatComposer.tsx:202
 msgid "Open project"
 msgstr "打开项目"
 
-#: src/features/chat/ChatPanel.tsx:790
+#: src/features/chat/ChatPanel.tsx:645
 msgid "Open Project"
 msgstr "打开项目"
 
-#: src/features/chat/ChatPanel.tsx:605
+#: src/features/chat/ChatComposer.tsx:242
 msgid "Open project..."
 msgstr "打开项目..."
 
 #. placeholder {0}: entryNoun(section)
-#: src/features/config/ConfigPanel.tsx:1729
+#: src/features/config/picker/PickerSection.tsx:382
 msgid "Opening {0}..."
 msgstr "正在打开 {0}..."
 
-#: src/features/config/ConfigPanel.tsx:1738
+#: src/features/config/picker/PickerSection.tsx:391
 msgid "Opening fields..."
 msgstr "正在打开字段..."
 
-#: src/app/workspace-shell/SettingsPage.tsx:162
-#: src/features/config/ConfigPanel.tsx:240
+#: src/app/workspace-shell/SettingsPage.tsx:145
+#: src/features/config/config-categories.ts:160
 msgid "Operations"
 msgstr "运维"
 
-#: src/features/chat/AgentSetupWizard.tsx:474
+#: src/features/chat/AgentSetupWizard.tsx:247
+#: src/features/chat/AgentSetupWizard.tsx:791
 msgid "optional"
 msgstr "可选"
 
-#: src/features/config/ConfigPanel.tsx:242
-#: src/features/integrations/IntegrationsPanel.tsx:397
+#: src/features/config/config-categories.ts:162
+#: src/features/integrations/IntegrationsPanel.tsx:399
 msgid "Other"
 msgstr "其他"
 
-#: src/features/config/ConfigPanel.tsx:684
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:140
 msgid "Overview"
 msgstr "概览"
 
-#: src/app/AddConnectionDialog.tsx:283
+#: src/app/AddConnectionDialog.tsx:287
 msgid "Pairing is disabled — no auth needed."
 msgstr "配对已禁用，无需认证。"
 
-#: src/app/AddConnectionDialog.tsx:282
+#: src/app/AddConnectionDialog.tsx:286
 msgid "Pairing is required — workspace will auto-pair after you save."
 msgstr "需要配对，保存后工作区会自动配对。"
 
@@ -1446,37 +1682,41 @@ msgstr "正在配对…"
 msgid "partial"
 msgstr "部分"
 
-#: src/features/chat/ChatPanel.tsx:622
+#: src/features/chat/ChatComposer.tsx:140
 msgid "Paste clipboard into message"
 msgstr "将剪贴板粘贴到消息"
 
-#: src/features/chat/ChatPanel.tsx:863
+#: src/features/chat/AttachmentTray.tsx:57
 msgid "path"
 msgstr "路径"
 
-#: src/features/logs/LogsPanel.tsx:29
+#: src/features/logs/LogsPanel.tsx:31
 msgid "Pause"
 msgstr "暂停"
 
-#: src/features/chat/AgentSetupWizard.tsx:482
+#: src/features/chat/AgentSetupWizard.tsx:867
 msgid "Peer groups"
 msgstr "Peer group"
 
+#: src/features/chat/AgentSetupWizard.tsx:887
+msgid "Peer groups are optional and will not block agent creation."
+msgstr ""
+
 #: src/app/ConnectionPicker.tsx:252
 #: src/app/ConnectionPicker.tsx:319
-#: src/app/workspace-shell/SettingsPage.tsx:250
+#: src/app/workspace-shell/SettingsPage.tsx:256
 msgid "pending tunnel"
 msgstr "隧道待建立"
 
 #: src/features/chat/AgentSetupWizard.tsx:358
-msgid "Personality file"
-msgstr "人格文件"
+#~ msgid "Personality file"
+#~ msgstr "人格文件"
 
-#: src/features/chat/AgentSetupWizard.tsx:562
+#: src/features/chat/AgentSetupWizard.tsx:826
 msgid "Personality files"
 msgstr "人格文件"
 
-#: src/features/config/ConfigPanel.tsx:1749
+#: src/features/config/picker/PickerSection.tsx:402
 msgid "Pick a choice"
 msgstr "选择一项"
 
@@ -1484,7 +1724,7 @@ msgstr "选择一项"
 msgid "Pick how you want to reach a ZeroClaw gateway. You can have any number of connections — local, remote, or both. Local install is optional."
 msgstr "选择你希望如何访问 ZeroClaw 网关。你可以创建任意数量的本地或远程连接，也可以两者都用。本地安装是可选的。"
 
-#: src/features/config/ConfigPanel.tsx:858
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:316
 msgid "Pick where local skill markdown and community bundles should live."
 msgstr "选择本地 skill markdown 和社区 bundle 的存放位置。"
 
@@ -1492,7 +1732,7 @@ msgstr "选择本地 skill markdown 和社区 bundle 的存放位置。"
 msgid "Pick where this workspace should save memories."
 msgstr "选择此 workspace 保存记忆的位置。"
 
-#: src/features/integrations/IntegrationsPanel.tsx:395
+#: src/features/integrations/IntegrationsPanel.tsx:397
 msgid "Platform"
 msgstr "平台"
 
@@ -1500,15 +1740,23 @@ msgstr "平台"
 msgid "Postgres"
 msgstr "Postgres"
 
-#: src/features/chat/ChatPanel.tsx:1037
+#: src/app/workspace-shell/SettingsPage.tsx:303
+msgid "Preferences"
+msgstr ""
+
+#: src/features/chat/agent-setup-wizard/components.tsx:260
+msgid "Preset"
+msgstr ""
+
+#: src/features/chat/MessageList.tsx:225
 msgid "Preview"
 msgstr "预览"
 
-#: src/features/chat/ChatPanel.tsx:871
+#: src/features/chat/AttachmentTray.tsx:66
 msgid "Preview file"
 msgstr "预览文件"
 
-#: src/features/chat/ChatPanel.tsx:1198
+#: src/features/chat/MessageList.tsx:324
 msgid "Preview truncated to 400 lines."
 msgstr "预览已截断为 400 行。"
 
@@ -1516,35 +1764,35 @@ msgstr "预览已截断为 400 行。"
 msgid "probe pending"
 msgstr "探测等待中"
 
-#: src/app/AddConnectionDialog.tsx:270
+#: src/app/AddConnectionDialog.tsx:274
 msgid "Probing localhost:{DEFAULT_PORT}…"
 msgstr "正在探测 localhost:{DEFAULT_PORT}…"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:163
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:157
 msgid "Project"
 msgstr "项目"
 
 #: src/features/chat/ChatPanel.tsx:656
-msgid "Project:"
-msgstr "项目："
+#~ msgid "Project:"
+#~ msgstr "项目："
 
-#: src/features/chat/ChatPanel.tsx:565
+#: src/features/chat/ChatComposer.tsx:202
 msgid "Project: {workspaceName}"
 msgstr "项目：{workspaceName}"
 
-#: src/features/cron/CronPanel.tsx:19
+#: src/features/cron/CronPanel.tsx:21
 msgid "Prompt"
 msgstr "提示词"
 
-#: src/features/chat/AgentSetupWizard.tsx:304
+#: src/features/chat/AgentSetupWizard.tsx:570
 msgid "Provider"
 msgstr "Provider"
 
-#: src/features/chat/AgentSetupWizard.tsx:314
+#: src/features/chat/AgentSetupWizard.tsx:601
 msgid "Provider alias"
 msgstr "Provider 别名"
 
-#: src/features/chat/AgentSetupWizard.tsx:305
+#: src/features/chat/AgentSetupWizard.tsx:592
 msgid "Provider type"
 msgstr "Provider 类型"
 
@@ -1556,27 +1804,31 @@ msgstr "Python Skills"
 msgid "Qdrant"
 msgstr "Qdrant"
 
-#: src/features/chat/AgentSetupWizard.tsx:290
-msgid "Quickstart Builder"
-msgstr "快速开始构建器"
+#: src/app/workspace-shell/SettingsPage.tsx:349
+msgid "Quickly bring ZeroClaw Workspace to the front."
+msgstr ""
 
-#: src/features/config/ConfigPanel.tsx:887
+#: src/features/chat/AgentSetupWizard.tsx:290
+#~ msgid "Quickstart Builder"
+#~ msgstr "快速开始构建器"
+
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:345
 msgid "raw config"
 msgstr "原始配置"
 
-#: src/features/chat/ChatPanel.tsx:977
+#: src/features/chat/MessageList.tsx:157
 msgid "raw details"
 msgstr "原始详情"
 
-#: src/features/integrations/IntegrationsPanel.tsx:283
+#: src/features/integrations/IntegrationsPanel.tsx:285
 msgid "Raw integration payload"
 msgstr "原始集成 payload"
 
-#: src/features/config/ConfigPanel.tsx:1111
+#: src/features/config/overview/ConfigOverview.tsx:90
 msgid "Raw paths"
 msgstr "原始路径"
 
-#: src/features/tools/ToolsPanel.tsx:193
+#: src/features/tools/ToolsPanel.tsx:195
 msgid "Raw payload"
 msgstr "原始 payload"
 
@@ -1593,22 +1845,23 @@ msgid "Readable file-backed memory."
 msgstr "可读的文件型记忆。"
 
 #. placeholder {0}: channel.readiness
-#: src/features/integrations/IntegrationsPanel.tsx:315
+#: src/features/integrations/IntegrationsPanel.tsx:317
 msgid "readiness {0}"
 msgstr "就绪状态 {0}"
 
-#: src/features/config/ConfigPanel.tsx:1045
-#: src/features/config/ConfigPanel.tsx:1263
+#: src/features/config/overview/ConfigOverview.tsx:242
+#: src/features/config/sections/section-status.tsx:8
 #: src/features/memory/MemoryPanel.tsx:1511
 msgid "ready"
 msgstr "就绪"
 
-#: src/features/config/ConfigPanel.tsx:462
-#: src/features/config/ConfigPanel.tsx:1122
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:407
+#: src/features/config/ConfigPanel.tsx:207
+#: src/features/config/overview/ConfigOverview.tsx:101
 msgid "Ready"
 msgstr "就绪"
 
-#: src/features/config/ConfigPanel.tsx:790
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:248
 msgid "Ready to use"
 msgstr "可直接使用"
 
@@ -1624,7 +1877,7 @@ msgstr "推荐"
 msgid "Recommended config"
 msgstr "推荐配置"
 
-#: src/features/config/ConfigPanel.tsx:839
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:297
 msgid "Recommended next steps"
 msgstr "推荐下一步"
 
@@ -1633,14 +1886,15 @@ msgid "Recommended. Saves memory on this device and works out of the box."
 msgstr "推荐。将记忆保存在此设备上，开箱即用。"
 
 #: src/features/_shared/DataPanel.tsx:35
-#: src/features/config/ConfigPanel.tsx:488
-#: src/features/config/ConfigPanel.tsx:647
-#: src/features/config/ConfigPanel.tsx:1103
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:328
+#: src/features/config/ConfigPanel.tsx:220
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:103
+#: src/features/config/overview/ConfigOverview.tsx:82
 #: src/features/config/SetupDoctorTab.tsx:249
-#: src/features/integrations/IntegrationsPanel.tsx:116
-#: src/features/logs/LogsPanel.tsx:41
+#: src/features/integrations/IntegrationsPanel.tsx:118
+#: src/features/logs/LogsPanel.tsx:43
 #: src/features/memory/MemoryPanel.tsx:289
-#: src/features/tools/ToolsPanel.tsx:63
+#: src/features/tools/ToolsPanel.tsx:65
 msgid "Refresh"
 msgstr "刷新"
 
@@ -1648,19 +1902,23 @@ msgstr "刷新"
 msgid "Refresh {what}"
 msgstr "刷新 {what}"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:280
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:279
 msgid "Refresh sessions"
 msgstr "刷新会话"
 
-#: src/features/chat/AgentSetupWizard.tsx:263
+#: src/features/chat/AgentSetupWizard.tsx:484
 msgid "Refreshing..."
 msgstr "正在刷新..."
 
-#: src/features/chat/ChatPanel.tsx:1062
+#: src/app/workspace-shell/SettingsPage.tsx:390
+msgid "Registered"
+msgstr ""
+
+#: src/features/chat/MessageList.tsx:265
 msgid "Reject"
 msgstr "拒绝"
 
-#: src/app/AddConnectionDialog.tsx:482
+#: src/app/AddConnectionDialog.tsx:486
 #: src/app/ConnectionPicker.tsx:51
 msgid "Remote"
 msgstr "远程"
@@ -1669,31 +1927,36 @@ msgstr "远程"
 msgid "Remote database"
 msgstr "远程数据库"
 
-#: src/app/AddConnectionDialog.tsx:207
+#: src/app/AddConnectionDialog.tsx:211
 msgid "Remote gateway port"
 msgstr "远程网关端口"
 
-#: src/features/chat/ChatPanel.tsx:725
+#: src/features/chat/ChatPanel.tsx:323
+#: src/features/chat/ChatPanel.tsx:579
 msgid "Remote working directory"
 msgstr "远程工作目录"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:360
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:364
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:412
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:416
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:359
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:363
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:411
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:415
 msgid "Rename session"
 msgstr "重命名会话"
 
-#. placeholder {0}: f.label
-#: src/features/chat/AgentSetupWizard.tsx:145
+#. placeholder {0}: field.label
+#: src/features/chat/AgentSetupWizard.tsx:338
 msgid "Required field missing: {0}"
 msgstr "缺少必填字段：{0}"
 
-#: src/features/chat/ChatPanel.tsx:1020
+#: src/features/chat/AgentSetupWizard.tsx:963
+msgid "required steps ready"
+msgstr ""
+
+#: src/features/chat/MessageList.tsx:208
 msgid "requires approval before the agent can continue."
 msgstr "需要批准后 agent 才能继续。"
 
-#: src/features/logs/LogsPanel.tsx:29
+#: src/features/logs/LogsPanel.tsx:31
 msgid "Resume"
 msgstr "继续"
 
@@ -1701,19 +1964,23 @@ msgstr "继续"
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/chat/ChatPanel.tsx:498
-msgid "Review current changes"
-msgstr "审查当前变更"
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:422
+msgid "Revert"
+msgstr ""
 
-#: src/features/config/ConfigPanel.tsx:790
+#: src/features/chat/ChatPanel.tsx:498
+#~ msgid "Review current changes"
+#~ msgstr "审查当前变更"
+
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:248
 msgid "Review setup"
 msgstr "检查设置"
 
-#: src/features/config/ConfigPanel.tsx:852
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:310
 msgid "Review skills"
 msgstr "检查 skills"
 
-#: src/features/chat/AgentSetupWizard.tsx:375
+#: src/features/chat/AgentSetupWizard.tsx:641
 msgid "Risk profile"
 msgstr "风险配置"
 
@@ -1726,15 +1993,15 @@ msgid "Run"
 msgstr "运行"
 
 #: src/features/chat/ChatPanel.tsx:501
-msgid "Run diagnostics"
-msgstr "运行诊断"
+#~ msgid "Run diagnostics"
+#~ msgstr "运行诊断"
 
-#: src/features/config/ConfigPanel.tsx:831
-#: src/features/doctor/DoctorPanel.tsx:32
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:289
+#: src/features/doctor/DoctorPanel.tsx:34
 msgid "Run doctor"
 msgstr "运行诊断"
 
-#: src/features/config/ConfigPanel.tsx:866
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:324
 msgid "Run the local setup check used by Python-backed skills."
 msgstr "运行 Python-backed skills 使用的本地设置检查。"
 
@@ -1750,20 +2017,21 @@ msgstr "运行此命令？\n"
 msgid "Running local setup checks..."
 msgstr "正在运行本地设置检查..."
 
-#: src/features/chat/AgentSetupWizard.tsx:371
+#: src/app/ConnectionPicker.tsx:204
 msgid "Runtime"
 msgstr "运行时"
 
 #: src/app/workspace-shell/settings-sections.ts:34
-#: src/features/config/ConfigPanel.tsx:166
+#: src/features/config/config-categories.ts:86
 msgid "Runtime & Safety"
 msgstr "运行时和安全"
 
-#: src/features/chat/AgentSetupWizard.tsx:384
+#: src/features/chat/AgentSetupWizard.tsx:653
 msgid "Runtime profile"
 msgstr "运行时配置"
 
 #: src/app/ConnectionPicker.tsx:233
+#: src/app/workspace-shell/SettingsPage.tsx:293
 msgid "Runtimes"
 msgstr "运行时"
 
@@ -1771,39 +2039,42 @@ msgstr "运行时"
 msgid "Sandbox Backend"
 msgstr "Sandbox 后端"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:411
 #: src/features/memory/MemoryPanel.tsx:1227
 msgid "Save"
 msgstr "保存"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:125
 #: src/features/memory/MemoryPanel.tsx:1227
 msgid "Saved"
 msgstr "已保存"
 
 #: src/app/workspace-shell/SettingsPage.tsx:266
-msgid "Saved runtimes"
-msgstr "已保存运行时"
+#~ msgid "Saved runtimes"
+#~ msgstr "已保存运行时"
 
 #: src/features/memory/MemoryPanel.tsx:419
 msgid "Saving"
 msgstr "正在保存"
 
-#: src/features/cron/CronPanel.tsx:18
+#: src/features/cron/CronPanel.tsx:20
 msgid "Schedule"
 msgstr "计划"
 
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:258
 #: src/features/memory/MemoryPanel.tsx:493
 msgid "Search agents..."
 msgstr "搜索 agent..."
 
-#: src/features/integrations/IntegrationsPanel.tsx:90
+#: src/features/integrations/IntegrationsPanel.tsx:92
 msgid "Search integrations..."
 msgstr "搜索集成..."
 
-#: src/features/config/ConfigPanel.tsx:454
+#: src/features/config/ConfigPanel.tsx:200
 msgid "Search sections..."
 msgstr "搜索区域..."
 
-#: src/features/tools/ToolsPanel.tsx:51
+#: src/features/tools/ToolsPanel.tsx:53
 msgid "Search tools..."
 msgstr "搜索工具..."
 
@@ -1820,33 +2091,38 @@ msgid "Select"
 msgstr "选择"
 
 #. placeholder {0}: pickerSelectionOption(section)
-#: src/features/config/ConfigPanel.tsx:1657
+#: src/features/config/picker/PickerSection.tsx:310
 msgid "Select {0}"
 msgstr "选择 {0}"
 
-#: src/features/config/ConfigPanel.tsx:1391
+#: src/features/config/sections/SectionExplorer.tsx:31
 msgid "Select a config section"
 msgstr "选择配置区域"
 
-#: src/app/App.tsx:110
+#: src/app/App.tsx:141
 msgid "Select a connection above, or add one."
 msgstr "请选择上方连接，或添加一个新连接。"
 
-#: src/features/tools/ToolsPanel.tsx:126
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:404
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:611
+msgid "Select a file"
+msgstr ""
+
+#: src/features/tools/ToolsPanel.tsx:128
 msgid "Select a tool"
 msgstr "选择工具"
 
-#: src/features/integrations/IntegrationsPanel.tsx:204
+#: src/features/integrations/IntegrationsPanel.tsx:206
 msgid "Select an integration"
 msgstr "选择集成"
 
-#: src/features/chat/ChatPanel.tsx:634
+#: src/features/chat/ChatComposer.tsx:161
 msgid "Send"
 msgstr "发送"
 
 #: src/features/chat/ChatPanel.tsx:717
-msgid "Session:"
-msgstr "会话："
+#~ msgid "Session:"
+#~ msgstr "会话："
 
 #: src/features/memory/MemoryPanel.tsx:709
 msgid "Set up"
@@ -1857,7 +2133,7 @@ msgstr "设置"
 msgid "Set up {0} memory."
 msgstr "设置 {0} 记忆。"
 
-#: src/app/AddConnectionDialog.tsx:451
+#: src/app/AddConnectionDialog.tsx:455
 #: src/app/WelcomeScreen.tsx:44
 msgid "Set up a new local zeroclaw"
 msgstr "设置新的本地 zeroclaw"
@@ -1866,7 +2142,7 @@ msgstr "设置新的本地 zeroclaw"
 msgid "Set up and use"
 msgstr "设置并使用"
 
-#: src/app/workspace-shell/WorkspaceSidebar.tsx:102
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:99
 msgid "Settings"
 msgstr "设置"
 
@@ -1875,7 +2151,7 @@ msgstr "设置"
 msgid "Setup Center"
 msgstr "设置中心"
 
-#: src/features/chat/AgentSetupWizard.tsx:275
+#: src/features/chat/AgentSetupWizard.tsx:498
 msgid "Setup unavailable"
 msgstr "设置不可用"
 
@@ -1883,18 +2159,22 @@ msgstr "设置不可用"
 msgid "Shared relational memory for server runtimes."
 msgstr "适合服务器运行时的共享关系型记忆。"
 
-#: src/features/config/ConfigPanel.tsx:794
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:252
 msgid "Skill bundles"
 msgstr "Skill bundles"
 
-#: src/features/config/ConfigPanel.tsx:818
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:276
 msgid "Skill Bundles"
 msgstr "Skill Bundles"
 
-#: src/features/config/ConfigPanel.tsx:789
-#: src/features/config/ConfigPanel.tsx:808
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:247
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:266
 msgid "Skills"
 msgstr "Skills"
+
+#: src/features/chat/AgentSetupWizard.tsx:841
+msgid "Skip"
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:1556
 msgid "SQLite"
@@ -1904,47 +2184,58 @@ msgstr "SQLite"
 msgid "SSH"
 msgstr "SSH"
 
-#: src/app/AddConnectionDialog.tsx:187
+#: src/app/AddConnectionDialog.tsx:191
 msgid "SSH host"
 msgstr "SSH 主机"
 
-#: src/app/AddConnectionDialog.tsx:198
+#: src/app/AddConnectionDialog.tsx:202
 msgid "SSH port (optional)"
 msgstr "SSH 端口（可选）"
 
-#: src/app/AddConnectionDialog.tsx:151
+#: src/app/AddConnectionDialog.tsx:155
 msgid "SSH tunnel"
 msgstr "SSH 隧道"
 
-#: src/app/AddConnectionDialog.tsx:178
+#: src/app/AddConnectionDialog.tsx:182
 msgid "SSH user"
 msgstr "SSH 用户"
 
-#: src/features/config/ConfigPanel.tsx:841
+#: src/features/chat/AgentSetupWizard.tsx:840
+msgid "Start from scratch"
+msgstr ""
+
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:299
 msgid "Start here if you are setting up tools and skills for the first time."
 msgstr "如果你是第一次设置工具和 skills，可以从这里开始。"
 
-#: src/features/chat/ChatPanel.tsx:537
+#: src/features/chat/ChatComposer.tsx:104
 msgid "Start this session..."
 msgstr "开始这个会话..."
+
+#: src/features/chat/AgentSetupWizard.tsx:839
+msgid "Start with template"
+msgstr ""
 
 #: src/app/ConnectionPicker.tsx:66
 msgid "Starting gateway…"
 msgstr "正在启动网关…"
 
-#: src/app/workspace-shell/SettingsPage.tsx:247
-#: src/features/integrations/IntegrationsPanel.tsx:255
+#: src/features/integrations/IntegrationsPanel.tsx:257
 msgid "Status"
 msgstr "状态"
 
 #. placeholder {0}: channel.status
-#: src/features/integrations/IntegrationsPanel.tsx:317
+#: src/features/integrations/IntegrationsPanel.tsx:319
 msgid "status {0}"
 msgstr "状态 {0}"
 
-#: src/features/config/ConfigPanel.tsx:238
+#: src/features/config/config-categories.ts:158
 msgid "Storage"
 msgstr "存储"
+
+#: src/app/workspace-shell/SettingsPage.tsx:306
+msgid "Stored locally on this device."
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:1608
 msgid "Stores memory in readable files that are easy to inspect."
@@ -1954,15 +2245,19 @@ msgstr "将记忆存储在易于查看的可读文件中。"
 msgid "Structured graph-oriented memory."
 msgstr "结构化图记忆。"
 
-#: src/features/chat/ChatPanel.tsx:1030
+#: src/features/chat/MessageList.tsx:218
 msgid "Summary"
 msgstr "摘要"
+
+#: src/app/workspace-shell/SettingsPage.tsx:331
+msgid "Switch between the dark workspace and a lighter workspace surface."
+msgstr "在深色工作区和更明亮的工作区界面之间切换。"
 
 #: src/features/memory/MemoryPanel.tsx:1605
 msgid "Syncs with the local lucid-memory CLI for structured, graph-oriented memory."
 msgstr "与本地 lucid-memory CLI 同步，用于结构化图记忆。"
 
-#: src/features/chat/AgentSetupWizard.tsx:349
+#: src/features/chat/AgentSetupWizard.tsx:816
 msgid "System prompt"
 msgstr "系统提示词"
 
@@ -1978,7 +2273,11 @@ msgstr "网关未报告记忆配置区域。"
 msgid "The gateway did not report editable fields for this memory target."
 msgstr "网关未报告此记忆目标下的可编辑字段。"
 
-#: src/features/chat/ChatPanel.tsx:1114
+#: src/app/workspace-shell/SettingsPage.tsx:330
+msgid "Theme"
+msgstr "主题"
+
+#: src/features/chat/MessageList.tsx:80
 msgid "thinking"
 msgstr "思考"
 
@@ -1990,62 +2289,62 @@ msgstr "此 agent"
 msgid "This config prefix does not map to a local setup capability."
 msgstr "此配置前缀未映射到本地设置能力。"
 
-#: src/features/config/ConfigPanel.tsx:213
+#: src/features/config/config-categories.ts:133
 msgid "This gateway did not report agent or peer group config sections."
 msgstr "此网关未报告 agent 或 peer group 配置区域。"
 
-#: src/features/config/ConfigPanel.tsx:217
+#: src/features/config/config-categories.ts:137
 msgid "This gateway did not report channel config sections."
 msgstr "此网关未报告渠道配置区域。"
 
-#: src/features/config/ConfigPanel.tsx:211
+#: src/features/config/config-categories.ts:131
 msgid "This gateway did not report provider config sections."
 msgstr "此网关未报告 provider 配置区域。"
 
-#: src/features/config/ConfigPanel.tsx:215
+#: src/features/config/config-categories.ts:135
 msgid "This gateway did not report risk profile or runtime profile sections."
 msgstr "此网关未报告风险配置或运行时配置区域。"
 
-#: src/features/config/ConfigPanel.tsx:219
+#: src/features/config/config-categories.ts:139
 msgid "This gateway did not report tools, skills, bundles, or MCP sections."
 msgstr "此网关未报告工具、skills、bundles 或 MCP 区域。"
 
-#: src/features/chat/AgentSetupWizard.tsx:465
+#: src/features/chat/AgentSetupWizard.tsx:780
 msgid "Token"
 msgstr "Token"
 
-#: src/features/chat/ChatPanel.tsx:1019
+#: src/features/chat/MessageList.tsx:207
 msgid "Tool"
 msgstr "工具"
 
-#: src/features/chat/ChatPanel.tsx:1043
+#: src/features/chat/MessageList.tsx:231
 msgid "tool input"
 msgstr "工具输入"
 
-#: src/features/config/ConfigPanel.tsx:232
+#: src/features/config/config-categories.ts:152
 msgid "Tools"
 msgstr "工具"
 
 #: src/app/workspace-shell/settings-sections.ts:37
-#: src/features/config/ConfigPanel.tsx:170
+#: src/features/config/config-categories.ts:90
 msgid "Tools & Skills"
 msgstr "工具和技能"
 
-#: src/features/integrations/IntegrationsPanel.tsx:393
+#: src/features/integrations/IntegrationsPanel.tsx:395
 msgid "Tools and automation"
 msgstr "工具和自动化"
 
-#: src/app/workspace-shell/SettingsPage.tsx:248
+#: src/app/workspace-shell/SettingsPage.tsx:260
 msgid "Transport"
 msgstr "传输"
 
-#: src/app/workspace-shell/SettingsPage.tsx:326
+#: src/app/workspace-shell/SettingsPage.tsx:377
 msgid "Tray / menu bar"
 msgstr "托盘 / 菜单栏"
 
 #: src/app/workspace-shell/SettingsPage.tsx:329
-msgid "Tray is available in this build; preference is stored locally."
-msgstr "此构建支持托盘；偏好设置会保存在本地。"
+#~ msgid "Tray is available in this build; preference is stored locally."
+#~ msgstr "此构建支持托盘；偏好设置会保存在本地。"
 
 #: src/app/ConnectionPicker.tsx:85
 msgid "Tunnel inactive / activate to probe"
@@ -2055,16 +2354,16 @@ msgstr "隧道未激活 / 激活后探测"
 msgid "Turn off memory"
 msgstr "关闭记忆"
 
-#: src/features/config/ConfigPanel.tsx:850
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:308
 msgid "Turn on the skills system before managing or installing skills."
 msgstr "在管理或安装 skills 前，先启用 skills 系统。"
 
-#: src/features/chat/AgentSetupWizard.tsx:439
+#: src/features/chat/AgentSetupWizard.tsx:750
 msgid "Type"
 msgstr "类型"
 
 #. placeholder {0}: channel.type
-#: src/features/integrations/IntegrationsPanel.tsx:307
+#: src/features/integrations/IntegrationsPanel.tsx:309
 msgid "type {0}"
 msgstr "类型 {0}"
 
@@ -2072,7 +2371,7 @@ msgstr "类型 {0}"
 msgid "unknown"
 msgstr "未知"
 
-#: src/features/integrations/IntegrationsPanel.tsx:403
+#: src/features/integrations/IntegrationsPanel.tsx:405
 msgid "Unknown"
 msgstr "未知"
 
@@ -2081,28 +2380,36 @@ msgid "unset"
 msgstr "未设置"
 
 #: src/app/workspace-shell/SettingsPage.tsx:250
-msgid "URL"
-msgstr "URL"
+#~ msgid "URL"
+#~ msgstr "URL"
 
 #: src/app/WelcomeScreen.tsx:40
 msgid "Use a zeroclaw binary that's already installed and (optionally) running on this machine. Auto-detected from PATH."
 msgstr "使用这台机器上已安装并可选运行中的 zeroclaw 二进制文件。会从 PATH 自动检测。"
 
+#: src/features/chat/agent-setup-wizard/components.tsx:211
+msgid "Use existing"
+msgstr ""
+
 #: src/features/memory/MemoryPanel.tsx:706
 msgid "Use for {agentLabel}"
 msgstr "用于 {agentLabel}"
 
-#: src/features/config/ConfigPanel.tsx:809
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:267
 msgid "Use guided workflows for PDF, images, docs, code tasks, and other repeatable work."
 msgstr "使用引导式工作流处理 PDF、图片、文档、代码任务和其他可重复工作。"
 
-#: src/features/config/ConfigPanel.tsx:890
+#: src/features/config/overview/ConfigCategoryWorkspace.tsx:348
 msgid "Use this when you know the exact config path you want to inspect or edit."
 msgstr "当你知道要查看或编辑的精确配置路径时使用此入口。"
 
 #: src/features/memory/MemoryPanel.tsx:1078
 msgid "Used by"
 msgstr "使用方"
+
+#: src/app/workspace-shell/SettingsPage.tsx:389
+msgid "Used by zeroclaw:// links from the operating system."
+msgstr ""
 
 #: src/features/memory/MemoryPanel.tsx:1610
 msgid "Uses a shared database for deployed or team runtimes."
@@ -2112,16 +2419,16 @@ msgstr "使用共享数据库，适合部署或团队运行时。"
 msgid "Uses vector search for semantic memory retrieval."
 msgstr "使用向量搜索进行语义记忆检索。"
 
-#: src/app/AddConnectionDialog.tsx:217
+#: src/app/AddConnectionDialog.tsx:221
 msgid "Uses your local ssh, ssh-agent, and ~/.ssh/config. The workspace opens an ssh -L port forward."
 msgstr "使用本地 ssh、ssh-agent 和 ~/.ssh/config。工作区会打开一个 ssh -L 端口转发。"
 
-#: src/features/chat/AgentSetupWizard.tsx:633
+#: src/features/chat/AgentSetupWizard.tsx:988
 msgid "Validating..."
 msgstr "正在验证..."
 
 #. placeholder {0}: errorMessage(e)
-#: src/features/chat/AgentSetupWizard.tsx:202
+#: src/features/chat/AgentSetupWizard.tsx:440
 msgid "Validation failed: {0}"
 msgstr "验证失败：{0}"
 
@@ -2137,7 +2444,7 @@ msgstr "用于语义检索的向量记忆。"
 msgid "Waiting for health…"
 msgstr "正在等待健康检查…"
 
-#: src/features/chat/AgentSetupWizard.tsx:259
+#: src/features/chat/AgentSetupWizard.tsx:480
 msgid "Waiting for the gateway to restart and load the new agent."
 msgstr "正在等待网关重启并加载新的 agent。"
 
@@ -2145,19 +2452,21 @@ msgstr "正在等待网关重启并加载新的 agent。"
 msgid "Welcome to ZeroClaw Workspace"
 msgstr "欢迎使用 ZeroClaw Workspace"
 
-#: src/features/chat/ChatPanel.tsx:780
+#: src/features/chat/ChatPanel.tsx:635
 msgid "What do you want to work on in this session?"
 msgstr "这个会话中你想做什么？"
 
-#: src/app/workspace-shell/SettingsPage.tsx:261
+#: src/app/workspace-shell/SettingsPage.tsx:273
+#: src/app/workspace-shell/WorkspaceSidebar.tsx:114
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:310
 msgid "Workspace"
 msgstr "工作区"
 
 #: src/app/ConnectionPicker.tsx:204
-msgid "Workspace runtime"
-msgstr "工作区运行时"
+#~ msgid "Workspace runtime"
+#~ msgstr "工作区运行时"
 
-#: src/app/AddConnectionDialog.tsx:417
+#: src/app/AddConnectionDialog.tsx:421
 msgid "Workspace will spawn zeroclaw gateway --port {port} when this connection is active, and shut it down when the workspace exits."
 msgstr "此连接激活时，工作区会启动 zeroclaw gateway --port {port}，并在工作区退出时关闭它。"
 
@@ -2170,5 +2479,5 @@ msgid "ZeroClaw turn finished"
 msgstr "ZeroClaw 轮次已完成"
 
 #: src/app/workspace-shell/SettingsPage.tsx:338
-msgid "zeroclaw:// registered"
-msgstr "zeroclaw:// 已注册"
+#~ msgid "zeroclaw:// registered"
+#~ msgstr "zeroclaw:// 已注册"
