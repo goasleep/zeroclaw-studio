@@ -16,6 +16,8 @@
   routes.
 - Provides one workspace for chat, files, tools, memory, cron, logs, doctor,
   devices, integrations, and config.
+- Keeps chat sessions project-scoped, with markdown responses, tool-call
+  progress, approval prompts, and per-session agent/model context.
 - Adds native desktop affordances: folder picker, file watcher, global
   shortcut, clipboard, notifications, and `zeroclaw://` deep links.
 - Keeps the workspace client independent from the main `zeroclaw` repo; the
@@ -99,7 +101,10 @@ on another host, or behind an SSH/Tailscale/VPN route.
    - **Local & attached** — connect to a gateway you already started.
    - **Remote** — enter a reachable URL or configure an SSH-tunneled target.
 3. Pair the workspace with the gateway when prompted.
-4. Open a workspace folder and start a chat.
+4. Open a workspace folder, pick an agent, and start a chat.
+
+Each chat session keeps its agent context stable once messages exist. Start a
+new session when you want to switch to another agent for the same workspace.
 
 The desktop app does not require `zeroclaw` to be installed locally unless you
 want a managed external local connection.
