@@ -2,16 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import {
-  access,
-  chmod,
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  stat,
-} from "node:fs/promises";
+import { access, chmod, copyFile, mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,7 +17,9 @@ function parseArgs(argv) {
   const out = { target: null, offline: false, force: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--target") {
+    if (arg === "--") {
+      continue;
+    } else if (arg === "--target") {
       out.target = argv[++i];
     } else if (arg === "--offline") {
       out.offline = true;
@@ -113,20 +106,22 @@ async function download(url, destination) {
   await mkdir(dirname(destination), { recursive: true });
   await new Promise((resolveDownload, reject) => {
     const file = createWriteStream(destination);
-    response.body.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          file.write(Buffer.from(chunk));
-        },
-        close() {
-          file.end(resolveDownload);
-        },
-        abort(err) {
-          file.destroy(err);
-          reject(err);
-        },
-      }),
-    ).catch(reject);
+    response.body
+      .pipeTo(
+        new WritableStream({
+          write(chunk) {
+            file.write(Buffer.from(chunk));
+          },
+          close() {
+            file.end(resolveDownload);
+          },
+          abort(err) {
+            file.destroy(err);
+            reject(err);
+          },
+        }),
+      )
+      .catch(reject);
   });
 }
 
@@ -182,7 +177,9 @@ async function main() {
   const target = args.target ?? currentTarget();
   const spec = manifest.targets[target];
   if (!spec) {
-    throw new Error(`unsupported target ${target}; supported: ${Object.keys(manifest.targets).join(", ")}`);
+    throw new Error(
+      `unsupported target ${target}; supported: ${Object.keys(manifest.targets).join(", ")}`,
+    );
   }
 
   const binaryName = `zeroclaw-${target}${target.endsWith("windows-msvc") ? ".exe" : ""}`;

@@ -58,7 +58,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm fetch:zeroclaw-sidecar -- --target ${{ matrix.target }}
+      - run: pnpm fetch:zeroclaw-sidecar --target ${{ matrix.target }}
 
       - uses: tauri-apps/tauri-action@v0
         env:
