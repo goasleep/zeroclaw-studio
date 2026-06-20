@@ -15,6 +15,7 @@ import {
 import { queryKeys } from "@/api/query";
 import { apiChannels, apiIntegrations, type ChannelInfo, type IntegrationInfo } from "@/api/tools";
 import { Select } from "@/ui/select";
+import { useConnections } from "@/app/connection-context";
 
 const CATEGORY_ORDER = ["Chat", "AiModel", "ToolsAutomation", "Platform"];
 const EMPTY_INTEGRATIONS: IntegrationInfo[] = [];
@@ -22,12 +23,13 @@ const EMPTY_CHANNELS: ChannelInfo[] = [];
 
 export function IntegrationsPanel({ onConfigure }: { onConfigure?: (section: string) => void }) {
   const { t, i18n } = useLingui();
+  const { active } = useConnections();
   const integrationsQuery = useQuery({
-    queryKey: queryKeys.gateway.integrations,
+    queryKey: queryKeys.gateway.integrations(active?.id ?? null),
     queryFn: apiIntegrations,
   });
   const channelsQuery = useQuery({
-    queryKey: queryKeys.gateway.channels,
+    queryKey: queryKeys.gateway.channels(active?.id ?? null),
     queryFn: apiChannels,
   });
   const [filter, setFilter] = useState("");

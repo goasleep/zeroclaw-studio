@@ -37,13 +37,13 @@ import { useConnections } from "@/app/connection-context";
 import { apiAgentWorkspaceList } from "@/api/tools";
 import { apiConfigList, type ConfigListEntry } from "@/api/config";
 import { apiQuickstartState } from "@/api/quickstart";
+import { chatCapabilities, prepareChatAttachments, type WorkspaceGitStatus } from "@/api/tauri";
 import {
-  chatCapabilities,
-  prepareChatAttachments,
-  workspaceGitStatus,
-  workspaceReadFile,
-  type WorkspaceGitStatus,
-} from "@/api/tauri";
+  isLocalWorkspaceConnection,
+  validateWorkspaceRoot,
+  workspaceAdapterGitStatus,
+  workspaceAdapterReadFile,
+} from "@/api/workspace";
 import { readClipboardText } from "@/workspace/clipboard/clipboard";
 import { Dialog } from "@/ui/dialog";
 import { Select } from "@/ui/select";
@@ -342,6 +342,7 @@ export function ChatPanel({
   const { t } = useLingui();
   const { active } = useConnections();
   const { recentRoots, selectedFiles, addFiles, clearSelection, setRoot } = useWorkspace();
+  const connectionId = active?.id ?? null;
   const [cwd, setCwd] = useState(workspaceDir ?? "");
   const [appliedCwd, setAppliedCwd] = useState(workspaceDir ?? "");
   const [remoteEntries, setRemoteEntries] = useState<Array<{
@@ -351,10 +352,11 @@ export function ChatPanel({
   }> | null>(null);
   const [remoteBrowseAvailable, setRemoteBrowseAvailable] = useState(true);
   const chat = useChat({
+    connectionId: connectionId ?? "",
     agentAlias,
     mode,
     workspaceRoot,
-    workspaceDir: mode === "acp" ? appliedCwd || workspaceDir || null : null,
+    workspaceDir: appliedCwd || workspaceDir || workspaceRoot || null,
   });
   const { selectSession, newSession, refreshSessions } = chat;
   const [draft, setDraft] = useState("");
@@ -481,12 +483,12 @@ export function ChatPanel({
   }, [newSession, refreshSessions, selectedModelProvider]);
 
   useEffect(() => {
-    if (!workspaceRoot) {
+    if (!active || !workspaceRoot) {
       setGitStatus(null);
       return;
     }
     let cancelled = false;
-    void workspaceGitStatus(workspaceRoot)
+    void workspaceAdapterGitStatus(active, workspaceRoot)
       .then((status) => {
         if (!cancelled) setGitStatus(status);
       })
@@ -496,7 +498,7 @@ export function ChatPanel({
     return () => {
       cancelled = true;
     };
-  }, [workspaceRoot]);
+  }, [active, workspaceRoot]);
 
   async function pasteClipboard() {
     const text = await readClipboardText();
@@ -582,6 +584,18 @@ export function ChatPanel({
   }
 
   async function pickWorkspaceRoot() {
+    if (!active) return;
+    if (!isLocalWorkspaceConnection(active)) {
+      const typed = window.prompt(t`Remote working directory`, workspaceRoot ?? cwd ?? "");
+      if (!typed) return;
+      const canonical = await validateWorkspaceRoot(active, typed);
+      await setRoot(canonical);
+      onWorkspaceRoot?.(canonical);
+      setCwd(canonical);
+      setAppliedCwd(canonical);
+      setWorkspaceMenuOpen(false);
+      return;
+    }
     const chosen = await openDialog({ directory: true, multiple: false });
     if (typeof chosen !== "string") return;
     await setRoot(chosen);
@@ -600,7 +614,8 @@ export function ChatPanel({
   async function previewFile(path: string) {
     setPreview({ path, content: "", loading: true });
     try {
-      const content = await workspaceReadFile(path);
+      if (!active || !workspaceRoot) throw new Error(t`No active workspace.`);
+      const content = await workspaceAdapterReadFile(active, workspaceRoot, path);
       setPreview({
         path,
         content:
@@ -654,6 +669,26 @@ export function ChatPanel({
     }
   }
 
+  async function applyWorkingDirectory() {
+    const next = cwd.trim();
+    if (!next) {
+      setAppliedCwd("");
+      onWorkspaceRoot?.(null);
+      return;
+    }
+    if (active && !isLocalWorkspaceConnection(active)) {
+      const canonical = await validateWorkspaceRoot(active, next);
+      await setRoot(canonical);
+      onWorkspaceRoot?.(canonical);
+      setCwd(canonical);
+      setAppliedCwd(canonical);
+      return;
+    }
+    await setRoot(next);
+    onWorkspaceRoot?.(next);
+    setAppliedCwd(next);
+  }
+
   async function submit() {
     const trimmed = draft.trim();
     if (!trimmed && selectedFiles.length === 0 && clipboardAttachments.length === 0) return;
@@ -665,7 +700,7 @@ export function ChatPanel({
     setComposerError(null);
     try {
       const prepared =
-        selectedFiles.length > 0
+        selectedFiles.length > 0 && isLocalWorkspaceConnection(active)
           ? await prepareChatAttachments({
               paths: selectedFiles,
               connection_id: active.id,
@@ -680,6 +715,14 @@ export function ChatPanel({
           size: entry.size,
           source: entry.source === "clipboard" ? "clipboard" : "file",
         })),
+        ...(!isLocalWorkspaceConnection(active)
+          ? selectedFiles.map<FileEntry>((path) => ({
+              path,
+              filename: filenameFromPath(path),
+              mime_type: mimeFromPath(path),
+              source: "file",
+            }))
+          : []),
         ...clipboardAttachments.map<FileEntry>(({ id: _id, ...entry }) => entry),
       ];
       const limitError = attachmentTotalLimitError(attachments);
@@ -979,7 +1022,7 @@ export function ChatPanel({
               />
               <button
                 type="button"
-                onClick={() => setAppliedCwd(cwd)}
+                onClick={() => void applyWorkingDirectory()}
                 className="rounded border border-white/10 px-2 py-1 text-[10px] text-neutral-300 hover:border-cyan-400 hover:text-cyan-300"
               >
                 {t`Apply`}

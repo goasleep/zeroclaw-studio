@@ -33,6 +33,7 @@ export interface ChatMessage {
 }
 
 export interface UseChatOptions {
+  connectionId: string;
   agentAlias: string;
   mode?: ChatMode;
   workspaceRoot?: string | null;

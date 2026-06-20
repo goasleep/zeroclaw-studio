@@ -3,11 +3,13 @@ import { useLingui } from "@lingui/react/macro";
 import { Loader2, Play } from "lucide-react";
 import { queryKeys } from "@/api/query";
 import { apiDoctor } from "@/api/tools";
+import { useConnections } from "@/app/connection-context";
 
 export function DoctorPanel() {
   const { t } = useLingui();
+  const { active } = useConnections();
   const doctorQuery = useQuery({
-    queryKey: queryKeys.gateway.doctor,
+    queryKey: queryKeys.gateway.doctor(active?.id ?? null),
     queryFn: apiDoctor,
     enabled: false,
   });

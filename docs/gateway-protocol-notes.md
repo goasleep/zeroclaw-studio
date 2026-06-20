@@ -123,16 +123,46 @@ OpenAPI-documented surface.
 | GET | `/api/cron/{id}/runs` |
 | POST | `/api/cron/{id}/run` (long-timeout manual trigger) |
 
-## Filesystem / agent workspace
+## Filesystem / workspace / agent workspace
+
+There are three distinct filesystem concepts:
+
+- `/api/browse/*` is the gateway's managed shared directory
+  (`<install>/shared`).
+- `/api/workspace/*` is a generic project workspace on the gateway machine.
+  The client supplies `root`; the gateway canonicalizes it and treats every
+  `path` as relative to that root. This is the desktop workspace tree for a
+  runtime/connection.
+- `/api/agents/{alias}/workspace/*` is the private agent workspace under the
+  ZeroClaw install/config model.
+
+`/api/workspace/*` never means the desktop machine's local filesystem unless
+the selected runtime itself is a local gateway. Remote runtimes must browse
+and read/write through their own gateway.
 
 | Method | Path |
 |---|---|
 | GET | `/api/browse` |
 | POST | `/api/browse/mkdir` |
 | DELETE | `/api/browse/rmdir` |
+| POST | `/api/workspace/validate` (`{root}` → canonical `{root}`) |
+| GET | `/api/workspace/list?root=<root>&path=<relative>` |
+| GET | `/api/workspace/read?root=<root>&path=<relative>` |
+| PUT | `/api/workspace/write` (`{root,path,content}` text write) |
+| GET | `/api/workspace/git?root=<root>` |
 | GET | `/api/agents/{alias}/workspace/{list,read}` |
 | DELETE | `/api/agents/{alias}/workspace/path` |
 | POST | `/api/agents/{alias}/workspace/{move,mkdir}` |
+
+Workspace API security rules:
+
+- `root` must exist and be a directory after canonicalization.
+- `path` must be relative; `..`, absolute paths, and symlink escapes are
+  rejected.
+- reads are bounded and return `{path,size,is_text,content,encoding}` where
+  `encoding` is `utf8` or `base64`.
+- writes accept text content only and require the resolved target parent to
+  remain inside `root`.
 
 ## Canvas (A2UI)
 
@@ -175,6 +205,8 @@ Optional first frame from client:
 `{"type":"connect", session_id?, device_name?, capabilities?, workspace_dir?}`
 → server replies `{"type":"connected", ...}`. Otherwise jumps to
 `{"type":"session_start", session_id, name, resumed, message_count}`.
+`workspace_dir` is the selected project root for the active gateway/runtime;
+it is not the ZeroClaw config directory and not an agent workspace path.
 
 Client → server: `message` (`{content}`), `approval_response`
 (`{request_id, decision: approve|deny|always}`), voice events

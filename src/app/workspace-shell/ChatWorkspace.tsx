@@ -5,6 +5,7 @@ import { ChatPanel } from "@/features/chat/ChatPanel";
 import { AgentSetupWizard } from "@/features/chat/AgentSetupWizard";
 
 interface ChatWorkspaceProps {
+  connectionId: string | null;
   mode: "chat" | "acp";
   workspaceRoot: string | null;
   onWorkspaceRoot: (path: string | null) => void;
@@ -15,6 +16,7 @@ interface ChatWorkspaceProps {
 }
 
 export function ChatWorkspace({
+  connectionId,
   mode,
   workspaceRoot,
   onWorkspaceRoot,
@@ -48,9 +50,11 @@ export function ChatWorkspace({
   return (
     <section className="flex min-w-0 flex-col overflow-hidden bg-[#020818]/70">
       <div className="min-h-0 flex-1 overflow-hidden">
-        {activeAgent && (
+        {connectionId && activeAgent && (
           <ChatPanel
-            key={`${mode}:${activeAgent}:${workspaceRoot ?? "no-project"}`}
+            key={`${connectionId ?? "no-connection"}:${mode}:${activeAgent}:${
+              workspaceRoot ?? "no-project"
+            }`}
             agentAlias={activeAgent}
             agents={agents}
             onAgentChange={onAgentChange}

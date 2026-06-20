@@ -210,12 +210,17 @@ export const agentWorkspaceDelete = (alias: string, path: string) =>
 
 // ---- Workspace FS commands ----
 
-export const workspaceOpenRoot = (path: string) => unwrap(commands.workspaceOpenRoot(path));
+export const workspaceOpenRoot = (connectionId: string, path: string) =>
+  unwrap(commands.workspaceOpenRoot(connectionId, path));
 
-export const workspaceGetState = () => unwrap(commands.workspaceGetState());
+export const workspaceGetState = (connectionId: string) =>
+  unwrap(commands.workspaceGetState(connectionId));
 
-export const workspaceImportLegacyState = (currentRoot: string | null, recentRoots: string[]) =>
-  unwrap(commands.workspaceImportLegacyState(currentRoot, recentRoots));
+export const workspaceImportLegacyState = (
+  connectionId: string,
+  currentRoot: string | null,
+  recentRoots: string[],
+) => unwrap(commands.workspaceImportLegacyState(connectionId, currentRoot, recentRoots));
 
 export const workspaceGetRoot = () => unwrap(commands.workspaceGetRoot());
 
@@ -236,32 +241,42 @@ export const workspaceGitStatus = (root: string) => unwrap(commands.workspaceGit
 // ---- Desktop-local chat state ----
 
 export const chatLocalGetSelectedSession = (
+  connectionId: string,
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
-) => unwrap(commands.chatLocalGetSelectedSession(workspaceRoot, mode, agentAlias));
+) => unwrap(commands.chatLocalGetSelectedSession(connectionId, workspaceRoot, mode, agentAlias));
 
 export const chatLocalSetSelectedSession = (
+  connectionId: string,
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string | null,
-) => unwrap(commands.chatLocalSetSelectedSession(workspaceRoot, mode, agentAlias, sessionId));
+) =>
+  unwrap(
+    commands.chatLocalSetSelectedSession(connectionId, workspaceRoot, mode, agentAlias, sessionId),
+  );
 
-export const chatLocalListSessionWorkspaces = () =>
-  unwrap(commands.chatLocalListSessionWorkspaces());
+export const chatLocalListSessionWorkspaces = (connectionId: string) =>
+  unwrap(commands.chatLocalListSessionWorkspaces(connectionId));
 
-export const chatLocalAssignSessionWorkspace = (sessionId: string, workspaceRoot: string) =>
-  unwrap(commands.chatLocalAssignSessionWorkspace(sessionId, workspaceRoot));
+export const chatLocalAssignSessionWorkspace = (
+  connectionId: string,
+  sessionId: string,
+  workspaceRoot: string,
+) => unwrap(commands.chatLocalAssignSessionWorkspace(connectionId, sessionId, workspaceRoot));
 
 export const chatLocalGetTranscript = (
+  connectionId: string,
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
-) => unwrap(commands.chatLocalGetTranscript(workspaceRoot, mode, agentAlias, sessionId));
+) => unwrap(commands.chatLocalGetTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId));
 
 export const chatLocalSetTranscript = (
+  connectionId: string,
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
@@ -269,12 +284,21 @@ export const chatLocalSetTranscript = (
   transcriptJson: string,
 ) =>
   unwrap(
-    commands.chatLocalSetTranscript(workspaceRoot, mode, agentAlias, sessionId, transcriptJson),
+    commands.chatLocalSetTranscript(
+      connectionId,
+      workspaceRoot,
+      mode,
+      agentAlias,
+      sessionId,
+      transcriptJson,
+    ),
   );
 
 export const chatLocalClearTranscript = (
+  connectionId: string,
   workspaceRoot: string | null,
   mode: string,
   agentAlias: string,
   sessionId: string,
-) => unwrap(commands.chatLocalClearTranscript(workspaceRoot, mode, agentAlias, sessionId));
+) =>
+  unwrap(commands.chatLocalClearTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId));

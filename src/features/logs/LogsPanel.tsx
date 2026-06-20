@@ -4,12 +4,14 @@ import { useLingui } from "@lingui/react/macro";
 import { Loader2, Pause, Play, RefreshCw } from "lucide-react";
 import { queryKeys } from "@/api/query";
 import { apiLogs, type LogEvent } from "@/api/logs";
+import { useConnections } from "@/app/connection-context";
 
 export function LogsPanel() {
   const { t } = useLingui();
+  const { active } = useConnections();
   const [paused, setPaused] = useState(false);
   const logsQuery = useQuery({
-    queryKey: queryKeys.gateway.logs(paused),
+    queryKey: queryKeys.gateway.logs(active?.id ?? null, paused),
     queryFn: () => apiLogs(),
     refetchInterval: paused ? false : 3000,
   });

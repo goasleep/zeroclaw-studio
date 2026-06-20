@@ -2,13 +2,15 @@ import { DataPanel } from "@/features/_shared/DataPanel";
 import { apiDevices } from "@/api/tools";
 import { queryKeys } from "@/api/query";
 import { useLingui } from "@lingui/react/macro";
+import { useConnections } from "@/app/connection-context";
 
 export function DevicesPanel() {
   const { t } = useLingui();
+  const { active } = useConnections();
   return (
     <DataPanel
       what={t`devices`}
-      queryKey={queryKeys.gateway.devices}
+      queryKey={queryKeys.gateway.devices(active?.id ?? null)}
       load={apiDevices}
       render={(data) => (
         <ul className="space-y-1 text-xs">

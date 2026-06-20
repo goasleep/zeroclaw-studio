@@ -2,13 +2,15 @@ import { DataPanel } from "@/features/_shared/DataPanel";
 import { apiCron } from "@/api/tools";
 import { queryKeys } from "@/api/query";
 import { useLingui } from "@lingui/react/macro";
+import { useConnections } from "@/app/connection-context";
 
 export function CronPanel() {
   const { t } = useLingui();
+  const { active } = useConnections();
   return (
     <DataPanel
       what={t`cron jobs`}
-      queryKey={queryKeys.gateway.cron}
+      queryKey={queryKeys.gateway.cron(active?.id ?? null)}
       load={apiCron}
       render={(data) => (
         <table className="w-full text-xs">

@@ -12,14 +12,16 @@ import {
 } from "lucide-react";
 import { queryKeys } from "@/api/query";
 import { apiTools } from "@/api/tools";
+import { useConnections } from "@/app/connection-context";
 
 type ToolInfo = { name: string; [k: string]: unknown };
 const EMPTY_TOOLS: ToolInfo[] = [];
 
 export function ToolsPanel() {
   const { t } = useLingui();
+  const { active } = useConnections();
   const toolsQuery = useQuery({
-    queryKey: queryKeys.gateway.tools,
+    queryKey: queryKeys.gateway.tools(active?.id ?? null),
     queryFn: apiTools,
   });
   const [filter, setFilter] = useState("");

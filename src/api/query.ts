@@ -22,11 +22,11 @@ export const queryKeys = {
     git: (root: string | null) => ["workspace", "git", root] as const,
   },
   agentWorkspace: {
-    agents: ["agent-workspace", "agents"] as const,
-    dir: (alias: string | null, path?: string | null) =>
-      ["agent-workspace", "dir", alias, path ?? null] as const,
-    file: (alias: string | null, path?: string | null) =>
-      ["agent-workspace", "file", alias, path ?? null] as const,
+    agents: (connectionId: string | null) => ["agent-workspace", connectionId, "agents"] as const,
+    dir: (connectionId: string | null, alias: string | null, path?: string | null) =>
+      ["agent-workspace", connectionId, "dir", alias, path ?? null] as const,
+    file: (connectionId: string | null, alias: string | null, path?: string | null) =>
+      ["agent-workspace", connectionId, "file", alias, path ?? null] as const,
   },
   sessions: {
     all: ["sessions"] as const,
@@ -47,16 +47,18 @@ export const queryKeys = {
       ["setup", "status", capability, prefix, alias ?? null] as const,
   },
   gateway: {
-    status: ["gateway", "status"] as const,
-    health: ["gateway", "health"] as const,
-    tools: ["gateway", "tools"] as const,
-    channels: ["gateway", "channels"] as const,
-    cron: ["gateway", "cron"] as const,
-    integrations: ["gateway", "integrations"] as const,
-    doctor: ["gateway", "doctor"] as const,
-    devices: ["gateway", "devices"] as const,
-    memory: ["gateway", "memory"] as const,
-    logs: (paused: boolean) => ["gateway", "logs", { paused }] as const,
+    status: (connectionId: string | null) => ["gateway", connectionId, "status"] as const,
+    health: (connectionId: string | null) => ["gateway", connectionId, "health"] as const,
+    tools: (connectionId: string | null) => ["gateway", connectionId, "tools"] as const,
+    channels: (connectionId: string | null) => ["gateway", connectionId, "channels"] as const,
+    cron: (connectionId: string | null) => ["gateway", connectionId, "cron"] as const,
+    integrations: (connectionId: string | null) =>
+      ["gateway", connectionId, "integrations"] as const,
+    doctor: (connectionId: string | null) => ["gateway", connectionId, "doctor"] as const,
+    devices: (connectionId: string | null) => ["gateway", connectionId, "devices"] as const,
+    memory: (connectionId: string | null) => ["gateway", connectionId, "memory"] as const,
+    logs: (connectionId: string | null, paused: boolean) =>
+      ["gateway", connectionId, "logs", { paused }] as const,
     agentWorkspace: (alias: string, path?: string | null) =>
       ["gateway", "agent-workspace", alias, path ?? null] as const,
     quickstart: {

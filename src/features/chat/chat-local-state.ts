@@ -15,65 +15,78 @@ const LEGACY_RECENT_WORKSPACES_KEY = "zeroclaw_recent_workspaces";
 const LEGACY_SESSION_PREFIX = "zeroclaw_session_id.";
 const LEGACY_TRANSCRIPT_PREFIX = "zeroclaw_transcript.";
 
-let migrationPromise: Promise<void> | null = null;
+const migrationPromises = new Map<string, Promise<void>>();
 
-export function migrateLegacyLocalState() {
-  migrationPromise ??= runLegacyMigration();
+export function migrateLegacyLocalState(connectionId: string) {
+  let migrationPromise = migrationPromises.get(connectionId);
+  if (!migrationPromise) {
+    migrationPromise = runLegacyMigration(connectionId);
+    migrationPromises.set(connectionId, migrationPromise);
+  }
   return migrationPromise;
 }
 
 export async function loadSelectedSession(
+  connectionId: string,
   workspaceRoot: string | null,
   agentAlias: string,
   mode: ChatMode,
 ): Promise<string | null> {
-  await migrateLegacyLocalState();
-  return chatLocalGetSelectedSession(workspaceRoot, mode, agentAlias);
+  await migrateLegacyLocalState(connectionId);
+  return chatLocalGetSelectedSession(connectionId, workspaceRoot, mode, agentAlias);
 }
 
 export async function saveSelectedSession(
+  connectionId: string,
   workspaceRoot: string | null,
   agentAlias: string,
   mode: ChatMode,
   sessionId: string | null,
 ) {
-  await migrateLegacyLocalState();
-  await chatLocalSetSelectedSession(workspaceRoot, mode, agentAlias, sessionId);
+  await migrateLegacyLocalState(connectionId);
+  await chatLocalSetSelectedSession(connectionId, workspaceRoot, mode, agentAlias, sessionId);
 }
 
-export async function assignSessionWorkspace(sessionId: string, workspaceRoot: string | null) {
-  await migrateLegacyLocalState();
+export async function assignSessionWorkspace(
+  connectionId: string,
+  sessionId: string,
+  workspaceRoot: string | null,
+) {
+  await migrateLegacyLocalState(connectionId);
   if (!workspaceRoot) return;
-  await chatLocalAssignSessionWorkspace(sessionId, workspaceRoot);
+  await chatLocalAssignSessionWorkspace(connectionId, sessionId, workspaceRoot);
 }
 
-export async function loadSessionWorkspaceMap() {
-  await migrateLegacyLocalState();
-  const bindings = await chatLocalListSessionWorkspaces();
+export async function loadSessionWorkspaceMap(connectionId: string) {
+  await migrateLegacyLocalState(connectionId);
+  const bindings = await chatLocalListSessionWorkspaces(connectionId);
   return new Map(bindings.map((binding) => [binding.session_id, binding.workspace_root]));
 }
 
 export async function readTranscriptCache(
+  connectionId: string,
   workspaceRoot: string | null,
   agentAlias: string,
   mode: ChatMode,
   sessionId: string,
 ): Promise<ChatMessage[]> {
-  await migrateLegacyLocalState();
-  const raw = await chatLocalGetTranscript(workspaceRoot, mode, agentAlias, sessionId);
+  await migrateLegacyLocalState(connectionId);
+  const raw = await chatLocalGetTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId);
   if (!raw) return [];
   return parseTranscript(raw);
 }
 
 export async function writeTranscriptCache(
+  connectionId: string,
   workspaceRoot: string | null,
   agentAlias: string,
   mode: ChatMode,
   sessionId: string,
   messages: ChatMessage[],
 ) {
-  await migrateLegacyLocalState();
+  await migrateLegacyLocalState(connectionId);
   await chatLocalSetTranscript(
+    connectionId,
     workspaceRoot,
     mode,
     agentAlias,
@@ -83,28 +96,29 @@ export async function writeTranscriptCache(
 }
 
 export async function clearTranscriptCache(
+  connectionId: string,
   workspaceRoot: string | null,
   agentAlias: string,
   mode: ChatMode,
   sessionId: string,
 ) {
-  await migrateLegacyLocalState();
-  await chatLocalClearTranscript(workspaceRoot, mode, agentAlias, sessionId);
+  await migrateLegacyLocalState(connectionId);
+  await chatLocalClearTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId);
 }
 
-async function runLegacyMigration() {
-  await importLegacyWorkspaces();
-  await importLegacyChatState();
+async function runLegacyMigration(connectionId: string) {
+  await importLegacyWorkspaces(connectionId);
+  await importLegacyChatState(connectionId);
 }
 
-async function importLegacyWorkspaces() {
+async function importLegacyWorkspaces(connectionId: string) {
   const recentRoots = readLegacyStringArray(LEGACY_RECENT_WORKSPACES_KEY);
   if (recentRoots.length === 0) return;
-  await workspaceImportLegacyState(recentRoots[0] ?? null, recentRoots);
+  await workspaceImportLegacyState(connectionId, recentRoots[0] ?? null, recentRoots);
   localStorage.removeItem(LEGACY_RECENT_WORKSPACES_KEY);
 }
 
-async function importLegacyChatState() {
+async function importLegacyChatState(connectionId: string) {
   const keys = Object.keys(localStorage);
   const migrated: string[] = [];
 
@@ -113,7 +127,7 @@ async function importLegacyChatState() {
       const scope = parseLegacyScopedKey(key, LEGACY_SESSION_PREFIX);
       const sessionId = localStorage.getItem(key);
       if (scope && sessionId) {
-        await chatLocalSetSelectedSession(null, scope.mode, scope.agentAlias, sessionId);
+        await chatLocalSetSelectedSession(connectionId, null, scope.mode, scope.agentAlias, sessionId);
         migrated.push(key);
       }
       continue;
@@ -123,7 +137,14 @@ async function importLegacyChatState() {
       const scope = parseLegacyTranscriptKey(key);
       const raw = localStorage.getItem(key);
       if (scope && raw && parseTranscript(raw).length > 0) {
-        await chatLocalSetTranscript(null, scope.mode, scope.agentAlias, scope.sessionId, raw);
+        await chatLocalSetTranscript(
+          connectionId,
+          null,
+          scope.mode,
+          scope.agentAlias,
+          scope.sessionId,
+          raw,
+        );
         migrated.push(key);
       }
     }

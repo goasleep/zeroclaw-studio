@@ -28,12 +28,15 @@ import {
   type AgentWorkspaceAgent,
   type AgentWorkspaceEntry,
 } from "@/api/tauri";
+import { useConnections } from "@/app/connection-context";
 
 const COMMON_FILES = ["IDENTITY.md", "SOUL.md", "HEARTBEAT.md"];
 const EMPTY_AGENTS: AgentWorkspaceAgent[] = [];
 
 export function AgentWorkspacePanel({ focusAlias = null }: { focusAlias?: string | null }) {
   const { t } = useLingui();
+  const { active } = useConnections();
+  const connectionId = active?.id ?? null;
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState("");
   const [activeAlias, setActiveAlias] = useState<string | null>(null);
@@ -44,8 +47,9 @@ export function AgentWorkspacePanel({ focusAlias = null }: { focusAlias?: string
   const [status, setStatus] = useState("");
 
   const agentsQuery = useQuery({
-    queryKey: queryKeys.agentWorkspace.agents,
+    queryKey: queryKeys.agentWorkspace.agents(connectionId),
     queryFn: agentWorkspaceListAgents,
+    enabled: Boolean(connectionId),
   });
 
   const agents = agentsQuery.data ?? EMPTY_AGENTS;
@@ -80,15 +84,15 @@ export function AgentWorkspacePanel({ focusAlias = null }: { focusAlias?: string
   }, [activeAlias]);
 
   const entriesQuery = useQuery({
-    queryKey: queryKeys.agentWorkspace.dir(activeAlias, currentDir || null),
+    queryKey: queryKeys.agentWorkspace.dir(connectionId, activeAlias, currentDir || null),
     queryFn: () => agentWorkspaceListDir(activeAlias ?? "", currentDir || null),
-    enabled: Boolean(activeAlias),
+    enabled: Boolean(connectionId && activeAlias),
   });
 
   const fileQuery = useQuery({
-    queryKey: queryKeys.agentWorkspace.file(activeAlias, selectedFile),
+    queryKey: queryKeys.agentWorkspace.file(connectionId, activeAlias, selectedFile),
     queryFn: () => agentWorkspaceReadFile(activeAlias ?? "", selectedFile ?? ""),
-    enabled: Boolean(activeAlias && selectedFile),
+    enabled: Boolean(connectionId && activeAlias && selectedFile),
     retry: false,
   });
 
@@ -101,12 +105,12 @@ export function AgentWorkspacePanel({ focusAlias = null }: { focusAlias?: string
 
   const invalidateAgentWorkspace = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.agentWorkspace.agents }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.agentWorkspace.agents(connectionId) }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.agentWorkspace.dir(activeAlias, currentDir || null),
+        queryKey: queryKeys.agentWorkspace.dir(connectionId, activeAlias, currentDir || null),
       }),
       queryClient.invalidateQueries({
-        queryKey: queryKeys.agentWorkspace.file(activeAlias, selectedFile),
+        queryKey: queryKeys.agentWorkspace.file(connectionId, activeAlias, selectedFile),
       }),
     ]);
   };

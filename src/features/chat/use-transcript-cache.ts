@@ -11,43 +11,48 @@ import {
 } from "./chat-local-state";
 
 export function useTranscriptCache({
+  connectionId,
   workspaceRoot,
   agentAlias,
   mode,
 }: {
+  connectionId: string;
   workspaceRoot: string | null;
   agentAlias: string;
   mode: ChatMode;
 }) {
   const loadSelected = useCallback(
-    () => loadSelectedSession(workspaceRoot, agentAlias, mode),
-    [agentAlias, mode, workspaceRoot],
+    () => loadSelectedSession(connectionId, workspaceRoot, agentAlias, mode),
+    [agentAlias, connectionId, mode, workspaceRoot],
   );
 
   const saveSelected = useCallback(
-    (sessionId: string | null) => saveSelectedSession(workspaceRoot, agentAlias, mode, sessionId),
-    [agentAlias, mode, workspaceRoot],
+    (sessionId: string | null) =>
+      saveSelectedSession(connectionId, workspaceRoot, agentAlias, mode, sessionId),
+    [agentAlias, connectionId, mode, workspaceRoot],
   );
 
   const assignWorkspace = useCallback(
-    (sessionId: string) => assignSessionWorkspace(sessionId, workspaceRoot),
-    [workspaceRoot],
+    (sessionId: string) => assignSessionWorkspace(connectionId, sessionId, workspaceRoot),
+    [connectionId, workspaceRoot],
   );
 
   const readTranscript = useCallback(
-    (sessionId: string) => readTranscriptCache(workspaceRoot, agentAlias, mode, sessionId),
-    [agentAlias, mode, workspaceRoot],
+    (sessionId: string) =>
+      readTranscriptCache(connectionId, workspaceRoot, agentAlias, mode, sessionId),
+    [agentAlias, connectionId, mode, workspaceRoot],
   );
 
   const writeTranscript = useCallback(
     (sessionId: string, messages: ChatMessage[]) =>
-      writeTranscriptCache(workspaceRoot, agentAlias, mode, sessionId, messages),
-    [agentAlias, mode, workspaceRoot],
+      writeTranscriptCache(connectionId, workspaceRoot, agentAlias, mode, sessionId, messages),
+    [agentAlias, connectionId, mode, workspaceRoot],
   );
 
   const clearTranscript = useCallback(
-    (sessionId: string) => clearTranscriptCache(workspaceRoot, agentAlias, mode, sessionId),
-    [agentAlias, mode, workspaceRoot],
+    (sessionId: string) =>
+      clearTranscriptCache(connectionId, workspaceRoot, agentAlias, mode, sessionId),
+    [agentAlias, connectionId, mode, workspaceRoot],
   );
 
   return {

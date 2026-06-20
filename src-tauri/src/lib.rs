@@ -148,10 +148,6 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     if let Err(e) = local_state_for_setup.load(&app_handle).await {
                         log::error!("failed to load workspace state: {e}");
-                    } else if let Some(root) = local_state_for_setup.snapshot().await.current_root {
-                        workspace_state_for_setup
-                            .set_root(std::path::PathBuf::from(root))
-                            .await;
                     }
                     if let Err(e) = book_for_setup.load(&app_handle).await {
                         log::error!("failed to load connections: {e}");
@@ -173,6 +169,22 @@ pub fn run() {
                         log::error!("[bootstrap] failed to persist active migration: {e}");
                     }
                     if let Some(conn) = book_for_setup.active().await {
+                        let connection_id = conn.id.to_string();
+                        match local_state_for_setup.snapshot(&connection_id).await {
+                            Ok(snapshot) => {
+                                if let Some(root) = snapshot.current_root {
+                                    workspace_state_for_setup
+                                        .set_root(std::path::PathBuf::from(root))
+                                        .await;
+                                }
+                                if let Err(e) = local_state_for_setup.save(&app_handle).await {
+                                    log::error!("failed to persist workspace state migration: {e}");
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("failed to load active workspace state: {e}");
+                            }
+                        }
                         connection::activator::activate(
                             &app_handle,
                             &conn,
@@ -254,7 +266,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::agent_workspace::agent_workspace_create_dir,
         commands::agent_workspace::agent_workspace_delete,
         commands::fs::workspace_open_root::<tauri::Wry>,
-        commands::fs::workspace_get_state,
+        commands::fs::workspace_get_state::<tauri::Wry>,
         commands::fs::workspace_import_legacy_state::<tauri::Wry>,
         commands::fs::workspace_get_root,
         commands::fs::workspace_list_dir,

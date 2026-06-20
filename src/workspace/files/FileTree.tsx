@@ -3,27 +3,30 @@
 import { useEffect, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import { ChevronDown, ChevronRight, File, Folder, FolderOpen } from "lucide-react";
-import { type DirEntry, workspaceListDir } from "@/api/tauri";
 import { useWorkspace } from "@/app/workspace-context";
+import { useConnections } from "@/app/connection-context";
+import { type WorkspaceEntry, workspaceAdapterListDir } from "@/api/workspace";
 
 interface NodeProps {
-  entry: DirEntry;
+  entry: WorkspaceEntry;
   depth: number;
+  root: string;
 }
 
-function FileNode({ entry, depth }: NodeProps) {
+function FileNode({ entry, depth, root }: NodeProps) {
   const [open, setOpen] = useState(false);
-  const [children, setChildren] = useState<DirEntry[] | null>(null);
+  const [children, setChildren] = useState<WorkspaceEntry[] | null>(null);
+  const { active } = useConnections();
   const { selectedFiles, toggleFile, changeNonce } = useWorkspace();
   const isSelected = !entry.isDir && selectedFiles.includes(entry.path);
 
   useEffect(() => {
-    if (entry.isDir && open) {
-      void workspaceListDir(entry.path)
+    if (active && entry.isDir && open) {
+      void workspaceAdapterListDir(active, root, entry.relPath)
         .then(setChildren)
         .catch(() => setChildren([]));
     }
-  }, [entry, open, changeNonce]);
+  }, [active, entry, open, root, changeNonce]);
 
   const padding = { paddingLeft: `${depth * 12 + 6}px` };
 
@@ -66,7 +69,7 @@ function FileNode({ entry, depth }: NodeProps) {
       {open && children !== null && (
         <div>
           {children.map((c) => (
-            <FileNode key={c.path} entry={c} depth={depth + 1} />
+            <FileNode key={c.path} entry={c} depth={depth + 1} root={root} />
           ))}
         </div>
       )}
@@ -76,18 +79,19 @@ function FileNode({ entry, depth }: NodeProps) {
 
 export function FileTree() {
   const { t } = useLingui();
+  const { active } = useConnections();
   const { root, changeNonce } = useWorkspace();
-  const [top, setTop] = useState<DirEntry[] | null>(null);
+  const [top, setTop] = useState<WorkspaceEntry[] | null>(null);
 
   useEffect(() => {
-    if (!root) {
+    if (!active || !root) {
       setTop(null);
       return;
     }
-    void workspaceListDir(root)
+    void workspaceAdapterListDir(active, root)
       .then(setTop)
       .catch(() => setTop([]));
-  }, [root, changeNonce]);
+  }, [active, root, changeNonce]);
 
   if (!root) return null;
   if (top === null) {
@@ -100,7 +104,7 @@ export function FileTree() {
   return (
     <div className="select-none py-1 font-mono">
       {top.map((entry) => (
-        <FileNode key={entry.path} entry={entry} depth={0} />
+        <FileNode key={entry.path} entry={entry} depth={0} root={root} />
       ))}
     </div>
   );

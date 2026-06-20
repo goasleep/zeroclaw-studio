@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useWorkspace } from "@/app/workspace-context";
+import { useConnections } from "@/app/connection-context";
+import { isLocalWorkspaceConnection, validateWorkspaceRoot } from "@/api/workspace";
 import {
   APP_COMMAND_EVENT,
   APP_COMMANDS,
@@ -23,7 +25,8 @@ import type { SettingsSection, WorkspacePage } from "./workspace-shell/types";
 import type { NormalizedSession } from "@/features/chat/use-chat";
 
 export function WorkspaceShell() {
-  const { root, addFiles, setRoot } = useWorkspace();
+  const { root, addFiles, setRoot, connectionId } = useWorkspace();
+  const { active } = useConnections();
   const [page, setPage] = useState<WorkspacePage>("chat");
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("app");
   const [configFocusSection, setConfigFocusSection] = useState<string | null>(null);
@@ -37,6 +40,11 @@ export function WorkspaceShell() {
   const activeChatWorkspaceRoot = chatScopeRoot === undefined ? root : chatScopeRoot;
 
   const loadAgents = useCallback(() => {
+    if (!connectionId) {
+      setAgents([]);
+      setActiveAgent(null);
+      return;
+    }
     void apiQuickstartState()
       .then((s) => {
         const aliases = s.agents ?? [];
@@ -49,7 +57,7 @@ export function WorkspaceShell() {
         setAgents([]);
         setActiveAgent(null);
       });
-  }, []);
+  }, [connectionId]);
 
   const focusComposer = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -58,13 +66,23 @@ export function WorkspaceShell() {
   }, []);
 
   const pickProject = useCallback(async () => {
+    if (active && !isLocalWorkspaceConnection(active)) {
+      const chosen = window.prompt("Remote working directory", root ?? "");
+      if (typeof chosen === "string" && chosen.trim()) {
+        const canonical = await validateWorkspaceRoot(active, chosen.trim());
+        await setRoot(canonical);
+        setChatScopeRoot(canonical);
+        setActiveThreadId(null);
+      }
+      return;
+    }
     const chosen = await openDialog({ directory: true, multiple: false });
     if (typeof chosen === "string") {
       await setRoot(chosen);
       setChatScopeRoot(chosen);
       setActiveThreadId(null);
     }
-  }, [setRoot]);
+  }, [active, root, setRoot]);
 
   const openProjectRoot = useCallback(
     async (path: string) => {
@@ -148,6 +166,12 @@ export function WorkspaceShell() {
   useEffect(() => {
     loadAgents();
   }, [loadAgents]);
+
+  useEffect(() => {
+    setChatScopeRoot(undefined);
+    setActiveThreadId(null);
+    setPendingSessionId(null);
+  }, [connectionId]);
 
   useEffect(() => {
     if (!pendingSessionId || page !== "chat") return;
@@ -328,6 +352,8 @@ export function WorkspaceShell() {
             onPickRoot={() => void pickProject()}
           />
           <ChatWorkspace
+            key={connectionId ?? "no-connection"}
+            connectionId={connectionId}
             mode={page === "code" ? "acp" : "chat"}
             workspaceRoot={activeChatWorkspaceRoot}
             onWorkspaceRoot={setChatScopeRoot}
@@ -339,6 +365,7 @@ export function WorkspaceShell() {
         </div>
       ) : (
         <SettingsPage
+          key={connectionId ?? "no-connection"}
           section={settingsSection}
           onSection={setSettingsSection}
           onBackToChat={() => setPage("chat")}

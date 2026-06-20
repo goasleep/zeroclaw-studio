@@ -20,6 +20,7 @@ export type {
 export { normalizeSession, sessionSort, shortSessionName } from "./chat-reducer";
 
 export function useChat({
+  connectionId,
   agentAlias,
   mode = "chat",
   workspaceRoot = null,
@@ -33,8 +34,9 @@ export function useChat({
   const [modelOverride, setModelOverride] = useState<ChatModelOverride | null>(null);
   const hydratedSessionRef = useRef<string | null>(null);
 
-  const sessions = useSessionService(agentAlias, workspaceRoot);
+  const sessions = useSessionService(connectionId, agentAlias, workspaceRoot);
   const transcriptCache = useTranscriptCache({
+    connectionId,
     workspaceRoot,
     agentAlias,
     mode,
@@ -60,7 +62,7 @@ export function useChat({
 
   useEffect(() => {
     hydratedSessionRef.current = null;
-  }, [agentAlias, mode, workspaceRoot, workspaceDir, connectionSeed]);
+  }, [agentAlias, connectionId, mode, workspaceRoot, workspaceDir, connectionSeed]);
 
   useEffect(() => {
     if (!state.sessionId || state.messages.length === 0) return;
@@ -93,6 +95,7 @@ export function useChat({
 
   const { connected, clientRef } = useChatTransport({
     agentAlias,
+    connectionId,
     mode: mode as ChatMode,
     workspaceRoot,
     workspaceDir,

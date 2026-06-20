@@ -33,20 +33,31 @@ pub async fn workspace_open_root<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, Arc<WorkspaceState>>,
     local_state: State<'_, SharedLocalStateStore>,
+    connection_id: String,
     path: String,
 ) -> Result<WorkspaceLocalState, String> {
     state.set_root(PathBuf::from(&path)).await;
-    let snapshot = local_state.remember_root(path).await;
+    let snapshot = local_state
+        .remember_root(&connection_id, path)
+        .await
+        .map_err(|e| e.to_string())?;
     local_state.save(&app).await.map_err(|e| e.to_string())?;
     Ok(snapshot)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn workspace_get_state(
+pub async fn workspace_get_state<R: Runtime>(
+    app: AppHandle<R>,
     local_state: State<'_, SharedLocalStateStore>,
+    connection_id: String,
 ) -> Result<WorkspaceLocalState, String> {
-    Ok(local_state.snapshot().await)
+    let snapshot = local_state
+        .snapshot(&connection_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    local_state.save(&app).await.map_err(|e| e.to_string())?;
+    Ok(snapshot)
 }
 
 #[tauri::command]
@@ -54,12 +65,14 @@ pub async fn workspace_get_state(
 pub async fn workspace_import_legacy_state<R: Runtime>(
     app: AppHandle<R>,
     local_state: State<'_, SharedLocalStateStore>,
+    connection_id: String,
     current_root: Option<String>,
     recent_roots: Vec<String>,
 ) -> Result<WorkspaceLocalState, String> {
     let snapshot = local_state
-        .import_workspace_state(current_root, recent_roots)
-        .await;
+        .import_workspace_state(&connection_id, current_root, recent_roots)
+        .await
+        .map_err(|e| e.to_string())?;
     local_state.save(&app).await.map_err(|e| e.to_string())?;
     Ok(snapshot)
 }

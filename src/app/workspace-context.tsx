@@ -15,11 +15,21 @@ import {
   type FileEvent,
   workspaceGetState,
   workspaceOpenRoot,
+  workspaceWatchStop,
   workspaceWatchStart,
 } from "@/api/tauri";
 import { migrateLegacyLocalState } from "@/features/chat/chat-local-state";
+import { useConnections } from "./connection-context";
+import { validateWorkspaceRoot } from "@/api/workspace";
+
+export interface WorkspaceScope {
+  connectionId: string;
+  root: string | null;
+}
 
 interface WorkspaceContextValue {
+  connectionId: string | null;
+  scope: WorkspaceScope | null;
   root: string | null;
   recentRoots: string[];
   setRoot: (path: string) => Promise<void>;
@@ -34,6 +44,9 @@ interface WorkspaceContextValue {
 const Ctx = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const { active } = useConnections();
+  const connectionId = active?.id ?? null;
+  const isLocalRuntime = active?.transport === "local";
   const [root, setRootState] = useState<string | null>(null);
   const [recentRoots, setRecentRoots] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
@@ -41,20 +54,32 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void migrateLegacyLocalState()
-      .then(workspaceGetState)
+    if (!connectionId) {
+      setRootState(null);
+      setRecentRoots([]);
+      setSelectedFiles([]);
+      void workspaceWatchStop();
+      return () => {
+        cancelled = true;
+      };
+    }
+    setSelectedFiles([]);
+    void migrateLegacyLocalState(connectionId)
+      .then(() => workspaceGetState(connectionId))
       .then((state) => {
         if (cancelled) return;
         setRootState(state.current_root);
         setRecentRoots(state.recent_roots);
-        if (state.current_root) {
+        if (state.current_root && isLocalRuntime) {
           void workspaceWatchStart(state.current_root);
+        } else {
+          void workspaceWatchStop();
         }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [connectionId, isLocalRuntime]);
 
   useEffect(() => {
     const unlisten = listen<FileEvent>("workspace://fs-changed", () => {
@@ -65,13 +90,22 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const setRoot = useCallback(async (path: string) => {
-    const state = await workspaceOpenRoot(path);
-    setRootState(state.current_root);
-    setRecentRoots(state.recent_roots);
-    setSelectedFiles([]);
-    await workspaceWatchStart(path);
-  }, []);
+  const setRoot = useCallback(
+    async (path: string) => {
+      if (!connectionId) throw new Error("No active connection");
+      const canonicalPath = active && !isLocalRuntime ? await validateWorkspaceRoot(active, path) : path;
+      const state = await workspaceOpenRoot(connectionId, canonicalPath);
+      setRootState(state.current_root);
+      setRecentRoots(state.recent_roots);
+      setSelectedFiles([]);
+      if (isLocalRuntime) {
+        await workspaceWatchStart(canonicalPath);
+      } else {
+        await workspaceWatchStop();
+      }
+    },
+    [active, connectionId, isLocalRuntime],
+  );
 
   const toggleFile = useCallback((path: string) => {
     setSelectedFiles((prev) =>
@@ -93,6 +127,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      connectionId,
+      scope: connectionId ? { connectionId, root } : null,
       root,
       recentRoots,
       setRoot,
@@ -102,7 +138,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       clearSelection,
       changeNonce,
     }),
-    [root, recentRoots, setRoot, selectedFiles, addFiles, toggleFile, clearSelection, changeNonce],
+    [
+      connectionId,
+      root,
+      recentRoots,
+      setRoot,
+      selectedFiles,
+      addFiles,
+      toggleFile,
+      clearSelection,
+      changeNonce,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -5,6 +5,7 @@ import type { ChatModelOverride } from "./chat-types";
 
 export function useChatTransport({
   agentAlias,
+  connectionId,
   mode,
   workspaceRoot,
   workspaceDir,
@@ -19,6 +20,7 @@ export function useChatTransport({
   setSessionError,
 }: {
   agentAlias: string;
+  connectionId: string;
   mode: ChatMode;
   workspaceRoot: string | null;
   workspaceDir: string | null;
@@ -114,6 +116,7 @@ export function useChatTransport({
     };
   }, [
     agentAlias,
+    connectionId,
     mode,
     workspaceRoot,
     workspaceDir,

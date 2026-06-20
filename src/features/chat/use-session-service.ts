@@ -15,7 +15,11 @@ import {
 } from "./chat-reducer";
 import type { ChatMessage } from "./chat-types";
 
-export function useSessionService(agentAlias: string, workspaceRoot: string | null) {
+export function useSessionService(
+  connectionId: string,
+  agentAlias: string,
+  workspaceRoot: string | null,
+) {
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -24,7 +28,10 @@ export function useSessionService(agentAlias: string, workspaceRoot: string | nu
     setSessionsLoading(true);
     setSessionError(null);
     try {
-      const [data, workspaceMap] = await Promise.all([apiSessions(), loadSessionWorkspaceMap()]);
+      const [data, workspaceMap] = await Promise.all([
+        apiSessions(),
+        loadSessionWorkspaceMap(connectionId),
+      ]);
       const normalized = data.sessions
         .map(normalizeSession)
         .filter((s): s is NormalizedSession => s !== null)
@@ -37,7 +44,7 @@ export function useSessionService(agentAlias: string, workspaceRoot: string | nu
     } finally {
       setSessionsLoading(false);
     }
-  }, [agentAlias, workspaceRoot]);
+  }, [agentAlias, connectionId, workspaceRoot]);
 
   useEffect(() => {
     void refreshSessions();

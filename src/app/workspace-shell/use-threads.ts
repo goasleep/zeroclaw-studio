@@ -2,18 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiSessionDelete, apiSessionRename, apiSessions } from "@/api/sessions";
 import { normalizeSession, sessionSort, type NormalizedSession } from "@/features/chat/use-chat";
 import { loadSessionWorkspaceMap } from "@/features/chat/chat-local-state";
+import { useConnections } from "../connection-context";
 
 export function useThreads() {
+  const { active } = useConnections();
+  const connectionId = active?.id ?? null;
   const [threads, setThreads] = useState<NormalizedSession[]>([]);
   const [workspaceMap, setWorkspaceMap] = useState<Map<string, string>>(() => new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!connectionId) {
+      setThreads([]);
+      setWorkspaceMap(new Map());
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const [data, workspaceMap] = await Promise.all([apiSessions(), loadSessionWorkspaceMap()]);
+      const [data, workspaceMap] = await Promise.all([
+        apiSessions(),
+        loadSessionWorkspaceMap(connectionId),
+      ]);
       setWorkspaceMap(workspaceMap);
       setThreads(
         data.sessions
@@ -26,7 +39,7 @@ export function useThreads() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [connectionId]);
 
   useEffect(() => {
     void refresh();
