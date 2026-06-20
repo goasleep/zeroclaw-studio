@@ -67,6 +67,13 @@ app-data config directory and never modifies your user-level `~/.zeroclaw/`.
 - **Independent client, simple gateway contract** with no Rust-level coupling
   to the main `zeroclaw` repo.
 
+## Interface overview
+
+| Area | What it shows | Preview |
+| --- | --- | --- |
+| Workspace chat | A project-scoped chat session connected to the local `zeroclaw` runtime, with runtime status, workspace context, session history, attachments, and agent selection in one desktop window. | ![ZeroClaw Workspace desktop chat workspace](images/workspace-chat.png) |
+| Runtime and app settings | Local runtime state, workspace folder context, preferences, native notifications, tray integration, deep-link registration, and the operations/capabilities navigation surface. | ![ZeroClaw Workspace desktop settings panel](images/runtime-settings.png) |
+
 ## What this is NOT
 
 - Not the system tray launcher at `zeroclaw-labs/zeroclaw` `apps/tauri/`
