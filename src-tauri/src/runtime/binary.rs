@@ -1,14 +1,13 @@
-//! Local `zeroclaw` binary detection.
+//! User-installed `zeroclaw` binary detection.
 //!
 //! Search order:
 //!   1. `$PATH` (via `which`)
 //!   2. `~/.cargo/bin/zeroclaw`
 //!   3. `$XDG_BIN_HOME/zeroclaw`
 //!   4. Well-known install paths from upstream `install.sh` (`/usr/local/bin`)
-//!   5. Tauri bundled sidecar (future — not enabled in Phase 1)
-//!
-//! Returns the first hit. Reports the resolved path and `zeroclaw --version`
-//! so the UI can show it.
+//! The bundled inner runtime is resolved through Tauri's sidecar machinery and
+//! deliberately does not appear here; this module is for external local
+//! binaries the user installed or selected.
 
 use anyhow::{Context, Result};
 use serde::Serialize;

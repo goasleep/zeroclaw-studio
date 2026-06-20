@@ -468,7 +468,7 @@ export type Connection = { id: string; name: string; transport: Transport;
  * Gateway base URL as seen FROM the workspace. For SSH connections this
  * is `http://127.0.0.1:<local_forward_port>` (set after tunnel comes up).
  */
-url: string; ssh: SshConfig | null; auth: AuthConfig; lifecycle: Lifecycle; 
+url: string; ssh: SshConfig | null; auth: AuthConfig; lifecycle: Lifecycle; runtime_source?: RuntimeSource; 
 /**
  * For `Lifecycle::Managed` connections only.
  */
@@ -510,6 +510,19 @@ export type PairResult = { outcome: string; token: string | null }
 export type PrepareChatAttachmentsRequest = { paths: string[]; connection_id: string }
 export type RiskProfileSummary = { alias: string; label: string; picker_badge: string | null; used_by_agents: string[]; level: string; workspace_only: boolean | null; allowed_commands: string[]; forbidden_paths: string[]; allowed_roots: string[]; require_approval_for_medium_risk: boolean | null; block_high_risk_commands: boolean | null; auto_approve: string[]; always_ask: string[]; allowed_tools: string[]; excluded_tools: string[]; sandbox_enabled: boolean | null; sandbox_backend: string }
 export type RuntimeProfileSummary = { alias: string; label: string; picker_badge: string | null; used_by_agents: string[]; agentic: boolean | null; max_tool_iterations: number | null; max_actions_per_hour: number | null; max_cost_per_day_cents: number | null; shell_timeout_secs: number | null; max_context_tokens: number | null; max_history_messages: number | null; compact_context: boolean | null; parallel_tools: boolean | null; strict_tool_parsing: boolean | null; tool_dispatcher: string }
+export type RuntimeSource = 
+/**
+ * App-private runtime shipped as a bundled Tauri sidecar.
+ */
+"bundled_inner" | 
+/**
+ * A user-installed or user-selected zeroclaw binary.
+ */
+"external_path" | 
+/**
+ * A gateway owned outside this desktop app.
+ */
+"attached"
 export type SessionWorkspaceBinding = { session_id: string; workspace_root: string }
 export type SetupAction = { id: SetupActionId; label: string; description: string; command: string[]; requires_confirmation: boolean }
 export type SetupActionId = "browser_install_agent_browser" | "browser_install_chrome_for_testing" | "docker_pull_alpine"

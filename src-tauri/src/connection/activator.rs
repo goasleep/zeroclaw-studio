@@ -13,15 +13,16 @@
 //! without polling.
 
 use crate::connection::store::SharedConnectionBook;
-use crate::connection::{Connection, Lifecycle, Transport};
+use crate::connection::{Connection, Lifecycle, RuntimeSource, Transport};
 use crate::gateway::client::GatewayClient;
 use crate::gateway::pair::{self, PairOutcome};
 use crate::runtime::binary;
-use crate::runtime::supervisor::SharedSupervisor;
+use crate::runtime::ports;
+use crate::runtime::supervisor::{LaunchSpec, SharedSupervisor, SupervisorStatus};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 use uuid::Uuid;
 
 /// Lifecycle of an activation attempt, surfaced to the frontend as a
@@ -65,6 +66,7 @@ pub async fn activate<R: Runtime>(
     book: &SharedConnectionBook,
     supervisor: &SharedSupervisor,
 ) {
+    let mut conn = conn.clone();
     let emit = |step: ActivationStep| {
         let _ = app.emit("zeroclaw://activation", &step);
     };
@@ -72,6 +74,20 @@ pub async fn activate<R: Runtime>(
     emit(ActivationStep::Started {
         connection_id: conn.id,
     });
+
+    if matches!(conn.runtime_source, RuntimeSource::BundledInner)
+        && !matches!(supervisor.status().await, SupervisorStatus::Running)
+    {
+        match prepare_inner_connection(app, &mut conn, book).await {
+            Ok(()) => {}
+            Err(e) => {
+                emit(ActivationStep::Failed {
+                    message: format!("failed to prepare inner runtime: {e}"),
+                });
+                return;
+            }
+        }
+    }
 
     // Connections without a resolved URL (e.g. SSH tunnel not yet up) can't
     // be probed — surface and bail. UI is expected to call ssh_open_tunnel
@@ -90,12 +106,12 @@ pub async fn activate<R: Runtime>(
 
     // Step 2: spawn if not running AND we have a path to a local binary.
     if !already_healthy {
-        match resolve_local_binary(conn).await {
-            LocalSpawn::Spawn(binary_path, port) => {
+        match resolve_local_binary(app, &conn).await {
+            LocalSpawn::Spawn(spec) => {
                 emit(ActivationStep::StartingGateway {
-                    binary_path: binary_path.to_string_lossy().into(),
+                    binary_path: spec.display_binary(),
                 });
-                if let Err(e) = supervisor.start(conn.id, &binary_path, port).await {
+                if let Err(e) = supervisor.start(app, spec).await {
                     // "supervisor already has a running process" is benign —
                     // some other activation is in flight or finished — fall
                     // through to health-wait below.
@@ -157,15 +173,15 @@ pub async fn activate<R: Runtime>(
 
 /// Outcome of "can / should we spawn a local zeroclaw for this connection?"
 enum LocalSpawn {
-    /// Yes — spawn this binary on this port.
-    Spawn(PathBuf, u16),
+    /// Yes — spawn this runtime launch spec.
+    Spawn(LaunchSpec),
     /// No — connection points at a remote URL we can't control.
     CannotSpawnRemote,
     /// We should be able to spawn but no binary was found anywhere on PATH.
     BinaryMissing,
 }
 
-async fn resolve_local_binary(conn: &Connection) -> LocalSpawn {
+async fn resolve_local_binary<R: Runtime>(app: &AppHandle<R>, conn: &Connection) -> LocalSpawn {
     // Spawning only makes sense for local-loopback URLs.
     let is_local_url =
         conn.url.starts_with("http://127.0.0.1") || conn.url.starts_with("http://localhost");
@@ -177,6 +193,16 @@ async fn resolve_local_binary(conn: &Connection) -> LocalSpawn {
     // URLs), but be explicit.
     if matches!(conn.lifecycle, Lifecycle::Remote) {
         return LocalSpawn::CannotSpawnRemote;
+    }
+
+    if matches!(conn.runtime_source, RuntimeSource::BundledInner) {
+        let port = url_port(&conn.url).unwrap_or_else(|| {
+            ports::pick_inner_port().unwrap_or(crate::connection::discover::DEFAULT_PORT + 1)
+        });
+        let Ok(config_dir) = inner_config_dir(app) else {
+            return LocalSpawn::BinaryMissing;
+        };
+        return LocalSpawn::Spawn(LaunchSpec::bundled_inner(conn.id, port, config_dir));
     }
 
     // Prefer the binary the connection was created with; otherwise re-run
@@ -191,11 +217,29 @@ async fn resolve_local_binary(conn: &Connection) -> LocalSpawn {
     };
 
     let port = url_port(&conn.url).unwrap_or(crate::connection::discover::DEFAULT_PORT);
-    LocalSpawn::Spawn(path, port)
+    LocalSpawn::Spawn(LaunchSpec::external_path(conn.id, path, port))
 }
 
 fn url_port(url: &str) -> Option<u16> {
     url::Url::parse(url).ok().and_then(|u| u.port())
+}
+
+async fn prepare_inner_connection<R: Runtime>(
+    app: &AppHandle<R>,
+    conn: &mut Connection,
+    book: &SharedConnectionBook,
+) -> anyhow::Result<()> {
+    let port = ports::pick_inner_port()?;
+    let url = format!("http://127.0.0.1:{port}");
+    conn.url = url.clone();
+    book.set_url(conn.id, url).await?;
+    book.save(app).await?;
+    tokio::fs::create_dir_all(inner_config_dir(app)?).await?;
+    Ok(())
+}
+
+fn inner_config_dir<R: Runtime>(app: &AppHandle<R>) -> anyhow::Result<PathBuf> {
+    Ok(app.path().app_data_dir()?.join("inner-zeroclaw"))
 }
 
 async fn wait_healthy(client: &GatewayClient) -> bool {
@@ -217,7 +261,7 @@ mod tests {
     async fn resolve_returns_cannot_spawn_for_remote_http() {
         let c = Connection::new_remote_http("Pi", "https://pi.local:42617");
         assert!(matches!(
-            resolve_local_binary(&c).await,
+            resolve_local_binary_for_test(&c).await,
             LocalSpawn::CannotSpawnRemote
         ));
     }
@@ -231,12 +275,19 @@ mod tests {
         let mut c = Connection::new_local_managed("test", PathBuf::from("/nope/zeroclaw"), 42617);
         c.binary_path = Some(PathBuf::from("/definitely/not/a/binary"));
         let detected = binary::detect().await.ok().flatten();
-        match resolve_local_binary(&c).await {
+        match resolve_local_binary_for_test(&c).await {
             LocalSpawn::BinaryMissing => assert!(
                 detected.is_none(),
                 "BinaryMissing only valid when no detect-hit"
             ),
-            LocalSpawn::Spawn(p, _) => assert!(detected.is_some() && p == detected.unwrap().path),
+            LocalSpawn::Spawn(spec) => match spec.kind {
+                crate::runtime::supervisor::LaunchKind::ExternalPath(p) => {
+                    assert!(detected.is_some() && p == detected.unwrap().path)
+                }
+                crate::runtime::supervisor::LaunchKind::BundledSidecar => {
+                    panic!("external test must not resolve to bundled sidecar")
+                }
+            },
             LocalSpawn::CannotSpawnRemote => panic!("local URL must be spawnable"),
         }
     }
@@ -245,5 +296,25 @@ mod tests {
     fn url_port_parses_loopback() {
         assert_eq!(url_port("http://127.0.0.1:42617"), Some(42617));
         assert_eq!(url_port("http://localhost"), None);
+    }
+
+    async fn resolve_local_binary_for_test(conn: &Connection) -> LocalSpawn {
+        let is_local_url =
+            conn.url.starts_with("http://127.0.0.1") || conn.url.starts_with("http://localhost");
+        if !is_local_url || !matches!(conn.transport, Transport::Local) {
+            return LocalSpawn::CannotSpawnRemote;
+        }
+        if matches!(conn.lifecycle, Lifecycle::Remote) {
+            return LocalSpawn::CannotSpawnRemote;
+        }
+        let path = match &conn.binary_path {
+            Some(p) if p.exists() => p.clone(),
+            _ => match binary::detect().await.ok().flatten() {
+                Some(detected) => detected.path,
+                None => return LocalSpawn::BinaryMissing,
+            },
+        };
+        let port = url_port(&conn.url).unwrap_or(crate::connection::discover::DEFAULT_PORT);
+        LocalSpawn::Spawn(LaunchSpec::external_path(conn.id, path, port))
     }
 }

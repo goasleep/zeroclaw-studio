@@ -19,6 +19,8 @@ dist/
 src-tauri/target/
 src-tauri/gen/schemas/
 src-tauri/WixTools/
+src-tauri/binaries/zeroclaw-*
+!src-tauri/binaries/.gitkeep
 
 # OS
 .DS_Store

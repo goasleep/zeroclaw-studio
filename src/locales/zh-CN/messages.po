@@ -265,6 +265,11 @@ msgstr "Agent："
 msgid "Agents"
 msgstr "代理"
 
+#: src/app/workspace-shell/settings-sections.ts:35
+#: src/features/agent-workspace/AgentWorkspacePanel.tsx:238
+msgid "Agent Workspace"
+msgstr "Agent 工作区"
+
 #: src/features/integrations/IntegrationsPanel.tsx:391
 msgid "AI models"
 msgstr "AI 模型"

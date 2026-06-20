@@ -115,7 +115,19 @@ Build the packaged Tauri desktop app:
 pnpm desktop:build
 ```
 
-This is equivalent to `pnpm tauri build`.
+This first prepares the bundled `zeroclaw v0.8.0` sidecar in
+`src-tauri/binaries/`, then runs `pnpm tauri build`. The actual sidecar binary
+is a local build input and is ignored by git.
+
+To prepare or verify the sidecar explicitly:
+
+```bash
+pnpm fetch:zeroclaw-sidecar
+pnpm fetch:zeroclaw-sidecar:offline
+```
+
+The offline command only checks an existing
+`src-tauri/binaries/zeroclaw-${targetTriple}` file and never downloads.
 
 ## Tauri command bindings
 

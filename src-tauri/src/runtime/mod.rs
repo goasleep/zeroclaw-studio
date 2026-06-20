@@ -6,4 +6,5 @@
 
 pub mod binary;
 pub mod installer;
+pub mod ports;
 pub mod supervisor;

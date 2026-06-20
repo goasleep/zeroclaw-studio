@@ -44,6 +44,17 @@ pub enum Lifecycle {
     Remote,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeSource {
+    /// App-private runtime shipped as a bundled Tauri sidecar.
+    BundledInner,
+    /// A user-installed or user-selected zeroclaw binary.
+    ExternalPath,
+    /// A gateway owned outside this desktop app.
+    Attached,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default, specta::Type)]
 pub struct SshConfig {
     pub host: String,
@@ -94,11 +105,32 @@ pub struct Connection {
     pub ssh: Option<SshConfig>,
     pub auth: AuthConfig,
     pub lifecycle: Lifecycle,
+    #[serde(default = "Connection::default_runtime_source")]
+    pub runtime_source: RuntimeSource,
     /// For `Lifecycle::Managed` connections only.
     pub binary_path: Option<PathBuf>,
 }
 
 impl Connection {
+    fn default_runtime_source() -> RuntimeSource {
+        RuntimeSource::Attached
+    }
+
+    /// Build the app-private bundled inner runtime connection.
+    pub fn new_bundled_inner(name: impl Into<String>, port: u16) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            name: name.into(),
+            transport: Transport::Local,
+            url: format!("http://127.0.0.1:{port}"),
+            ssh: None,
+            auth: AuthConfig::default(),
+            lifecycle: Lifecycle::Managed,
+            runtime_source: RuntimeSource::BundledInner,
+            binary_path: None,
+        }
+    }
+
     /// Build a managed-local connection at the default port.
     pub fn new_local_managed(name: impl Into<String>, binary_path: PathBuf, port: u16) -> Self {
         Self {
@@ -109,6 +141,7 @@ impl Connection {
             ssh: None,
             auth: AuthConfig::default(),
             lifecycle: Lifecycle::Managed,
+            runtime_source: RuntimeSource::ExternalPath,
             binary_path: Some(binary_path),
         }
     }
@@ -123,6 +156,7 @@ impl Connection {
             ssh: None,
             auth: AuthConfig::default(),
             lifecycle: Lifecycle::Attach,
+            runtime_source: RuntimeSource::Attached,
             binary_path: None,
         }
     }
@@ -137,6 +171,7 @@ impl Connection {
             ssh: None,
             auth: AuthConfig::default(),
             lifecycle: Lifecycle::Remote,
+            runtime_source: RuntimeSource::Attached,
             binary_path: None,
         }
     }
@@ -153,6 +188,7 @@ impl Connection {
             ssh: Some(ssh),
             auth: AuthConfig::default(),
             lifecycle: Lifecycle::Remote,
+            runtime_source: RuntimeSource::Attached,
             binary_path: None,
         }
     }
@@ -172,13 +208,24 @@ mod tests {
         assert_eq!(c.transport, Transport::Local);
         assert_eq!(c.lifecycle, Lifecycle::Managed);
         assert_eq!(c.url, "http://127.0.0.1:42617");
+        assert_eq!(c.runtime_source, RuntimeSource::ExternalPath);
         assert!(c.binary_path.is_some());
+    }
+
+    #[test]
+    fn bundled_inner_has_no_binary_path() {
+        let c = Connection::new_bundled_inner("Inner zeroclaw", 42618);
+        assert_eq!(c.lifecycle, Lifecycle::Managed);
+        assert_eq!(c.runtime_source, RuntimeSource::BundledInner);
+        assert_eq!(c.url, "http://127.0.0.1:42618");
+        assert!(c.binary_path.is_none());
     }
 
     #[test]
     fn local_attach_no_binary() {
         let c = Connection::new_local_attach("Service", 42617);
         assert_eq!(c.lifecycle, Lifecycle::Attach);
+        assert_eq!(c.runtime_source, RuntimeSource::Attached);
         assert!(c.binary_path.is_none());
     }
 
