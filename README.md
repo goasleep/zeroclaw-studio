@@ -98,19 +98,19 @@ supported by the pinned runtime.
 
 ## Interface overview
 
-| Area | What it shows | Preview |
-| --- | --- | --- |
-| Workspace chat | A project-scoped chat session connected to the local `zeroclaw` runtime, with runtime status, workspace context, session history, attachments, and agent selection in one desktop window. | ![ZeroClaw Studio desktop chat workspace](images/workspace-chat.png) |
-| Runtime and app settings | Local runtime state, workspace folder context, preferences, native notifications, tray integration, deep-link registration, and the operations/capabilities navigation surface. | ![ZeroClaw Studio desktop settings panel](images/runtime-settings.png) |
+| Area                     | What it shows                                                                                                                                                                             | Preview                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Workspace chat           | A project-scoped chat session connected to the local `zeroclaw` runtime, with runtime status, workspace context, session history, attachments, and agent selection in one desktop window. | ![ZeroClaw Studio desktop chat workspace](images/workspace-chat.png)   |
+| Runtime and app settings | Local runtime state, workspace folder context, preferences, native notifications, tray integration, deep-link registration, and the operations/capabilities navigation surface.           | ![ZeroClaw Studio desktop settings panel](images/runtime-settings.png) |
 
 ## Runtime modes
 
-| Mode | Needs local `zeroclaw` install? | Best for |
-| --- | --- | --- |
-| Bundled inner runtime | No | First run, local project work, and trying the app without CLI setup |
-| Local & managed | Yes | Using your own local `zeroclaw` binary while letting the workspace supervise it |
-| Local & attached | Already running locally | Connecting to a gateway managed by launchd, systemd, `zeroclaw service start`, or another supervisor |
-| Remote | No | Managing a homelab, server, workstation, or cloud VM from your desktop |
+| Mode                  | Needs local `zeroclaw` install? | Best for                                                                                             |
+| --------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Bundled inner runtime | No                              | First run, local project work, and trying the app without CLI setup                                  |
+| Local & managed       | Yes                             | Using your own local `zeroclaw` binary while letting the workspace supervise it                      |
+| Local & attached      | Already running locally         | Connecting to a gateway managed by launchd, systemd, `zeroclaw service start`, or another supervisor |
+| Remote                | No                              | Managing a homelab, server, workstation, or cloud VM from your desktop                               |
 
 ## What this is NOT
 
@@ -182,11 +182,11 @@ against the matching `zeroclaw` build.
 
 The project targets current stable Tauri 2 desktop platforms:
 
-| Platform | Architecture | Status |
-| --- | --- | --- |
-| macOS | arm64 | Supported by release builds |
-| Linux | x86_64 | Supported by release builds |
-| Windows | x86_64 | Supported by release builds |
+| Platform | Architecture | Status                      |
+| -------- | ------------ | --------------------------- |
+| macOS    | arm64        | Supported by release builds |
+| Linux    | x86_64       | Supported by release builds |
+| Windows  | x86_64       | Supported by release builds |
 
 Source builds may work on additional targets when Tauri and a compatible
 `zeroclaw` gateway are available, but those targets are not part of the release
@@ -236,6 +236,8 @@ For formatting, generated Tauri command bindings, and PR workflow, see
 - [`docs/development.md`](docs/development.md) — local development workflow.
 - [`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md) — gateway
   protocol notes.
+- [`docs/product-data-boundaries.md`](docs/product-data-boundaries.md) — product
+  data ownership between Studio, ZeroClaw, and user resources.
 - [`SECURITY.md`](SECURITY.md) — supported versions, vulnerability reporting,
   data boundaries, and security notes.
 

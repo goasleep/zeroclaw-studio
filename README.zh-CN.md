@@ -68,19 +68,19 @@ Bundled gateway 会把 ZeroClaw 的 runtime 模型带进桌面应用：在 pinne
 
 ## 界面概览
 
-| 区域 | 说明 | 预览 |
-| --- | --- | --- |
-| 工作区聊天 | 面向项目的聊天会话，连接本地 `zeroclaw` runtime，并在一个桌面窗口里展示运行时状态、workspace 上下文、会话历史、附件和 agent 选择。 | ![ZeroClaw Studio 桌面端工作区聊天界面](images/workspace-chat.png) |
-| 运行时和应用设置 | 展示本地 runtime 状态、workspace 文件夹上下文、偏好设置、原生通知、托盘集成、深链接注册，以及运维和能力面板导航。 | ![ZeroClaw Studio 桌面端设置面板](images/runtime-settings.png) |
+| 区域             | 说明                                                                                                                               | 预览                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 工作区聊天       | 面向项目的聊天会话，连接本地 `zeroclaw` runtime，并在一个桌面窗口里展示运行时状态、workspace 上下文、会话历史、附件和 agent 选择。 | ![ZeroClaw Studio 桌面端工作区聊天界面](images/workspace-chat.png) |
+| 运行时和应用设置 | 展示本地 runtime 状态、workspace 文件夹上下文、偏好设置、原生通知、托盘集成、深链接注册，以及运维和能力面板导航。                  | ![ZeroClaw Studio 桌面端设置面板](images/runtime-settings.png)     |
 
 ## 运行模式
 
-| 模式 | 是否需要本机安装 `zeroclaw` | 适合场景 |
-| --- | --- | --- |
-| 内置 inner runtime | 不需要 | 首次使用、本地项目工作、不想先配置 CLI 就试用应用 |
-| 本地托管 | 需要 | 使用你自己的本地 `zeroclaw` 二进制，同时让 workspace 负责监督进程 |
-| 本地附加 | 本地已运行 | 连接由 launchd、systemd、`zeroclaw service start` 或其他 supervisor 管理的 gateway |
-| 远程 | 不需要 | 从桌面管理 homelab、服务器、工作站或云 VM |
+| 模式               | 是否需要本机安装 `zeroclaw` | 适合场景                                                                           |
+| ------------------ | --------------------------- | ---------------------------------------------------------------------------------- |
+| 内置 inner runtime | 不需要                      | 首次使用、本地项目工作、不想先配置 CLI 就试用应用                                  |
+| 本地托管           | 需要                        | 使用你自己的本地 `zeroclaw` 二进制，同时让 workspace 负责监督进程                  |
+| 本地附加           | 本地已运行                  | 连接由 launchd、systemd、`zeroclaw service start` 或其他 supervisor 管理的 gateway |
+| 远程               | 不需要                      | 从桌面管理 homelab、服务器、工作站或云 VM                                          |
 
 ## 这不是什么
 
@@ -133,10 +133,10 @@ ZeroClaw Studio 通过 HTTP、WebSocket 和 SSE 与 gateway 通信。Gateway 兼
 
 项目面向当前稳定的 Tauri 2 桌面平台：
 
-| 平台 | 架构 | 状态 |
-| --- | --- | --- |
-| macOS | arm64 | release 构建支持 |
-| Linux | x86_64 | release 构建支持 |
+| 平台    | 架构   | 状态             |
+| ------- | ------ | ---------------- |
+| macOS   | arm64  | release 构建支持 |
+| Linux   | x86_64 | release 构建支持 |
 | Windows | x86_64 | release 构建支持 |
 
 当 Tauri 和兼容的 `zeroclaw` gateway 可用时，源码构建可能支持更多 target，但这些 target 暂不属于 release matrix。
@@ -182,6 +182,7 @@ pnpm desktop:build
 - [`docs/architecture.md`](docs/architecture.md)：产品和技术模型。
 - [`docs/development.md`](docs/development.md)：本地开发流程。
 - [`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md)：gateway 协议说明。
+- [`docs/product-data-boundaries.md`](docs/product-data-boundaries.md)：Studio、ZeroClaw 和用户资源之间的产品数据归属。
 - [`SECURITY.md`](SECURITY.md)：支持版本、漏洞报告、数据边界和安全说明。
 
 ## 安全说明
