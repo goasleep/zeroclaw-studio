@@ -132,6 +132,18 @@ function formatBytes(size?: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const MESSAGE_TIMESTAMP_PREFIX =
+  /^\[((?:\d{4}-\d{2}-\d{2})[ T](?:\d{2}:\d{2}(?::\d{2})?)(?:\s*(?:Z|[+-]\d{2}:?\d{2}))?)\]\s*/;
+
+function splitMessageTimestamp(content: string) {
+  const match = content.match(MESSAGE_TIMESTAMP_PREFIX);
+  if (!match) return { timestamp: null, content };
+  return {
+    timestamp: match[1],
+    content: content.slice(match[0].length),
+  };
+}
+
 type ToolCallView = ChatMessage["toolCalls"][number];
 
 function valueFromKeys(value: unknown, keys: string[]) {
@@ -630,13 +642,15 @@ export function ChatPanel({
               <Clipboard size={12} />
             </button>
             <div className="flex-1" />
-            <Select
-              value={agentAlias}
-              options={agentOptions}
-              onValueChange={onAgentChange}
-              placeholder={t`Agent`}
-              className="h-8 w-36 max-w-[44vw] border-white/10 bg-white/[0.04] py-0 text-[11px]"
-            />
+            {!hasMessages && (
+              <Select
+                value={agentAlias}
+                options={agentOptions}
+                onValueChange={onAgentChange}
+                placeholder={t`Agent`}
+                className="h-8 w-36 max-w-[44vw] border-white/10 bg-white/[0.04] py-0 text-[11px]"
+              />
+            )}
             <button
               type="button"
               onClick={() => void submit()}
@@ -1109,70 +1123,76 @@ function MessageRow({
 }) {
   const { t } = useLingui();
   const isUser = message.role === "user";
+  const { timestamp, content } = splitMessageTimestamp(message.content);
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
-      <div
-        className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${
-          isUser ? "bg-cyan-400/10 text-neutral-100" : "bg-white/[0.06] text-neutral-200"
-        }`}
-      >
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-1 text-[10px] text-neutral-400">
-            {message.attachments.map((attachment) => (
-              <span
-                key={`${attachment.filename}-${attachment.mime_type}`}
-                className="rounded bg-[#020818]/90 px-1.5 py-0.5 font-mono"
-              >
-                {attachment.filename}
-                {attachment.size !== undefined && (
-                  <span className="ml-1 text-neutral-600">{formatBytes(attachment.size)}</span>
-                )}
-              </span>
-            ))}
-          </div>
+      <div className={`flex max-w-[90%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+        {timestamp && (
+          <div className="mb-1 px-1 font-mono text-[10px] text-neutral-500">{timestamp}</div>
         )}
+        <div
+          className={`rounded-lg px-3 py-2 text-sm ${
+            isUser ? "bg-cyan-400/10 text-neutral-100" : "bg-white/[0.06] text-neutral-200"
+          }`}
+        >
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-1 text-[10px] text-neutral-400">
+              {message.attachments.map((attachment) => (
+                <span
+                  key={`${attachment.filename}-${attachment.mime_type}`}
+                  className="rounded bg-[#020818]/90 px-1.5 py-0.5 font-mono"
+                >
+                  {attachment.filename}
+                  {attachment.size !== undefined && (
+                    <span className="ml-1 text-neutral-600">{formatBytes(attachment.size)}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
 
-        {message.thinking && (
-          <details className="mb-2 text-xs">
-            <summary className="flex cursor-pointer items-center gap-1 text-neutral-500">
-              <Brain size={10} />
-              {t`thinking`}
-            </summary>
-            <pre className="mt-1 whitespace-pre-wrap rounded bg-[#020818]/60 p-2 text-[11px] text-neutral-400">
-              {message.thinking}
-            </pre>
-          </details>
-        )}
+          {message.thinking && (
+            <details className="mb-2 text-xs">
+              <summary className="flex cursor-pointer items-center gap-1 text-neutral-500">
+                <Brain size={10} />
+                {t`thinking`}
+              </summary>
+              <pre className="mt-1 whitespace-pre-wrap rounded bg-[#020818]/60 p-2 text-[11px] text-neutral-400">
+                {message.thinking}
+              </pre>
+            </details>
+          )}
 
-        <ExecutionStream toolCalls={message.toolCalls} />
+          <ExecutionStream toolCalls={message.toolCalls} />
 
-        {message.approval && (
-          <ApprovalCard
-            approval={message.approval}
-            toolCalls={message.toolCalls}
-            onApprove={onApprove}
-          />
-        )}
+          {message.approval && (
+            <ApprovalCard
+              approval={message.approval}
+              toolCalls={message.toolCalls}
+              onApprove={onApprove}
+            />
+          )}
 
-        {message.content && (
-          <div className="prose prose-invert prose-sm max-w-none prose-pre:bg-[#020818]/90 prose-pre:text-[12px]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-              {message.content}
-            </ReactMarkdown>
-          </div>
-        )}
+          {content && (
+            <div className="prose prose-invert prose-sm max-w-none prose-pre:bg-[#020818]/90 prose-pre:text-[12px]">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+          )}
 
-        {message.cost_usd !== undefined && (
-          <p className="mt-2 text-[10px] text-neutral-500">
-            {t`cost`} ${message.cost_usd.toFixed(4)}
-          </p>
-        )}
-        {message.status === "error" && (
-          <p className="mt-2 text-xs text-red-300">{message.error || t`error`}</p>
-        )}
-        {message.status === "streaming" && (
-          <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
-        )}
+          {message.cost_usd !== undefined && (
+            <p className="mt-2 text-[10px] text-neutral-500">
+              {t`cost`} ${message.cost_usd.toFixed(4)}
+            </p>
+          )}
+          {message.status === "error" && (
+            <p className="mt-2 text-xs text-red-300">{message.error || t`error`}</p>
+          )}
+          {message.status === "streaming" && (
+            <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-cyan-300" />
+          )}
+        </div>
       </div>
     </div>
   );
