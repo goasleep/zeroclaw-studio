@@ -113,6 +113,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_shell::init())
         .manage(book.clone())
         .manage(tunnels.clone())
         .manage(supervisor.clone())
@@ -238,7 +239,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::gateway_client::gateway_request::<tauri::Wry>,
         commands::runtime::detect_local_binary,
         commands::runtime::install_instructions,
-        commands::runtime::runtime_start,
+        commands::runtime::runtime_start::<tauri::Wry>,
         commands::runtime::runtime_stop,
         commands::runtime::runtime_status,
         commands::setup::setup_get_status,

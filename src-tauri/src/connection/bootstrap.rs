@@ -1,22 +1,16 @@
-//! First-run bootstrap: if the user has a local `zeroclaw` binary but no
-//! saved connections yet, create one for them and mark it active. The next
-//! step (activation) then auto-spawns the gateway and pairs — fully
-//! zero-touch onboarding for the common case of "I have zeroclaw installed
-//! and I just want the workspace to talk to it".
+//! Bootstrap the app-private bundled inner runtime connection.
 //!
-//! Deliberately does nothing if:
-//!  - The user already has any saved connections (don't overwrite intent).
-//!  - No local `zeroclaw` binary is detectable (remote-only user; they'll
-//!    pick "Connect to remote" from the welcome screen).
+//! The inner connection is guaranteed to exist for both fresh installs and
+//! users migrating from older builds. It becomes active only when no active
+//! connection exists, so we don't steal focus from a user-selected gateway.
 //!
 //! Behaviour is observable through the existing `zeroclaw://activation`
 //! event stream (after this returns, the caller invokes the activator on
 //! the freshly-minted connection).
 
-use crate::connection::Connection;
-use crate::connection::discover::{self, DEFAULT_PORT};
 use crate::connection::store::SharedConnectionBook;
-use crate::runtime::binary;
+use crate::connection::{Connection, RuntimeSource};
+use crate::runtime::ports;
 use anyhow::Result;
 use tauri::{AppHandle, Runtime};
 
@@ -24,64 +18,45 @@ use tauri::{AppHandle, Runtime};
 /// caller doesn't branch on it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BootstrapOutcome {
-    /// User already had connections; we left the book alone.
-    AlreadyConfigured,
-    /// No local binary detectable; user must add a remote connection
-    /// manually.
-    NoLocalBinary,
-    /// Created a new local connection and made it active. The next step
-    /// (activator) will spawn / pair.
-    AutoCreatedLocal,
+    /// A bundled inner connection already existed.
+    InnerAlreadyPresent,
+    /// Could not reserve a port for the bundled inner runtime.
+    InnerPortUnavailable,
+    /// Created a new bundled inner connection and made it active. The next
+    /// step (activator) will spawn / pair.
+    AutoCreatedInner,
 }
 
-/// Attempt the first-run auto-onboard flow. Persists to disk on success.
+/// Ensure the bundled inner connection exists. Persists to disk on success.
 ///
-/// **Idempotent:** safe to call on every startup — if connections already
-/// exist, this returns `AlreadyConfigured` without touching anything.
+/// **Idempotent:** safe to call on every startup.
 pub async fn try_auto_onboard<R: Runtime>(
     app: &AppHandle<R>,
     book: &SharedConnectionBook,
 ) -> Result<BootstrapOutcome> {
-    // Bail if the user already configured anything — never silently
-    // overwrite a connection they created by hand.
-    if !book.list().await.is_empty() {
-        return Ok(BootstrapOutcome::AlreadyConfigured);
+    if book
+        .list()
+        .await
+        .iter()
+        .any(|conn| matches!(conn.runtime_source, RuntimeSource::BundledInner))
+    {
+        return Ok(BootstrapOutcome::InnerAlreadyPresent);
     }
 
-    // Look for a local binary. If there isn't one, this user is remote-only
-    // (or hasn't installed yet) — leave them to the welcome screen.
-    let Some(detected) = binary::detect().await.ok().flatten() else {
-        return Ok(BootstrapOutcome::NoLocalBinary);
+    let Ok(port) = ports::pick_inner_port() else {
+        return Ok(BootstrapOutcome::InnerPortUnavailable);
     };
 
-    // Pick the port: if something is already listening on the default
-    // port, attach to it (don't fight); otherwise we'll spawn on the
-    // default. Either way the resulting Connection is local-loopback so
-    // the activator will pair via the admin endpoint without a manual
-    // code.
-    let already_running = discover::probe_local(DEFAULT_PORT).await.is_some();
-
-    let conn = if already_running {
-        // Attach mode — gateway is up (maybe `zeroclaw service start` ran
-        // earlier today). We won't kill it on app exit because we didn't
-        // spawn it, but we'll still spawn one later if it dies (activator
-        // promotes attach → managed when the URL goes cold and a binary
-        // exists).
-        let mut c = Connection::new_local_attach("Local zeroclaw", DEFAULT_PORT);
-        // Remember the path so the activator's auto-promote spawn path
-        // doesn't need to re-detect.
-        c.binary_path = Some(detected.path);
-        c
-    } else {
-        Connection::new_local_managed("Local zeroclaw", detected.path, DEFAULT_PORT)
-    };
+    let conn = Connection::new_bundled_inner("Inner zeroclaw", port);
 
     let id = conn.id;
     book.upsert(conn).await;
-    book.set_active(Some(id)).await?;
+    if book.active().await.is_none() {
+        book.set_active(Some(id)).await?;
+    }
     book.save(app).await?;
 
-    Ok(BootstrapOutcome::AutoCreatedLocal)
+    Ok(BootstrapOutcome::AutoCreatedInner)
 }
 
 #[cfg(test)]
@@ -89,31 +64,32 @@ mod tests {
     use crate::connection::Connection;
     use crate::connection::store::ConnectionBook;
 
-    // We don't have a real AppHandle in unit tests, so the public
-    // `try_auto_onboard` (which needs to persist) can only be exercised
-    // through integration tests. The interesting branch — "skips if
-    // connections already exist" — has a `book`-only equivalent we can
-    // test in isolation, which catches the no-overwrite invariant that
-    // really matters.
-
     #[tokio::test]
-    async fn skip_when_connections_exist_predicate() {
+    async fn existing_non_inner_connections_do_not_block_inner_creation() {
         let book = ConnectionBook::new();
         book.upsert(Connection::new_local_attach("preset", 42617))
             .await;
-        // The first check inside try_auto_onboard:
         assert!(
-            !book.list().await.is_empty(),
-            "if list is non-empty, bootstrap must return AlreadyConfigured"
+            !book
+                .list()
+                .await
+                .iter()
+                .any(|conn| matches!(conn.runtime_source, super::RuntimeSource::BundledInner)),
+            "non-inner connections must not block creating the bundled inner runtime"
         );
     }
 
     #[tokio::test]
-    async fn empty_book_is_eligible() {
+    async fn bundled_inner_is_detectable() {
         let book = ConnectionBook::new();
+        book.upsert(Connection::new_bundled_inner("Inner zeroclaw", 42618))
+            .await;
         assert!(
-            book.list().await.is_empty(),
-            "fresh book is eligible for auto-onboard"
+            book.list()
+                .await
+                .iter()
+                .any(|conn| matches!(conn.runtime_source, super::RuntimeSource::BundledInner)),
+            "existing bundled inner connection should make bootstrap idempotent"
         );
     }
 }

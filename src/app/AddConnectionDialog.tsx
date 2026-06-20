@@ -40,6 +40,7 @@ function newLocalAttach(name: string, port: number): Connection {
     ssh: null,
     auth: { mode: "pairing", token: null },
     lifecycle: "attach",
+    runtime_source: "attached",
     binary_path: null,
   };
 }
@@ -53,6 +54,7 @@ function newLocalManaged(name: string, binaryPath: string, port: number): Connec
     ssh: null,
     auth: { mode: "pairing", token: null },
     lifecycle: "managed",
+    runtime_source: "external_path",
     binary_path: binaryPath,
   };
 }
@@ -66,6 +68,7 @@ function newRemoteHttp(name: string, url: string): Connection {
     ssh: null,
     auth: { mode: "pairing", token: null },
     lifecycle: "remote",
+    runtime_source: "attached",
     binary_path: null,
   };
 }
@@ -79,6 +82,7 @@ function newRemoteSsh(name: string, ssh: SshConfig): Connection {
     ssh,
     auth: { mode: "pairing", token: null },
     lifecycle: "remote",
+    runtime_source: "attached",
     binary_path: null,
   };
 }

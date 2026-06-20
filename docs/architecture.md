@@ -56,11 +56,17 @@ struct Connection {
     ssh: Option<SshConfig>,
     auth: AuthConfig,
     lifecycle: Lifecycle,   // Managed, Attach, Remote
-    binary_path: Option<PathBuf>,   // only for Managed
+    runtime_source: RuntimeSource, // BundledInner, ExternalPath, Attached
+    binary_path: Option<PathBuf>,   // only for ExternalPath managed
 }
 ```
 
-- `Managed`: workspace spawns and owns the local `zeroclaw` process.
+- `Managed`: workspace spawns and owns a local `zeroclaw` process.
+- `BundledInner`: app-private managed runtime shipped as a sidecar. It uses
+  its own config dir under the Tauri app-data directory and never uses port
+  `42617`.
+- `ExternalPath`: managed runtime using a user-installed or user-selected
+  `zeroclaw` binary.
 - `Attach`: gateway is already running locally; workspace just connects.
 - `Remote`: gateway lives elsewhere, reached via direct URL, SSH tunnel,
   Tailscale, etc.
@@ -76,10 +82,10 @@ activator.rs` runs the same workflow on the backend:
 
 1. **Probe** `Connection.url` for an existing healthy gateway.
 2. If down AND the connection is local-loopback, **spawn** a managed
-   `zeroclaw gateway start -p <port>` via `runtime/supervisor.rs`. If the
-   stored binary path is invalid, re-run `runtime::binary::detect` to find
-   one on `$PATH` / well-known install dirs. If still no binary, emit
-   `binary_missing` so the UI offers the install path.
+   `zeroclaw gateway start -p <port>` via `runtime/supervisor.rs`. Bundled
+   inner connections use the Tauri sidecar and app-private config dir;
+   external managed connections use the stored binary path or re-run
+   `runtime::binary::detect` for `$PATH` / well-known install dirs.
 3. **Await health** (`/health` poll, 15s timeout, 300ms interval).
 4. **Pair** via `gateway::pair::ensure_token` — reuses existing token if
    still valid, otherwise mints a fresh one on localhost (or surfaces
@@ -96,16 +102,12 @@ gateway…", "pairing…", etc.) without polling.
 the activator. It only fires when the user's saved-connections list is
 empty (idempotent — never overwrites existing connections):
 
-- If a local `zeroclaw` binary is detectable, synthesise a `Local
-  zeroclaw` connection (`managed` if the default port is free, `attach`
-  if the port is already in use) with the detected binary path baked in,
-  persist, and mark active.
-- If no local binary, do nothing — the welcome screen guides the user
-  to add a remote or install one.
+- Synthesize an `Inner zeroclaw` bundled connection, choose an app-private
+  localhost port outside `42617`, persist, and mark active.
 
-Result: a fresh install on a machine that already has `zeroclaw`
-installed brings up a fully-paired gateway and the workspace UI in one
-step, with no CLI commands at any point.
+Result: a fresh install brings up a fully-paired app-private gateway and the
+workspace UI in one step, without touching the user's `~/.zeroclaw/` or any
+gateway already listening on `127.0.0.1:42617`.
 
 ## Phase status
 

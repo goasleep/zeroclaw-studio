@@ -1,0 +1,18 @@
+{
+  "version": "v0.8.0",
+  "baseUrl": "https://github.com/zeroclaw-labs/zeroclaw/releases/download/v0.8.0",
+  "targets": {
+    "aarch64-apple-darwin": {
+      "asset": "zeroclaw-aarch64-apple-darwin.tar.gz",
+      "sha256": "ee945b44e6cd39c5b07c9375ffa55c8fd3bde1f8ecc21238899a8c6e91cc9c26"
+    },
+    "x86_64-unknown-linux-gnu": {
+      "asset": "zeroclaw-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "b3a3349971fc2e030b80f95999ae3fb671dc8d7af2ebeabedd7ea176c6182b64"
+    },
+    "x86_64-pc-windows-msvc": {
+      "asset": "zeroclaw-x86_64-pc-windows-msvc.zip",
+      "sha256": "7441278c24d7bbe967bcd4eeb5740f3375415fcb25e8ab0de438376345f088ad"
+    }
+  }
+}

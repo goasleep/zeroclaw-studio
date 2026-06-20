@@ -1,10 +1,11 @@
 //! Local-runtime commands: detect binary, start/stop managed process.
 
+use crate::connection::RuntimeSource;
 use crate::connection::store::SharedConnectionBook;
 use crate::runtime::binary::{self, DetectedBinary};
 use crate::runtime::installer::{self, InstallInstructions};
-use crate::runtime::supervisor::{SharedSupervisor, SupervisorStatus};
-use tauri::State;
+use crate::runtime::supervisor::{LaunchSpec, SharedSupervisor, SupervisorStatus};
+use tauri::{AppHandle, Manager, Runtime, State};
 use uuid::Uuid;
 
 #[tauri::command]
@@ -21,7 +22,8 @@ pub fn install_instructions() -> InstallInstructions {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn runtime_start(
+pub async fn runtime_start<R: Runtime>(
+    app: AppHandle<R>,
     book: State<'_, SharedConnectionBook>,
     supervisor: State<'_, SharedSupervisor>,
     id: Uuid,
@@ -30,14 +32,24 @@ pub async fn runtime_start(
         .get(id)
         .await
         .ok_or_else(|| "connection not found".to_string())?;
-    let binary_path = conn
-        .binary_path
-        .clone()
-        .ok_or_else(|| "connection has no binary_path".to_string())?;
     // Extract port from URL ("http://127.0.0.1:PORT"). Fall back to default.
     let port = url_port(&conn.url).unwrap_or(crate::connection::discover::DEFAULT_PORT);
+    let spec = if matches!(conn.runtime_source, RuntimeSource::BundledInner) {
+        let config_dir = app
+            .path()
+            .app_data_dir()
+            .map_err(|e| e.to_string())?
+            .join("inner-zeroclaw");
+        LaunchSpec::bundled_inner(id, port, config_dir)
+    } else {
+        let binary_path = conn
+            .binary_path
+            .clone()
+            .ok_or_else(|| "connection has no binary_path".to_string())?;
+        LaunchSpec::external_path(id, binary_path, port)
+    };
     supervisor
-        .start(id, &binary_path, port)
+        .start(&app, spec)
         .await
         .map_err(|e| e.to_string())?;
     Ok(())

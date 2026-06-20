@@ -40,6 +40,8 @@ The app is independent from the main `zeroclaw` repo. It speaks to a
 `zeroclaw` gateway over HTTP/WebSocket, and each gateway can be:
 
 - **Local & managed** — workspace spawns and supervises a `zeroclaw` process.
+- **Inner runtime** — fresh installs get an app-private bundled `zeroclaw`
+  runtime, isolated from your `~/.zeroclaw/` and the default gateway port.
 - **Local & attached** — workspace connects to a gateway you already started
   (systemd, launchd, `zeroclaw service start`, …).
 - **Remote** — point at any reachable URL (SSH tunnel, Tailscale, VPN, public TLS).
@@ -50,8 +52,8 @@ ZeroClaw's low deployment cost is the point: AI capabilities can live wherever
 your work already lives, while the desktop app gives you one place to connect,
 operate, observe, and intervene.
 
-The workspace UI itself runs everywhere — installing it never installs or
-modifies anything in `~/.zeroclaw/` on machines it doesn't manage.
+The workspace UI itself runs everywhere. The bundled inner runtime keeps its
+own app-data config directory and never modifies your user-level `~/.zeroclaw/`.
 
 ## What this is NOT
 
@@ -66,7 +68,7 @@ modifies anything in `~/.zeroclaw/` on machines it doesn't manage.
 
 Prebuilt desktop artifacts are produced by tag-triggered GitHub releases:
 
-- macOS: `.dmg` / `.app`
+- macOS arm64: `.dmg` / `.app`
 - Linux: `.deb` / AppImage
 - Windows: `.msi` / NSIS `.exe`
 
@@ -81,26 +83,26 @@ xattr -dr com.apple.quarantine /Applications/ZeroClaw\ Workspace.app
 ```
 
 Signed and notarized builds are planned for a later release.
+Intel macOS builds are paused while the pinned bundled `zeroclaw v0.8.0`
+release lacks an `x86_64-apple-darwin` artifact.
 
 ## Quick start
 
-You need a reachable ZeroClaw gateway. The gateway can run on the same machine,
-on another host in your network, or behind an SSH/Tailscale/VPN route.
+You need a reachable ZeroClaw gateway. Fresh installs start with a bundled
+app-private gateway, and you can still connect to gateways on the same machine,
+on another host, or behind an SSH/Tailscale/VPN route.
 
-1. Install or start a ZeroClaw gateway. See the
-   [main ZeroClaw repository](https://github.com/zeroclaw-labs/zeroclaw).
-2. Launch ZeroClaw Workspace.
-3. Choose one connection mode:
+1. Launch ZeroClaw Workspace.
+2. Use the bundled inner runtime, or choose another connection mode:
    - **Local & managed** — let the workspace find and supervise a local
-     `zeroclaw` binary.
+     user-installed `zeroclaw` binary.
    - **Local & attached** — connect to a gateway you already started.
    - **Remote** — enter a reachable URL or configure an SSH-tunneled target.
-4. Pair the workspace with the gateway when prompted.
-5. Open a workspace folder and start a chat.
+3. Pair the workspace with the gateway when prompted.
+4. Open a workspace folder and start a chat.
 
-If no local `zeroclaw` binary is found, remote-only use still works. The desktop
-app does not require `zeroclaw` to be installed locally unless you want a
-managed local connection.
+The desktop app does not require `zeroclaw` to be installed locally unless you
+want a managed external local connection.
 
 ## Gateway compatibility
 
