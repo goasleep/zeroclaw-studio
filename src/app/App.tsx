@@ -17,7 +17,8 @@ import { useGlobalQuickInvoke } from "@/workspace/shortcuts/useGlobalQuickInvoke
 import { useNotifications } from "@/workspace/notifications/useNotifications";
 import { useDeepLinks } from "@/workspace/protocol/useDeepLinks";
 import { setAppLocale } from "@/i18n/i18n";
-import { loadPreferences } from "@/workspace/preferences/preferences";
+import { loadPreferences, type AppPreferences } from "@/workspace/preferences/preferences";
+import { applyAppTheme } from "@/workspace/preferences/theme";
 
 type AddPath = "remote" | "local-attach" | "local-install" | null;
 
@@ -31,9 +32,39 @@ function Shell() {
   useDeepLinks();
 
   useEffect(() => {
+    let disposed = false;
+
+    function applyPreferenceSideEffects(preferences: AppPreferences) {
+      applyAppTheme(preferences.theme);
+      void setAppLocale(preferences.language);
+    }
+
+    function onPreferencesChanged(e: Event) {
+      const detail = (
+        e as CustomEvent<{
+          key: keyof AppPreferences;
+          value: AppPreferences[keyof AppPreferences];
+        }>
+      ).detail;
+      if (!detail) return;
+      if (detail.key === "theme") {
+        applyAppTheme(detail.value as AppPreferences["theme"]);
+      }
+      if (detail.key === "language") {
+        void setAppLocale(detail.value as AppPreferences["language"]);
+      }
+    }
+
     void loadPreferences()
-      .then((preferences) => setAppLocale(preferences.language))
+      .then((preferences) => {
+        if (!disposed) applyPreferenceSideEffects(preferences);
+      })
       .catch(() => undefined);
+    window.addEventListener("zeroclaw://preferences-changed", onPreferencesChanged);
+    return () => {
+      disposed = true;
+      window.removeEventListener("zeroclaw://preferences-changed", onPreferencesChanged);
+    };
   }, []);
 
   // React to zeroclaw:// deep-link commands — for now, just log; future

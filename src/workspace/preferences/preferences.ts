@@ -1,5 +1,6 @@
 import { load } from "@tauri-apps/plugin-store";
 import { DEFAULT_LOCALE, isSupportedLocale, type SupportedLocale } from "@/i18n/locales";
+import { DEFAULT_THEME, isSupportedTheme, type AppTheme } from "./theme";
 
 const STORE_PATH = "app-preferences.json";
 
@@ -8,6 +9,7 @@ export interface AppPreferences {
   notifications: boolean;
   tray: boolean;
   language: SupportedLocale;
+  theme: AppTheme;
 }
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
@@ -15,6 +17,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   notifications: true,
   tray: true,
   language: DEFAULT_LOCALE,
+  theme: DEFAULT_THEME,
 };
 
 type PreferenceKey = keyof AppPreferences;
@@ -26,6 +29,7 @@ async function preferenceStore() {
       "app.preferences.notifications": DEFAULT_PREFERENCES.notifications,
       "app.preferences.tray": DEFAULT_PREFERENCES.tray,
       "app.preferences.language": DEFAULT_PREFERENCES.language,
+      "app.preferences.theme": DEFAULT_PREFERENCES.theme,
     },
     autoSave: 100,
   });
@@ -34,6 +38,7 @@ async function preferenceStore() {
 export async function loadPreferences(): Promise<AppPreferences> {
   const store = await preferenceStore();
   const language = await store.get<unknown>("app.preferences.language");
+  const theme = await store.get<unknown>("app.preferences.theme");
   return {
     shortcut: (await store.get<string>("app.preferences.shortcut")) ?? DEFAULT_PREFERENCES.shortcut,
     notifications:
@@ -41,6 +46,7 @@ export async function loadPreferences(): Promise<AppPreferences> {
       DEFAULT_PREFERENCES.notifications,
     tray: (await store.get<boolean>("app.preferences.tray")) ?? DEFAULT_PREFERENCES.tray,
     language: isSupportedLocale(language) ? language : DEFAULT_PREFERENCES.language,
+    theme: isSupportedTheme(theme) ? theme : DEFAULT_PREFERENCES.theme,
   };
 }
 

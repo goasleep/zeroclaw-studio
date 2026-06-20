@@ -22,6 +22,7 @@ import {
   savePreference,
   type AppPreferences,
 } from "@/workspace/preferences/preferences";
+import { applyAppTheme } from "@/workspace/preferences/theme";
 import { SETTINGS_SECTIONS, type SettingsGroup } from "./settings-sections";
 import { settingsSectionForConfigTarget } from "./settings-routing";
 import type { SettingsSection } from "./types";
@@ -214,6 +215,9 @@ function AppSettings() {
     if (key === "language") {
       await setAppLocale(value as AppPreferences["language"]);
     }
+    if (key === "theme") {
+      applyAppTheme(value as AppPreferences["theme"]);
+    }
   }
 
   return (
@@ -316,6 +320,24 @@ function AppSettings() {
                   ]}
                   onValueChange={(value) =>
                     void updatePreference("language", value as AppPreferences["language"])
+                  }
+                  className="w-full sm:w-56"
+                />
+              }
+            />
+
+            <PreferenceRow
+              label={t`Theme`}
+              description={t`Switch between the dark workspace and a lighter workspace surface.`}
+              control={
+                <Select
+                  value={preferences.theme}
+                  options={[
+                    { value: "dark", label: t`Dark` },
+                    { value: "light", label: t`Light` },
+                  ]}
+                  onValueChange={(value) =>
+                    void updatePreference("theme", value as AppPreferences["theme"])
                   }
                   className="w-full sm:w-56"
                 />
