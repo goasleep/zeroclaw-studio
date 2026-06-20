@@ -46,7 +46,7 @@ function MessageRow({
   onApprove: (request_id: string, decision: ApprovalDecision) => Promise<void>;
 }) {
   const { t } = useLingui();
-  const isUser = message.role === "user";
+  const isUser = message.role === "user" && !isExternalMessage(message);
   const parsed = splitMessageTimestamp(message.content);
   const timestamp = message.timestamp ?? parsed.timestamp;
   return (
@@ -121,6 +121,10 @@ function MessageRow({
       </div>
     </div>
   );
+}
+
+function isExternalMessage(message: ChatMessage) {
+  return message.source !== undefined && message.source !== null && message.source !== "local";
 }
 
 function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {

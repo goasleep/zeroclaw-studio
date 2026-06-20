@@ -40,6 +40,7 @@ export function fromSessionMessage(message: SessionMessage): ChatMessage | null 
     id: uid(),
     role: message.role,
     content,
+    source: message.source,
     timestamp: message.created_at ?? timestamp,
     toolCalls: [],
     status: "done",
@@ -67,6 +68,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             id: uid(),
             role: "user",
             content: action.content,
+            source: "local",
             timestamp,
             attachments: action.attachments,
             toolCalls: [],
@@ -97,6 +99,24 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       const frame = action.frame;
       if (frame.type === "session_start") {
         return { ...state, sessionId: frame.session_id };
+      }
+
+      if (frame.type === "message") {
+        return appendDoneMessage(state, {
+          role: frame.role === "user" ? "user" : "assistant",
+          content: frame.content,
+          source: frame.source ?? "gateway",
+          timestamp: frame.timestamp,
+        });
+      }
+
+      if (frame.type === "cron_result") {
+        return appendDoneMessage(state, {
+          role: "assistant",
+          content: cronResultContent(frame.output),
+          source: "cron",
+          timestamp: frame.timestamp,
+        });
       }
 
       const last = state.messages[state.messages.length - 1];
@@ -168,6 +188,37 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         messages: [...state.messages.slice(0, -1), updated],
       };
     }
+  }
+}
+
+function appendDoneMessage(
+  state: ChatState,
+  message: Pick<ChatMessage, "role" | "content"> & Pick<ChatMessage, "source" | "timestamp">,
+): ChatState {
+  return {
+    ...state,
+    messages: [
+      ...state.messages,
+      {
+        id: uid(),
+        role: message.role,
+        content: message.content,
+        source: message.source,
+        timestamp: message.timestamp ?? new Date().toISOString(),
+        toolCalls: [],
+        status: "done",
+      },
+    ],
+  };
+}
+
+function cronResultContent(output: unknown) {
+  if (typeof output === "string") return output;
+  if (output == null) return "";
+  try {
+    return JSON.stringify(output, null, 2);
+  } catch {
+    return String(output);
   }
 }
 

@@ -118,6 +118,7 @@ export function ChatPanel({
   const [selectedModelProvider, setSelectedModelProvider] = useState(MODEL_FOLLOWS_AGENT);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
+  const messageBottomRef = useRef<HTMLDivElement | null>(null);
   const { attachmentDrafts, clipboardAttachments, setClipboardAttachments, clearAttachments } =
     useAttachments({
       active,
@@ -182,12 +183,18 @@ export function ChatPanel({
   }, []);
 
   useEffect(() => {
-    const scrollContainer = messageScrollRef.current;
-    if (!scrollContainer) return;
-    const frame = window.requestAnimationFrame(() => {
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    if (chat.messages.length === 0) return;
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      messageBottomRef.current?.scrollIntoView({ block: "end" });
+      secondFrame = window.requestAnimationFrame(() => {
+        messageBottomRef.current?.scrollIntoView({ block: "end" });
+      });
     });
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
   }, [chat.messages]);
 
   useEffect(() => {
@@ -650,6 +657,7 @@ export function ChatPanel({
             </div>
           )}
           <MessageList messages={chat.messages} onApprove={chat.respondToApproval} />
+          <div ref={messageBottomRef} aria-hidden="true" />
         </div>
 
         {hasMessages && (

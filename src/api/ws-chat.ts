@@ -28,6 +28,20 @@ export type ChatFrame =
       message_count: number;
     }
   | { type: "connected"; [k: string]: unknown }
+  | {
+      type: "message";
+      role?: string;
+      content: string;
+      source?: string | null;
+      timestamp?: string | null;
+    }
+  | {
+      type: "cron_result";
+      output?: unknown;
+      success?: boolean;
+      job_id?: string;
+      timestamp?: string | null;
+    }
   | { type: "chunk"; content: string }
   | { type: "thinking"; content: string }
   | { type: "tool_call"; name: string; args: unknown }

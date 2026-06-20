@@ -40,6 +40,51 @@ describe("chatReducer", () => {
     });
   });
 
+  it("appends session-scoped broadcast messages as completed messages", () => {
+    const next = chatReducer(
+      { messages: [], sessionId: "session-1" },
+      {
+        type: "frame",
+        frame: {
+          type: "message",
+          role: "assistant",
+          content: "scheduled hello",
+          source: "api",
+          timestamp: "2026-06-20T15:46:39Z",
+        },
+      },
+    );
+
+    expect(next.messages[0]).toMatchObject({
+      role: "assistant",
+      content: "scheduled hello",
+      source: "api",
+      timestamp: "2026-06-20T15:46:39Z",
+      status: "done",
+    });
+  });
+
+  it("renders global cron results as assistant-side messages", () => {
+    const next = chatReducer(
+      { messages: [], sessionId: "session-1" },
+      {
+        type: "frame",
+        frame: {
+          type: "cron_result",
+          output: "你好！现在是每小时30分的问好时间 😊",
+          timestamp: "2026-06-20T15:46:39Z",
+        },
+      },
+    );
+
+    expect(next.messages[0]).toMatchObject({
+      role: "assistant",
+      source: "cron",
+      content: "你好！现在是每小时30分的问好时间 😊",
+      status: "done",
+    });
+  });
+
   it("tracks approval response status on the matching assistant message", () => {
     const state = chatReducer(
       {
@@ -86,11 +131,13 @@ describe("session helpers", () => {
       fromSessionMessage({
         role: "assistant",
         content: "[2026-06-20 15:42:00] hello",
+        source: "api",
         created_at: "2026-06-20T07:42:00Z",
       }),
     ).toMatchObject({
       role: "assistant",
       content: "hello",
+      source: "api",
       timestamp: "2026-06-20T07:42:00Z",
     });
   });

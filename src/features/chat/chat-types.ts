@@ -18,6 +18,7 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
+  source?: string | null;
   timestamp?: string | null;
   thinking?: string;
   toolCalls: Array<{ name: string; args: unknown; result?: unknown }>;

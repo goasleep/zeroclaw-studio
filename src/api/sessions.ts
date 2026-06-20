@@ -15,6 +15,7 @@ export interface SessionListItem {
 export interface SessionMessage {
   role: string;
   content: string;
+  source?: string | null;
   created_at?: string | null;
 }
 
