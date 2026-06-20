@@ -111,7 +111,7 @@ pub enum SupervisorStatus {
 
 #[derive(Debug)]
 enum ManagedChild {
-    Tokio(Child),
+    Tokio(Box<Child>),
     Sidecar {
         child: CommandChild,
         exit_code: Arc<Mutex<Option<i32>>>,
@@ -144,9 +144,9 @@ impl Supervisor {
         let child = match &spec.kind {
             LaunchKind::BundledSidecar => self.spawn_sidecar(app, &spec)?,
             LaunchKind::ExternalPath(path) => {
-                ManagedChild::Tokio(spawn_external(path, &spec).with_context(|| {
-                    format!("failed to spawn zeroclaw gateway at {}", path.display())
-                })?)
+                ManagedChild::Tokio(Box::new(spawn_external(path, &spec).with_context(
+                    || format!("failed to spawn zeroclaw gateway at {}", path.display()),
+                )?))
             }
         };
 
@@ -166,7 +166,7 @@ impl Supervisor {
             anyhow::bail!("supervisor already has a running process");
         }
         *guard = Some(Managed {
-            child: ManagedChild::Tokio(spawn_external(binary_path, &spec)?),
+            child: ManagedChild::Tokio(Box::new(spawn_external(binary_path, &spec)?)),
         });
         Ok(())
     }

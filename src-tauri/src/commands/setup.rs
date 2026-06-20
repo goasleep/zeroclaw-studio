@@ -517,7 +517,7 @@ fn landlock_check() -> SetupCheck {
     #[cfg(target_os = "linux")]
     {
         let path = Path::new("/sys/kernel/security/landlock");
-        return SetupCheck {
+        SetupCheck {
             id: "landlock".into(),
             label: "Landlock".into(),
             status: if path.exists() {
@@ -530,7 +530,7 @@ fn landlock_check() -> SetupCheck {
             } else {
                 "Kernel Landlock interface was not detected.".into()
             },
-        };
+        }
     }
     #[cfg(not(target_os = "linux"))]
     SetupCheck {
