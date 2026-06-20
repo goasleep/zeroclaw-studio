@@ -45,10 +45,17 @@ export function useChatTransport({
     function handleFrame(frame: ChatFrame) {
       dispatch({ type: "frame", frame });
       if (frame.type === "session_start") {
-        void saveSelected(frame.session_id);
-        void assignWorkspace(frame.session_id);
-        void hydrateSession(frame.session_id, frame.message_count);
-        void refreshSessions();
+        void (async () => {
+          try {
+            await saveSelected(frame.session_id);
+            await assignWorkspace(frame.session_id);
+            await hydrateSession(frame.session_id, frame.message_count);
+          } catch (e) {
+            setSessionError(e instanceof Error ? e.message : String(e));
+          } finally {
+            void refreshSessions();
+          }
+        })();
       }
       if (frame.type === "approval_request") {
         window.dispatchEvent(

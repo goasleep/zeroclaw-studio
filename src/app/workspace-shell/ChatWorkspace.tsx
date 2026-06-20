@@ -35,7 +35,7 @@ export function ChatWorkspace({
       <div className="min-h-0 flex-1 overflow-hidden">
         {activeAgent && (
           <ChatPanel
-            key={activeAgent}
+            key={`${mode}:${activeAgent}:${workspaceRoot ?? "no-project"}`}
             agentAlias={activeAgent}
             agents={agents}
             onAgentChange={onAgentChange}

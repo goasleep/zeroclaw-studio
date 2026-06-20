@@ -5,6 +5,7 @@ import {
   apiSessionRename,
   apiSessions,
 } from "@/api/sessions";
+import { loadSessionWorkspaceMap } from "./chat-local-state";
 import type { NormalizedSession } from "./chat-types";
 import {
   fromSessionMessage,
@@ -14,7 +15,7 @@ import {
 } from "./chat-reducer";
 import type { ChatMessage } from "./chat-types";
 
-export function useSessionService(agentAlias: string) {
+export function useSessionService(agentAlias: string, workspaceRoot: string | null) {
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -23,11 +24,12 @@ export function useSessionService(agentAlias: string) {
     setSessionsLoading(true);
     setSessionError(null);
     try {
-      const data = await apiSessions();
+      const [data, workspaceMap] = await Promise.all([apiSessions(), loadSessionWorkspaceMap()]);
       const normalized = data.sessions
         .map(normalizeSession)
         .filter((s): s is NormalizedSession => s !== null)
         .filter((s) => !s.agent_alias || s.agent_alias === agentAlias)
+        .filter((s) => sessionBelongsToWorkspace(s, workspaceRoot, workspaceMap))
         .sort(sessionSort);
       setSessions(normalized);
     } catch (e) {
@@ -35,7 +37,7 @@ export function useSessionService(agentAlias: string) {
     } finally {
       setSessionsLoading(false);
     }
-  }, [agentAlias]);
+  }, [agentAlias, workspaceRoot]);
 
   useEffect(() => {
     void refreshSessions();
@@ -75,4 +77,13 @@ export function useSessionService(agentAlias: string) {
     renameSession,
     deleteSession,
   };
+}
+
+function sessionBelongsToWorkspace(
+  session: NormalizedSession,
+  workspaceRoot: string | null,
+  workspaceMap: Map<string, string>,
+) {
+  const boundWorkspace = workspaceMap.get(session.session_id) ?? null;
+  return workspaceRoot ? boundWorkspace === workspaceRoot : boundWorkspace === null;
 }
