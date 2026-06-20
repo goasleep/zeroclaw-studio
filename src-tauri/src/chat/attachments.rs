@@ -3,10 +3,12 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 pub const MAX_ATTACHMENT_BYTES: u64 = 10 * 1024 * 1024;
+pub const MAX_ATTACHMENT_REQUEST_BYTES: u64 = 20 * 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ChatCapabilities {
     pub max_attachment_bytes: u64,
+    pub max_attachment_request_bytes: u64,
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
@@ -22,14 +24,24 @@ pub struct ChatFileEntry {
 pub fn capabilities() -> ChatCapabilities {
     ChatCapabilities {
         max_attachment_bytes: MAX_ATTACHMENT_BYTES,
+        max_attachment_request_bytes: MAX_ATTACHMENT_REQUEST_BYTES,
     }
 }
 
 pub fn prepare_many(paths: &[String], embed_bytes: bool) -> Result<Vec<ChatFileEntry>, String> {
-    paths
+    let entries: Vec<ChatFileEntry> = paths
         .iter()
         .map(|raw| prepare_one(raw, embed_bytes))
-        .collect()
+        .collect::<Result<_, _>>()?;
+    let total_size = entries.iter().map(|entry| entry.size).sum::<u64>();
+    if total_size > MAX_ATTACHMENT_REQUEST_BYTES {
+        return Err(format!(
+            "attachments too large: {} total (limit {})",
+            format_size(total_size),
+            format_size(MAX_ATTACHMENT_REQUEST_BYTES)
+        ));
+    }
+    Ok(entries)
 }
 
 fn prepare_one(raw: &str, embed_bytes: bool) -> Result<ChatFileEntry, String> {
@@ -138,12 +150,49 @@ fn base64_encode(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::base64_encode;
+    use std::fs::{self, File};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use super::{MAX_ATTACHMENT_BYTES, MAX_ATTACHMENT_REQUEST_BYTES, base64_encode, prepare_many};
 
     #[test]
     fn base64_encoder_handles_padding() {
         assert_eq!(base64_encode(b"f"), "Zg==");
         assert_eq!(base64_encode(b"fo"), "Zm8=");
         assert_eq!(base64_encode(b"foo"), "Zm9v");
+    }
+
+    #[test]
+    fn prepare_many_rejects_total_over_request_limit() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time before epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "zeroclaw-workspace-attachments-{}-{suffix}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("create temp attachment dir");
+        let sizes = [
+            MAX_ATTACHMENT_BYTES,
+            MAX_ATTACHMENT_REQUEST_BYTES - MAX_ATTACHMENT_BYTES,
+            1,
+        ];
+        let paths: Vec<String> = sizes
+            .iter()
+            .enumerate()
+            .map(|(index, size)| {
+                let path = dir.join(format!("file-{index}.txt"));
+                let file = File::create(&path).expect("create temp attachment");
+                file.set_len(*size).expect("set temp attachment size");
+                path.to_string_lossy().to_string()
+            })
+            .collect();
+
+        let err = prepare_many(&paths, false).expect_err("total size should be rejected");
+
+        assert!(err.contains("attachments too large"));
+        assert!(err.contains("limit 20.0 MB"));
+        let _ = fs::remove_dir_all(&dir);
     }
 }

@@ -453,7 +453,7 @@ export type AuthMode =
  * User supplied a token directly.
  */
 "token"
-export type ChatCapabilities = { max_attachment_bytes: number }
+export type ChatCapabilities = { max_attachment_bytes: number; max_attachment_request_bytes: number }
 export type ChatCloseRequest = { session_id: string }
 export type ChatConnectRequest = { url: string; agent_alias: string; session_id: string | null; token: string; mode: ChatMode | null; workspace_dir: string | null; model_provider: string | null; model: string | null }
 export type ChatError = { message: string }

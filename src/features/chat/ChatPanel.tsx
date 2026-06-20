@@ -1,6 +1,6 @@
 // Chat/Code panel — session list + messages + composer.
 
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { useLingui } from "@lingui/react/macro";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
@@ -50,21 +50,31 @@ import { Select } from "@/ui/select";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
 
 interface ContextAttachmentDraft {
-  path: string;
+  id: string;
+  path?: string;
   filename: string;
   mime: string;
-  source: "file";
+  source: "file" | "clipboard";
   status: "pending" | "too_large" | "ready";
   error?: string;
   embedBytes: boolean;
+  size?: number;
 }
 
 const MODEL_FOLLOWS_AGENT = "__agent__";
+const CLIENT_MAX_CLIPBOARD_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const CLIENT_MAX_ATTACHMENT_REQUEST_BYTES = 20 * 1024 * 1024;
 
 type ConfiguredModelChoice = {
   value: string;
   model?: string;
 };
+
+type ClipboardAttachment = Required<Pick<FileEntry, "data_b64" | "filename" | "mime_type">> &
+  Pick<FileEntry, "size" | "source"> & {
+    id: string;
+    source: "clipboard";
+  };
 
 function filenameFromPath(path: string) {
   return path.split(/[\\/]/).filter(Boolean).pop() || path;
@@ -130,6 +140,115 @@ function formatBytes(size?: number) {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function idForClipboardAttachment(filename: string, size: number, dataB64: string) {
+  return `clipboard:${filename}:${size}:${dataB64.slice(0, 48)}`;
+}
+
+function pathFromFileUri(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "file:") return null;
+    const decoded = decodeURIComponent(url.pathname);
+    return decoded.match(/^\/[A-Za-z]:\//) ? decoded.slice(1) : decoded;
+  } catch {
+    return null;
+  }
+}
+
+function filePathsFromUriList(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map(pathFromFileUri)
+    .filter((path): path is string => Boolean(path));
+}
+
+function clipboardPathFromFile(file: File) {
+  const path = (file as File & { path?: unknown }).path;
+  if (typeof path !== "string" || !path.trim()) return null;
+  return path.startsWith("file:") ? pathFromFileUri(path) : path;
+}
+
+function clipboardFiles(data: DataTransfer) {
+  const bySignature = new Map<string, File>();
+  const add = (file: File | null) => {
+    if (!file) return;
+    bySignature.set(`${file.name}:${file.size}:${file.type}:${file.lastModified}`, file);
+  };
+  Array.from(data.files).forEach(add);
+  Array.from(data.items)
+    .filter((item) => item.kind === "file")
+    .forEach((item) => add(item.getAsFile()));
+  return Array.from(bySignature.values());
+}
+
+function clipboardFilePaths(data: DataTransfer) {
+  const paths = new Set<string>();
+  for (const file of clipboardFiles(data)) {
+    const path = clipboardPathFromFile(file);
+    if (path) paths.add(path);
+  }
+  for (const type of ["text/uri-list", "text/plain"]) {
+    filePathsFromUriList(data.getData(type)).forEach((path) => paths.add(path));
+  }
+  return Array.from(paths);
+}
+
+function fileExtensionForMime(mime: string) {
+  if (mime === "image/png") return "png";
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/gif") return "gif";
+  if (mime === "image/webp") return "webp";
+  if (mime === "image/svg+xml") return "svg";
+  if (mime === "application/pdf") return "pdf";
+  if (mime === "application/json") return "json";
+  if (mime === "text/csv") return "csv";
+  if (mime === "text/markdown") return "md";
+  if (mime.startsWith("text/")) return "txt";
+  return "bin";
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+async function fileToClipboardAttachment(file: File, limit: number, fallbackName: string) {
+  if (file.size > limit) {
+    throw new Error(
+      `${file.name || fallbackName} is ${formatBytes(file.size)} (limit ${formatBytes(limit)})`,
+    );
+  }
+  const mime = file.type || mimeFromPath(file.name || fallbackName);
+  const filename = file.name || `${fallbackName}.${fileExtensionForMime(mime)}`;
+  const dataB64 = arrayBufferToBase64(await file.arrayBuffer());
+  return {
+    id: idForClipboardAttachment(filename, file.size, dataB64),
+    data_b64: dataB64,
+    filename,
+    mime_type: mime,
+    size: file.size,
+    source: "clipboard" as const,
+  };
+}
+
+function addClipboardAttachments(current: ClipboardAttachment[], incoming: ClipboardAttachment[]) {
+  const next = [...current];
+  for (const entry of incoming) {
+    if (!next.some((existing) => existing.id === entry.id)) next.push(entry);
+  }
+  return next;
+}
+
+function totalAttachmentBytes(entries: Array<{ size?: number | null }>) {
+  return entries.reduce((total, entry) => total + (entry.size ?? 0), 0);
 }
 
 const MESSAGE_TIMESTAMP_PREFIX =
@@ -250,20 +369,33 @@ export function ChatPanel({
   const [gitStatus, setGitStatus] = useState<WorkspaceGitStatus | null>(null);
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
   const [maxAttachmentBytes, setMaxAttachmentBytes] = useState<number | null>(null);
+  const [maxAttachmentRequestBytes, setMaxAttachmentRequestBytes] = useState<number | null>(null);
   const [modelChoices, setModelChoices] = useState<ConfiguredModelChoice[]>([]);
   const [selectedModelProvider, setSelectedModelProvider] = useState(MODEL_FOLLOWS_AGENT);
+  const [clipboardAttachments, setClipboardAttachments] = useState<ClipboardAttachment[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentDrafts = useMemo<ContextAttachmentDraft[]>(
-    () =>
-      selectedFiles.map((path) => ({
+    () => [
+      ...selectedFiles.map((path) => ({
+        id: `file:${path}`,
         path,
         filename: filenameFromPath(path),
         mime: mimeFromPath(path),
-        source: "file",
-        status: "pending",
+        source: "file" as const,
+        status: "pending" as const,
         embedBytes: Boolean(active && active.transport !== "local"),
       })),
-    [active, selectedFiles],
+      ...clipboardAttachments.map((entry) => ({
+        id: entry.id,
+        filename: entry.filename,
+        mime: entry.mime_type,
+        source: "clipboard" as const,
+        status: "ready" as const,
+        embedBytes: true,
+        size: entry.size,
+      })),
+    ],
+    [active, clipboardAttachments, selectedFiles],
   );
 
   useEffect(() => {
@@ -275,10 +407,16 @@ export function ChatPanel({
     let cancelled = false;
     void chatCapabilities()
       .then((capabilities) => {
-        if (!cancelled) setMaxAttachmentBytes(capabilities.max_attachment_bytes);
+        if (!cancelled) {
+          setMaxAttachmentBytes(capabilities.max_attachment_bytes);
+          setMaxAttachmentRequestBytes(capabilities.max_attachment_request_bytes);
+        }
       })
       .catch(() => {
-        if (!cancelled) setMaxAttachmentBytes(null);
+        if (!cancelled) {
+          setMaxAttachmentBytes(null);
+          setMaxAttachmentRequestBytes(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -361,9 +499,80 @@ export function ChatPanel({
   }, [workspaceRoot]);
 
   async function pasteClipboard() {
-    const t = await readClipboardText();
-    if (!t) return;
-    setDraft((d) => (d ? `${d}\n\n${t}` : t));
+    const text = await readClipboardText();
+    const paths = filePathsFromUriList(text);
+    if (paths.length > 0) {
+      addFiles(paths);
+      setComposerError(attachmentTotalLimitError(clipboardAttachments));
+      return;
+    }
+
+    const clipboardFiles = await readClipboardFilesFromNavigator();
+    if (clipboardFiles.length > 0) {
+      const nextAttachments = addClipboardAttachments(clipboardAttachments, clipboardFiles);
+      setClipboardAttachments(nextAttachments);
+      setComposerError(attachmentTotalLimitError(nextAttachments));
+      return;
+    }
+
+    if (text) setDraft((d) => (d ? `${d}\n\n${text}` : text));
+  }
+
+  async function readClipboardFilesFromNavigator() {
+    if (!navigator.clipboard?.read) return [];
+    try {
+      const items = await navigator.clipboard.read();
+      const attachments: ClipboardAttachment[] = [];
+      const limit = maxAttachmentBytes ?? CLIENT_MAX_CLIPBOARD_ATTACHMENT_BYTES;
+      let index = 1;
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith("text/")) continue;
+          const blob = await item.getType(type);
+          const file = new File([blob], `clipboard-${index}.${fileExtensionForMime(type)}`, {
+            type,
+          });
+          attachments.push(await fileToClipboardAttachment(file, limit, `clipboard-${index}`));
+          index += 1;
+        }
+      }
+      return attachments;
+    } catch {
+      return [];
+    }
+  }
+
+  async function handlePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const paths = clipboardFilePaths(e.clipboardData);
+    const files = clipboardFiles(e.clipboardData).filter((file) => !clipboardPathFromFile(file));
+    if (paths.length === 0 && files.length === 0) return;
+
+    e.preventDefault();
+    if (paths.length > 0) addFiles(paths);
+    if (files.length === 0) {
+      setComposerError(attachmentTotalLimitError(clipboardAttachments));
+      return;
+    }
+
+    const limit = maxAttachmentBytes ?? CLIENT_MAX_CLIPBOARD_ATTACHMENT_BYTES;
+    const attachments: ClipboardAttachment[] = [];
+    const rejected: string[] = [];
+    for (let index = 0; index < files.length; index += 1) {
+      try {
+        attachments.push(
+          await fileToClipboardAttachment(files[index], limit, `clipboard-${index + 1}`),
+        );
+      } catch (err) {
+        rejected.push(err instanceof Error ? err.message : String(err));
+      }
+    }
+    if (attachments.length > 0) {
+      const nextAttachments = addClipboardAttachments(clipboardAttachments, attachments);
+      setClipboardAttachments(nextAttachments);
+      const limitError = attachmentTotalLimitError(nextAttachments);
+      if (limitError) rejected.push(limitError);
+    }
+    setComposerError(rejected.length > 0 ? rejected.join("\n") : null);
   }
 
   async function pickFiles() {
@@ -416,6 +625,18 @@ export function ChatPanel({
     if (paths.length > 0) addFiles(paths);
   }
 
+  function clearAttachments() {
+    clearSelection();
+    setClipboardAttachments([]);
+  }
+
+  function attachmentTotalLimitError(files: Array<{ size?: number | null }>) {
+    const totalSize = totalAttachmentBytes(files);
+    const totalLimit = maxAttachmentRequestBytes ?? CLIENT_MAX_ATTACHMENT_REQUEST_BYTES;
+    if (totalSize <= totalLimit) return null;
+    return t`Attachments total ${formatBytes(totalSize)} exceeds upload limit ${formatBytes(totalLimit)}.`;
+  }
+
   async function browseRemoteWorkspace() {
     setRemoteBrowseAvailable(true);
     try {
@@ -435,7 +656,7 @@ export function ChatPanel({
 
   async function submit() {
     const trimmed = draft.trim();
-    if (!trimmed && selectedFiles.length === 0) return;
+    if (!trimmed && selectedFiles.length === 0 && clipboardAttachments.length === 0) return;
     if (!active) {
       setComposerError(t`No active connection.`);
       return;
@@ -450,17 +671,22 @@ export function ChatPanel({
               connection_id: active.id,
             })
           : [];
-      const attachments: FileEntry[] = prepared.map((entry) => ({
-        path: entry.path,
-        data_b64: entry.data_b64,
-        filename: entry.filename,
-        mime_type: entry.mime_type,
-        size: entry.size,
-        source: entry.source === "clipboard" ? "clipboard" : "file",
-      }));
+      const attachments: FileEntry[] = [
+        ...prepared.map<FileEntry>((entry) => ({
+          path: entry.path,
+          data_b64: entry.data_b64,
+          filename: entry.filename,
+          mime_type: entry.mime_type,
+          size: entry.size,
+          source: entry.source === "clipboard" ? "clipboard" : "file",
+        })),
+        ...clipboardAttachments.map<FileEntry>(({ id: _id, ...entry }) => entry),
+      ];
+      const limitError = attachmentTotalLimitError(attachments);
+      if (limitError) throw new Error(limitError);
       chat.send(trimmed, attachments);
       setDraft("");
-      clearSelection();
+      clearAttachments();
     } catch (e) {
       setComposerError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -520,7 +746,8 @@ export function ChatPanel({
         <AttachmentStrip
           files={attachmentDrafts}
           maxAttachmentBytes={maxAttachmentBytes}
-          onClear={clearSelection}
+          maxAttachmentRequestBytes={maxAttachmentRequestBytes}
+          onClear={clearAttachments}
           onPreview={(path) => void previewFile(path)}
         />
         {composerError && (
@@ -533,6 +760,7 @@ export function ChatPanel({
             ref={textareaRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onPaste={(e) => void handlePaste(e)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -837,18 +1065,27 @@ export function ChatPanel({
 function AttachmentStrip({
   files,
   maxAttachmentBytes,
+  maxAttachmentRequestBytes,
   onClear,
   onPreview,
 }: {
   files: ContextAttachmentDraft[];
   maxAttachmentBytes: number | null;
+  maxAttachmentRequestBytes: number | null;
   onClear: () => void;
   onPreview: (path: string) => void;
 }) {
   const { t } = useLingui();
   if (files.length === 0) return null;
+  const knownTotalSize = totalAttachmentBytes(files);
+  const totalLimit = maxAttachmentRequestBytes ?? CLIENT_MAX_ATTACHMENT_REQUEST_BYTES;
+  const totalTooLarge = knownTotalSize > totalLimit;
   return (
-    <div className="mb-2 rounded border border-white/10 bg-[#020818]/80 p-2 text-[10px]">
+    <div
+      className={`mb-2 rounded border bg-[#020818]/80 p-2 text-[10px] ${
+        totalTooLarge ? "border-red-500/40" : "border-white/10"
+      }`}
+    >
       <div className="mb-1 flex items-center gap-1 text-neutral-400">
         <Paperclip size={10} className="text-cyan-300" />
         <span>{files.length === 1 ? t`1 attachment` : t`${files.length} attachments`}</span>
@@ -865,33 +1102,37 @@ function AttachmentStrip({
       <div className="flex flex-wrap gap-1">
         {files.map((file) => (
           <div
-            key={file.path}
+            key={file.id}
             className="group flex max-w-full items-center gap-1 rounded bg-white/[0.05] px-1.5 py-1 font-mono text-neutral-300"
-            title={file.path}
+            title={file.path ?? file.filename}
           >
             <FileText size={10} className="shrink-0 text-neutral-500" />
             <span className="max-w-40 truncate">{file.filename}</span>
             <span className="rounded bg-white/[0.08] px-1 text-neutral-500">
-              {file.embedBytes ? t`bytes` : t`path`}
+              {file.source === "clipboard" ? t`clipboard` : file.embedBytes ? t`bytes` : t`path`}
             </span>
             <span className="text-neutral-600">{file.mime}</span>
-            <span className="text-neutral-600">{formatBytes()}</span>
-            <button
-              type="button"
-              onClick={() => onPreview(file.path)}
-              className="ml-0.5 text-neutral-500 opacity-0 hover:text-cyan-300 group-hover:opacity-100"
-              title={t`Preview file`}
-            >
-              <Eye size={10} />
-            </button>
+            <span className="text-neutral-600">{formatBytes(file.size)}</span>
+            {file.path && (
+              <button
+                type="button"
+                onClick={() => file.path && onPreview(file.path)}
+                className="ml-0.5 text-neutral-500 opacity-0 hover:text-cyan-300 group-hover:opacity-100"
+                title={t`Preview file`}
+              >
+                <Eye size={10} />
+              </button>
+            )}
           </div>
         ))}
       </div>
       {files.length > 0 && (
-        <p className="mt-1 text-[10px] text-neutral-600">
-          {maxAttachmentBytes === null
-            ? t`Files are checked during send.`
-            : t`Files over ${formatBytes(maxAttachmentBytes)} are rejected during send.`}
+        <p className={`mt-1 text-[10px] ${totalTooLarge ? "text-red-300" : "text-neutral-600"}`}>
+          {totalTooLarge
+            ? t`Known attachment total ${formatBytes(knownTotalSize)} exceeds upload limit ${formatBytes(totalLimit)}.`
+            : maxAttachmentBytes === null || maxAttachmentRequestBytes === null
+              ? t`Files are checked during send.`
+              : t`Before upload: each file up to ${formatBytes(maxAttachmentBytes)}, total up to ${formatBytes(maxAttachmentRequestBytes)}.`}
         </p>
       )}
     </div>
