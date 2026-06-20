@@ -1,19 +1,14 @@
 import type { ChatMode } from "@/api/ws-chat";
-import type { ChatMessage } from "./chat-types";
 import {
   chatLocalAssignSessionWorkspace,
-  chatLocalClearTranscript,
   chatLocalGetSelectedSession,
-  chatLocalGetTranscript,
   chatLocalListSessionWorkspaces,
   chatLocalSetSelectedSession,
-  chatLocalSetTranscript,
   workspaceImportLegacyState,
 } from "@/api/tauri";
 
 const LEGACY_RECENT_WORKSPACES_KEY = "zeroclaw_recent_workspaces";
 const LEGACY_SESSION_PREFIX = "zeroclaw_session_id.";
-const LEGACY_TRANSCRIPT_PREFIX = "zeroclaw_transcript.";
 
 const migrationPromises = new Map<string, Promise<void>>();
 
@@ -63,49 +58,6 @@ export async function loadSessionWorkspaceMap(connectionId: string) {
   return new Map(bindings.map((binding) => [binding.session_id, binding.workspace_root]));
 }
 
-export async function readTranscriptCache(
-  connectionId: string,
-  workspaceRoot: string | null,
-  agentAlias: string,
-  mode: ChatMode,
-  sessionId: string,
-): Promise<ChatMessage[]> {
-  await migrateLegacyLocalState(connectionId);
-  const raw = await chatLocalGetTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId);
-  if (!raw) return [];
-  return parseTranscript(raw);
-}
-
-export async function writeTranscriptCache(
-  connectionId: string,
-  workspaceRoot: string | null,
-  agentAlias: string,
-  mode: ChatMode,
-  sessionId: string,
-  messages: ChatMessage[],
-) {
-  await migrateLegacyLocalState(connectionId);
-  await chatLocalSetTranscript(
-    connectionId,
-    workspaceRoot,
-    mode,
-    agentAlias,
-    sessionId,
-    JSON.stringify(messages),
-  );
-}
-
-export async function clearTranscriptCache(
-  connectionId: string,
-  workspaceRoot: string | null,
-  agentAlias: string,
-  mode: ChatMode,
-  sessionId: string,
-) {
-  await migrateLegacyLocalState(connectionId);
-  await chatLocalClearTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId);
-}
-
 async function runLegacyMigration(connectionId: string) {
   await importLegacyWorkspaces(connectionId);
   await importLegacyChatState(connectionId);
@@ -131,22 +83,6 @@ async function importLegacyChatState(connectionId: string) {
         migrated.push(key);
       }
       continue;
-    }
-
-    if (key.startsWith(LEGACY_TRANSCRIPT_PREFIX)) {
-      const scope = parseLegacyTranscriptKey(key);
-      const raw = localStorage.getItem(key);
-      if (scope && raw && parseTranscript(raw).length > 0) {
-        await chatLocalSetTranscript(
-          connectionId,
-          null,
-          scope.mode,
-          scope.agentAlias,
-          scope.sessionId,
-          raw,
-        );
-        migrated.push(key);
-      }
     }
   }
 
@@ -175,42 +111,4 @@ function parseLegacyScopedKey(key: string, prefix: string) {
     mode: rest.slice(0, separator) as ChatMode,
     agentAlias: rest.slice(separator + 1),
   };
-}
-
-function parseLegacyTranscriptKey(key: string) {
-  const scoped = parseLegacyScopedKey(key, LEGACY_TRANSCRIPT_PREFIX);
-  if (!scoped) return null;
-  const separator = scoped.agentAlias.lastIndexOf(".");
-  if (separator <= 0 || separator >= scoped.agentAlias.length - 1) return null;
-  return {
-    mode: scoped.mode,
-    agentAlias: scoped.agentAlias.slice(0, separator),
-    sessionId: scoped.agentAlias.slice(separator + 1),
-  };
-}
-
-function parseTranscript(raw: string) {
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isChatMessage);
-  } catch {
-    return [];
-  }
-}
-
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== "object") return false;
-  const message = value as Partial<ChatMessage>;
-  return (
-    typeof message.id === "string" &&
-    (message.role === "user" || message.role === "assistant") &&
-    typeof message.content === "string" &&
-    Array.isArray(message.toolCalls) &&
-    (message.status === "pending" ||
-      message.status === "streaming" ||
-      message.status === "done" ||
-      message.status === "aborted" ||
-      message.status === "error")
-  );
 }

@@ -1,5 +1,5 @@
 // Per-agent chat client. Wraps transport, message state, session management,
-// transcript cache, attachments, abort, and approvals behind one public hook.
+// Session selection, attachments, abort, and approvals behind one public hook.
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ChatMode, FileEntry } from "@/api/ws-chat";
@@ -7,7 +7,7 @@ import { apiSessionAbort } from "@/api/sessions";
 import { chatReducer } from "./chat-reducer";
 import { useChatTransport } from "./use-chat-transport";
 import { useSessionService } from "./use-session-service";
-import { useTranscriptCache } from "./use-transcript-cache";
+import { useChatLocalState } from "./use-chat-local-state";
 import type { ChatModelOverride, UseChatOptions } from "./chat-types";
 
 export type {
@@ -36,7 +36,7 @@ export function useChat({
   const hydratedSessionRef = useRef<string | null>(null);
 
   const sessions = useSessionService(connectionId, agentAlias, workspaceRoot);
-  const transcriptCache = useTranscriptCache({
+  const chatLocalState = useChatLocalState({
     connectionId,
     workspaceRoot,
     agentAlias,
@@ -52,46 +52,27 @@ export function useChat({
     renameSession: renameStoredSession,
     deleteSession: deleteStoredSession,
   } = sessions;
-  const {
-    loadSelected,
-    saveSelected,
-    assignWorkspace,
-    readTranscript,
-    writeTranscript,
-    clearTranscript,
-  } = transcriptCache;
+  const { loadSelected, saveSelected, assignWorkspace } = chatLocalState;
 
   useEffect(() => {
     hydratedSessionRef.current = null;
   }, [agentAlias, connectionId, mode, workspaceRoot, workspaceDir, connectionSeed]);
 
-  useEffect(() => {
-    if (!state.sessionId || state.messages.length === 0) return;
-    void writeTranscript(state.sessionId, state.messages);
-  }, [state.sessionId, state.messages, writeTranscript]);
-
   const hydrateSession = useCallback(
     async (sessionId: string, messageCount?: number) => {
       if (hydratedSessionRef.current === sessionId) return;
       hydratedSessionRef.current = sessionId;
-      const cachedMessages = await readTranscript(sessionId);
       if (messageCount !== undefined && messageCount <= 0) {
-        if (cachedMessages.length > 0) {
-          dispatch({ type: "hydrate", sessionId, messages: cachedMessages });
-        }
         return;
       }
       try {
-        const messages = await loadMessages(sessionId, cachedMessages);
+        const messages = await loadMessages(sessionId);
         dispatch({ type: "hydrate", sessionId, messages });
       } catch {
-        if (cachedMessages.length > 0) {
-          dispatch({ type: "hydrate", sessionId, messages: cachedMessages });
-        }
         hydratedSessionRef.current = null;
       }
     },
-    [loadMessages, readTranscript],
+    [loadMessages],
   );
 
   const { connected, clientRef } = useChatTransport({
@@ -146,12 +127,11 @@ export function useChat({
   const deleteSession = useCallback(
     async (sessionId: string) => {
       await deleteStoredSession(sessionId);
-      void clearTranscript(sessionId);
       if (state.sessionId === sessionId) {
         selectSession(null);
       }
     },
-    [clearTranscript, deleteStoredSession, selectSession, state.sessionId],
+    [deleteStoredSession, selectSession, state.sessionId],
   );
 
   const send = useCallback(

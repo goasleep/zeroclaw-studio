@@ -128,22 +128,30 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
       const entryByPath = new Map(entries.map((entry) => [entry.path, entry]));
       setFields((current) => {
         const next: Record<string, StagedField> = {};
+        let changed = false;
         for (const [path, staged] of Object.entries(current)) {
           if (staged.prefix !== prefix) {
             next[path] = staged;
             continue;
           }
-          if (!paths.has(path)) continue;
+          if (!paths.has(path)) {
+            changed = true;
+            continue;
+          }
           const nextSeed = seed[path] ?? "";
-          if (staged.draft === nextSeed) continue;
-          next[path] = {
-            ...staged,
-            title,
-            entry: entryByPath.get(path) ?? staged.entry,
-            seed: nextSeed,
-          };
+          if (staged.draft === nextSeed) {
+            changed = true;
+            continue;
+          }
+          const nextEntry = entryByPath.get(path) ?? staged.entry;
+          if (staged.title === title && staged.entry === nextEntry && staged.seed === nextSeed) {
+            next[path] = staged;
+            continue;
+          }
+          changed = true;
+          next[path] = { ...staged, title, entry: nextEntry, seed: nextSeed };
         }
-        return next;
+        return changed ? next : current;
       });
     },
     [],

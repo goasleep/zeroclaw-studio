@@ -6,15 +6,13 @@ import {
   apiSessions,
 } from "@/api/sessions";
 import { loadSessionWorkspaceMap } from "./chat-local-state";
-import type { NormalizedSession } from "./chat-types";
+import type { ChatMessage, NormalizedSession } from "./chat-types";
 import {
   fromSessionMessage,
   isVisibleSession,
-  mergeTranscripts,
   normalizeSession,
   sessionSort,
 } from "./chat-reducer";
-import type { ChatMessage } from "./chat-types";
 
 export function useSessionService(
   connectionId: string,
@@ -52,12 +50,11 @@ export function useSessionService(
     void refreshSessions();
   }, [refreshSessions]);
 
-  const loadMessages = useCallback(async (sessionId: string, cachedMessages: ChatMessage[]) => {
+  const loadMessages = useCallback(async (sessionId: string) => {
     const transcript = await apiSessionMessages(sessionId);
-    const gatewayMessages = transcript.messages
+    return transcript.messages
       .map(fromSessionMessage)
       .filter((m): m is ChatMessage => m !== null);
-    return mergeTranscripts(gatewayMessages, cachedMessages);
   }, []);
 
   const renameSession = useCallback(

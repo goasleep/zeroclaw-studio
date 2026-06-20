@@ -1,7 +1,7 @@
 //! Native persistence for desktop-local workspace state.
 //!
 //! Gateway sessions remain the source of truth. This store only keeps the
-//! desktop shell's local selection, recents, and transcript fallback cache.
+//! desktop shell's local selection, recents, and session workspace bindings.
 
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,6 @@ use tokio::sync::RwLock;
 const STORE_FILE: &str = "workspace-state.json";
 const KEY_STATE: &str = "state";
 const MAX_RECENT_ROOTS: usize = 8;
-const MAX_CACHED_MESSAGES: usize = 200;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct WorkspaceLocalState {
@@ -34,8 +33,6 @@ struct PersistedLocalState {
     selected_sessions: HashMap<String, String>,
     #[serde(default)]
     session_workspaces: HashMap<String, String>,
-    #[serde(default)]
-    transcript_cache: HashMap<String, Vec<serde_json::Value>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
@@ -216,56 +213,6 @@ impl LocalStateStore {
         bindings.sort_by(|a, b| a.session_id.cmp(&b.session_id));
         Ok(bindings)
     }
-
-    pub async fn transcript(
-        &self,
-        connection_id: &str,
-        workspace_root: Option<&str>,
-        mode: &str,
-        agent_alias: &str,
-        session_id: &str,
-    ) -> Result<Option<Vec<serde_json::Value>>> {
-        let key = transcript_key(connection_id, workspace_root, mode, agent_alias, session_id)?;
-        let state = self.state.read().await;
-        Ok(state.transcript_cache.get(&key).cloned())
-    }
-
-    pub async fn set_transcript(
-        &self,
-        connection_id: &str,
-        workspace_root: Option<&str>,
-        mode: &str,
-        agent_alias: &str,
-        session_id: &str,
-        mut messages: Vec<serde_json::Value>,
-    ) -> Result<()> {
-        let key = transcript_key(connection_id, workspace_root, mode, agent_alias, session_id)?;
-        if messages.len() > MAX_CACHED_MESSAGES {
-            messages = messages.split_off(messages.len() - MAX_CACHED_MESSAGES);
-        }
-        let mut state = self.state.write().await;
-        if let Some(workspace_root) = workspace_root.filter(|value| !value.trim().is_empty()) {
-            state.session_workspaces.insert(
-                session_workspace_key(connection_id, session_id)?,
-                workspace_root.to_string(),
-            );
-        }
-        state.transcript_cache.insert(key, messages);
-        Ok(())
-    }
-
-    pub async fn clear_transcript(
-        &self,
-        connection_id: &str,
-        workspace_root: Option<&str>,
-        mode: &str,
-        agent_alias: &str,
-        session_id: &str,
-    ) -> Result<()> {
-        let key = transcript_key(connection_id, workspace_root, mode, agent_alias, session_id)?;
-        self.state.write().await.transcript_cache.remove(&key);
-        Ok(())
-    }
 }
 
 fn migrate_legacy_workspace_state(
@@ -293,7 +240,6 @@ fn migrate_legacy_workspace_state(
 
     migrate_legacy_selected_sessions(state, connection_id)?;
     migrate_legacy_session_workspaces(state, connection_id)?;
-    migrate_legacy_transcripts(state, connection_id)?;
     Ok(())
 }
 
@@ -341,40 +287,6 @@ fn migrate_legacy_session_workspaces(
     Ok(())
 }
 
-fn migrate_legacy_transcripts(state: &mut PersistedLocalState, connection_id: &str) -> Result<()> {
-    let keys = state.transcript_cache.keys().cloned().collect::<Vec<_>>();
-    for key in keys {
-        let Some(rest) = key.strip_prefix("transcript:") else {
-            continue;
-        };
-        let Some((scope, session_id)) = rest.rsplit_once(':') else {
-            continue;
-        };
-        let Ok((workspace_root, mode, agent_alias)) =
-            serde_json::from_str::<(String, String, String)>(scope)
-        else {
-            continue;
-        };
-        let Some(value) = state.transcript_cache.remove(&key) else {
-            continue;
-        };
-        let workspace_root = if workspace_root.is_empty() {
-            None
-        } else {
-            Some(workspace_root.as_str())
-        };
-        let new_key = transcript_key(
-            connection_id,
-            workspace_root,
-            &mode,
-            &agent_alias,
-            session_id,
-        )?;
-        state.transcript_cache.entry(new_key).or_insert(value);
-    }
-    Ok(())
-}
-
 fn selected_session_key(
     connection_id: &str,
     workspace_root: Option<&str>,
@@ -400,18 +312,6 @@ fn scoped_key(
     let agent_alias = validated_segment("agent alias", agent_alias)?;
     serde_json::to_string(&(connection_id, workspace_root, mode, agent_alias))
         .context("serialize scope key")
-}
-
-fn transcript_key(
-    connection_id: &str,
-    workspace_root: Option<&str>,
-    mode: &str,
-    agent_alias: &str,
-    session_id: &str,
-) -> Result<String> {
-    let scope = scoped_key(connection_id, workspace_root, mode, agent_alias)?;
-    let session_id = validated_segment("session id", session_id)?;
-    Ok(format!("transcript:{scope}:{session_id}"))
 }
 
 fn session_workspace_key(connection_id: &str, session_id: &str) -> Result<String> {
@@ -630,10 +530,6 @@ mod tests {
             state
                 .session_workspaces
                 .insert("session-legacy".into(), "/repo/legacy".into());
-            state.transcript_cache.insert(
-                format!("transcript:{legacy_scope}:session-legacy"),
-                vec![serde_json::json!({ "id": "legacy" })],
-            );
         }
 
         let snapshot = store.snapshot("conn-a").await.unwrap();
@@ -654,20 +550,6 @@ mod tests {
                 workspace_root: "/repo/legacy".into(),
             }]
         );
-        assert_eq!(
-            store
-                .transcript(
-                    "conn-a",
-                    Some("/repo/legacy"),
-                    "chat",
-                    "zeroclaw",
-                    "session-legacy",
-                )
-                .await
-                .unwrap(),
-            Some(vec![serde_json::json!({ "id": "legacy" })])
-        );
-
         let second_snapshot = store.snapshot("conn-b").await.unwrap();
         assert_eq!(second_snapshot, WorkspaceLocalState::default());
         assert!(
@@ -678,90 +560,5 @@ mod tests {
                 .is_none()
         );
         assert!(store.session_workspaces("conn-b").await.unwrap().is_empty());
-        assert!(
-            store
-                .transcript(
-                    "conn-b",
-                    Some("/repo/legacy"),
-                    "chat",
-                    "zeroclaw",
-                    "session-legacy",
-                )
-                .await
-                .unwrap()
-                .is_none()
-        );
-    }
-
-    #[tokio::test]
-    async fn transcript_cache_truncates_and_clears() {
-        let store = LocalStateStore::new();
-        let messages = (0..250)
-            .map(|index| serde_json::json!({ "id": index }))
-            .collect();
-
-        store
-            .set_transcript(
-                "conn-a",
-                Some("/repo/a"),
-                "chat",
-                "zeroclaw",
-                "session-1",
-                messages,
-            )
-            .await
-            .unwrap();
-        let cached = store
-            .transcript("conn-a", Some("/repo/a"), "chat", "zeroclaw", "session-1")
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(cached.len(), MAX_CACHED_MESSAGES);
-        assert_eq!(
-            cached.first().and_then(|value| value["id"].as_i64()),
-            Some(50)
-        );
-
-        store
-            .clear_transcript("conn-a", Some("/repo/a"), "chat", "zeroclaw", "session-1")
-            .await
-            .unwrap();
-        assert!(
-            store
-                .transcript("conn-a", Some("/repo/a"), "chat", "zeroclaw", "session-1")
-                .await
-                .unwrap()
-                .is_none()
-        );
-    }
-
-    #[tokio::test]
-    async fn transcript_cache_is_scoped_to_connection() {
-        let store = LocalStateStore::new();
-        store
-            .set_transcript(
-                "conn-a",
-                None,
-                "chat",
-                "zeroclaw",
-                "session-1",
-                vec![serde_json::json!({ "id": 1 })],
-            )
-            .await
-            .unwrap();
-
-        assert!(
-            store
-                .transcript("conn-b", None, "chat", "zeroclaw", "session-1")
-                .await
-                .unwrap()
-                .is_none()
-        );
-        let cached = store
-            .transcript("conn-a", None, "chat", "zeroclaw", "session-1")
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(cached, vec![serde_json::json!({ "id": 1 })]);
     }
 }

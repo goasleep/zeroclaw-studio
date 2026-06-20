@@ -398,30 +398,6 @@ async chatLocalAssignSessionWorkspace(connectionId: string, sessionId: string, w
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
-},
-async chatLocalGetTranscript(connectionId: string, workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string) : Promise<Result<string | null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_get_transcript", { connectionId, workspaceRoot, mode, agentAlias, sessionId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async chatLocalSetTranscript(connectionId: string, workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string, transcriptJson: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_set_transcript", { connectionId, workspaceRoot, mode, agentAlias, sessionId, transcriptJson }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async chatLocalClearTranscript(connectionId: string, workspaceRoot: string | null, mode: string, agentAlias: string, sessionId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("chat_local_clear_transcript", { connectionId, workspaceRoot, mode, agentAlias, sessionId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 }
 }
 

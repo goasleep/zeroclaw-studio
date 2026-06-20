@@ -7,8 +7,11 @@
 
 use crate::connection::store::SharedConnectionBook;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use tauri::{AppHandle, Runtime};
 use url::Url;
+
+const GATEWAY_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 pub struct GatewayHttpRequest {
@@ -58,7 +61,9 @@ pub async fn gateway_request<R: Runtime>(
 
     validate_gateway_url(&book, &req.url).await?;
 
-    let mut builder = client.request(method, &req.url);
+    let mut builder = client
+        .request(method, &req.url)
+        .timeout(GATEWAY_REQUEST_TIMEOUT);
     for (k, v) in &req.headers {
         builder = builder.header(k, v);
     }

@@ -3,11 +3,9 @@ import {
   chatReducer,
   fromSessionMessage,
   isVisibleSession,
-  mergeTranscripts,
   normalizeSession,
 } from "./chat-reducer";
 import type { ChatState } from "./chat-reducer";
-import type { ChatMessage } from "./chat-types";
 
 describe("chatReducer", () => {
   it("adds a user message and pending assistant placeholder before sending", () => {
@@ -122,17 +120,4 @@ describe("session helpers", () => {
     expect(isVisibleSession(base)).toBe(true);
   });
 
-  it("merges cached transcript entries that are missing from gateway history", () => {
-    const gateway: ChatMessage[] = [
-      { id: "1", role: "user", content: "hello", toolCalls: [], status: "done" },
-    ];
-    const cached: ChatMessage[] = [
-      { id: "2", role: "assistant", content: "cached", toolCalls: [], status: "done" },
-    ];
-
-    expect(mergeTranscripts(gateway, cached).map((message) => message.content)).toEqual([
-      "hello",
-      "cached",
-    ]);
-  });
 });

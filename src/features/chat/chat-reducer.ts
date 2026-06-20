@@ -3,7 +3,6 @@ import type { SessionListItem, SessionMessage } from "@/api/sessions";
 import { buildApprovalPreview } from "./diff-preview";
 import type { ApprovalDecision, ChatMessage, NormalizedSession } from "./chat-types";
 
-const MAX_CACHED_MESSAGES = 200;
 const MESSAGE_TIMESTAMP_PREFIX =
   /^\[((?:\d{4}-\d{2}-\d{2})[ T](?:\d{2}:\d{2}(?::\d{2})?)(?:\s*(?:Z|[+-]\d{2}:?\d{2}))?)\]\s*/;
 
@@ -213,6 +212,11 @@ export function normalizeSession(item: SessionListItem): NormalizedSession | nul
 export function sessionSort(a: NormalizedSession, b: NormalizedSession) {
   const at = a.last_message_at ?? a.updated_at ?? a.created_at ?? "";
   const bt = b.last_message_at ?? b.updated_at ?? b.created_at ?? "";
+  const parsedA = parseTimestamp(at);
+  const parsedB = parseTimestamp(bt);
+  if (parsedA !== null && parsedB !== null) return parsedB - parsedA;
+  if (parsedA !== null) return -1;
+  if (parsedB !== null) return 1;
   return bt.localeCompare(at);
 }
 
@@ -224,27 +228,15 @@ export function shortSessionName(id: string) {
   return `session ${id.slice(0, 8)}`;
 }
 
-export function mergeTranscripts(gatewayMessages: ChatMessage[], cachedMessages: ChatMessage[]) {
-  if (cachedMessages.length === 0) return gatewayMessages;
-  if (gatewayMessages.length === 0) return cachedMessages;
+function parseTimestamp(value: string | null | undefined) {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
 
-  const merged = [...gatewayMessages];
-  const seen = new Set(gatewayMessages.map(messageSignature));
-  for (const message of cachedMessages) {
-    const signature = messageSignature(message);
-    if (seen.has(signature)) continue;
-    merged.push(message);
-    seen.add(signature);
-  }
-  return merged.slice(-MAX_CACHED_MESSAGES);
-}
-
-function messageSignature(message: ChatMessage) {
-  return [
-    message.role,
-    message.status,
-    message.content,
-    message.error ?? "",
-    message.attachments?.map((a) => a.filename).join(",") ?? "",
-  ].join("\u0000");
+  const legacy = value
+    .trim()
+    .replace(/^(\d{4}-\d{2}-\d{2})\s+/, "$1T")
+    .replace(/\s+(Z|[+-]\d{2}:?\d{2})$/, "$1");
+  const parsed = Date.parse(legacy);
+  return Number.isFinite(parsed) ? parsed : null;
 }

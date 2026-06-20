@@ -266,39 +266,3 @@ export const chatLocalAssignSessionWorkspace = (
   sessionId: string,
   workspaceRoot: string,
 ) => unwrap(commands.chatLocalAssignSessionWorkspace(connectionId, sessionId, workspaceRoot));
-
-export const chatLocalGetTranscript = (
-  connectionId: string,
-  workspaceRoot: string | null,
-  mode: string,
-  agentAlias: string,
-  sessionId: string,
-) => unwrap(commands.chatLocalGetTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId));
-
-export const chatLocalSetTranscript = (
-  connectionId: string,
-  workspaceRoot: string | null,
-  mode: string,
-  agentAlias: string,
-  sessionId: string,
-  transcriptJson: string,
-) =>
-  unwrap(
-    commands.chatLocalSetTranscript(
-      connectionId,
-      workspaceRoot,
-      mode,
-      agentAlias,
-      sessionId,
-      transcriptJson,
-    ),
-  );
-
-export const chatLocalClearTranscript = (
-  connectionId: string,
-  workspaceRoot: string | null,
-  mode: string,
-  agentAlias: string,
-  sessionId: string,
-) =>
-  unwrap(commands.chatLocalClearTranscript(connectionId, workspaceRoot, mode, agentAlias, sessionId));
