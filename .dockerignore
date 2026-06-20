@@ -1,0 +1,12 @@
+.git
+.DS_Store
+node_modules
+dist
+playwright-report
+test-results
+.tsbuildinfo-node
+*.tsbuildinfo
+src-tauri/target
+src-tauri/binaries
+src-tauri/gen
+target

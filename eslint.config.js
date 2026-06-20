@@ -13,6 +13,9 @@ export default [
       "src-tauri/gen/**",
       "src/api/bindings.ts",
       "*.tsbuildinfo",
+      ".tsbuildinfo-node/**",
+      "playwright-report/**",
+      "test-results/**",
     ],
   },
   js.configs.recommended,
@@ -46,7 +49,15 @@ export default [
     },
   },
   {
-    files: ["vite.config.ts", "eslint.config.js", "scripts/**/*.{js,mjs}"],
+    files: [
+      "vite.config.ts",
+      "vitest.config.ts",
+      "playwright.browser.config.ts",
+      "wdio.tauri.conf.mjs",
+      "eslint.config.js",
+      "scripts/**/*.{js,mjs}",
+      "tests/e2e/browser/*.mjs",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -55,6 +66,33 @@ export default [
         ...globals.es2022,
         fetch: "readonly",
         WritableStream: "readonly",
+      },
+    },
+  },
+  {
+    files: ["tests/e2e/browser/**/*.ts"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+        ...globals.es2022,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    files: ["tests/e2e/tauri/**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.mocha,
+        ...globals.es2022,
+        browser: "readonly",
+        $: "readonly",
       },
     },
   },

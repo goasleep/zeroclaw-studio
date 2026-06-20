@@ -48,11 +48,19 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const [activation, setActivation] = useState<ActivationStep | null>(null);
 
   const refresh = useCallback(async () => {
-    const [list, act] = await Promise.all([listConnections(), getActiveConnection()]);
-    setConnections(list);
-    setActive(act);
-    cacheActiveConnection(act);
-    setLoading(false);
+    try {
+      const [list, act] = await Promise.all([listConnections(), getActiveConnection()]);
+      setConnections(list);
+      setActive(act);
+      cacheActiveConnection(act);
+    } catch (err) {
+      console.warn("connection refresh failed:", err);
+      setConnections([]);
+      setActive(null);
+      cacheActiveConnection(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
