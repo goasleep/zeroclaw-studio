@@ -45,7 +45,7 @@ jobs:
             librsvg2-dev \
             build-essential
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
