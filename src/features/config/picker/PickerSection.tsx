@@ -29,10 +29,14 @@ export function PickerSection({
   section,
   onTarget,
   onSaved,
+  focusTarget,
+  onFocusConsumed,
 }: {
   section: ConfigSectionInfo;
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
+  focusTarget?: string | null;
+  onFocusConsumed?: () => void;
 }) {
   const { t } = useLingui();
   const [items, setItems] = useState<PickerItem[]>([]);
@@ -119,6 +123,36 @@ export function PickerSection({
       cancelled = true;
     };
   }, [typed, section.key, reloadKey]);
+
+  useEffect(() => {
+    if (!focusTarget || loading) return;
+    if (focusTarget === section.key) {
+      onFocusConsumed?.();
+      return;
+    }
+    if (!focusTarget.startsWith(`${section.key}.`)) return;
+    const itemKey = focusTarget.slice(section.key.length + 1).split(".")[0];
+    if (!itemKey) return;
+    const item = items.find((candidate) => candidate.key === itemKey);
+    if (!item) return;
+    if (oneTier) {
+      void openOneTierItem(item);
+      onFocusConsumed?.();
+    } else if (!typed) {
+      void openBackendItem(item);
+      onFocusConsumed?.();
+    }
+  }, [
+    focusTarget,
+    items,
+    loading,
+    oneTier,
+    onFocusConsumed,
+    openBackendItem,
+    openOneTierItem,
+    section.key,
+    typed,
+  ]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();

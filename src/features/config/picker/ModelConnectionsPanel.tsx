@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Loader2, Search, Sparkles, Trash2 } from "lucide-react";
+import { ChevronRight, Loader2, RotateCcw, Search, Sparkles, Trash2 } from "lucide-react";
 import {
-  apiConfigDeleteMapKey,
   apiConfigList,
   apiConfigSelectItem,
   type ConfigSectionInfo,
@@ -9,6 +8,7 @@ import {
 } from "@/api/config";
 import { Badge, ErrorBox, LoadingInline } from "@/ui/feedback";
 import type { FormTarget, ModelConnection } from "../types";
+import { useConfigDrafts } from "../config-drafts";
 import { errorMessage } from "../section-utils";
 import {
   modelConnectionsFromEntries,
@@ -37,12 +37,12 @@ export function ModelConnectionsPanel({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { isRemovalStaged, savedVersion, stageRemoval, unstageRemoval } = useConfigDrafts();
   const [connections, setConnections] = useState<ModelConnection[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(true);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
   const [alias, setAlias] = useState("default");
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ModelConnection | null>(null);
   const recommended = useMemo(() => recommendedModelProviders(items), [items]);
 
@@ -62,6 +62,10 @@ export function ModelConnectionsPanel({
   useEffect(() => {
     void loadConnections();
   }, [loadConnections]);
+
+  useEffect(() => {
+    if (savedVersion > 0) void loadConnections();
+  }, [loadConnections, savedVersion]);
 
   async function openConnection(item: PickerItem, nextAlias = alias) {
     const clean = nextAlias.trim() || "default";
@@ -86,20 +90,14 @@ export function ModelConnectionsPanel({
     }
   }
 
-  async function deleteConnection(connection: ModelConnection) {
-    const key = `${connection.providerKey}:${connection.alias}`;
-    setDeletingKey(key);
-    setConnectionsError(null);
-    try {
-      await apiConfigDeleteMapKey(`${section.key}.${connection.providerKey}`, connection.alias);
-      setDeleteTarget(null);
-      onSaved();
-      await loadConnections();
-    } catch (e) {
-      setConnectionsError(errorMessage(e));
-    } finally {
-      setDeletingKey(null);
-    }
+  function deleteConnection(connection: ModelConnection) {
+    stageRemoval(
+      section.key,
+      section.label,
+      modelConnectionPath(section.key, connection),
+      `${connection.providerLabel} / ${connection.alias}`,
+    );
+    setDeleteTarget(null);
   }
 
   return (
@@ -157,11 +155,14 @@ export function ModelConnectionsPanel({
               {connections.map((connection) => {
                 const item = items.find((candidate) => candidate.key === connection.providerKey);
                 const busy = busyKey === `${connection.providerKey}:${connection.alias}`;
-                const deleting = deletingKey === `${connection.providerKey}:${connection.alias}`;
+                const removalPath = modelConnectionPath(section.key, connection);
+                const deleteStaged = isRemovalStaged(removalPath);
                 return (
                   <div
                     key={`${connection.providerKey}:${connection.alias}`}
-                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(140px,1fr)_minmax(120px,180px)_auto] md:items-center"
+                    className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(140px,1fr)_minmax(120px,180px)_auto] md:items-center ${
+                      deleteStaged ? "bg-red-500/[0.06] opacity-75" : ""
+                    }`}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
@@ -177,12 +178,13 @@ export function ModelConnectionsPanel({
                     <span className="font-mono text-xs text-neutral-400">{connection.alias}</span>
                     <span className="flex items-center justify-between gap-2 md:justify-end">
                       {connection.badge && <Badge label={connection.badge} />}
+                      {deleteStaged && <Badge label="delete staged" />}
                       <button
                         type="button"
                         onClick={() => {
                           if (item) void openConnection(item, connection.alias);
                         }}
-                        disabled={!item || busy || deleting}
+                        disabled={!item || busy || deleteStaged}
                         className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {busy ? (
@@ -194,16 +196,22 @@ export function ModelConnectionsPanel({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setDeleteTarget(connection)}
-                        disabled={busy || deleting}
-                        aria-label={`Remove ${connection.providerLabel} ${connection.alias}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          deleteStaged ? unstageRemoval(removalPath) : setDeleteTarget(connection)
+                        }
+                        disabled={busy}
+                        aria-label={
+                          deleteStaged
+                            ? `Undo removing ${connection.providerLabel} ${connection.alias}`
+                            : `Remove ${connection.providerLabel} ${connection.alias}`
+                        }
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          deleteStaged
+                            ? "border-amber-300/25 text-amber-200 hover:bg-amber-300/10"
+                            : "border-white/10 text-neutral-500 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+                        }`}
                       >
-                        {deleting ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={13} />
-                        )}
+                        {deleteStaged ? <RotateCcw size={13} /> : <Trash2 size={13} />}
                       </button>
                     </span>
                   </div>
@@ -348,12 +356,12 @@ export function ModelConnectionsPanel({
                   Remove model connection?
                 </h3>
                 <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-                  This removes{" "}
+                  This stages{" "}
                   <span className="font-medium text-neutral-100">
                     {deleteTarget.providerLabel} / {deleteTarget.alias}
                   </span>{" "}
-                  from saved model connections. Agents using this connection may need a new model
-                  connection before they can run.
+                  for removal. It will not be removed until you use Save all. Agents using this
+                  connection may need a new model connection before they can run.
                 </p>
               </div>
             </div>
@@ -362,23 +370,17 @@ export function ModelConnectionsPanel({
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                disabled={Boolean(deletingKey)}
                 className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-white/20 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={() => void deleteConnection(deleteTarget)}
-                disabled={Boolean(deletingKey)}
+                onClick={() => deleteConnection(deleteTarget)}
                 className="inline-flex items-center gap-1.5 rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {deletingKey ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Trash2 size={13} />
-                )}
-                Remove
+                <Trash2 size={13} />
+                Stage remove
               </button>
             </div>
           </section>
@@ -386,4 +388,8 @@ export function ModelConnectionsPanel({
       )}
     </div>
   );
+}
+
+function modelConnectionPath(sectionKey: string, connection: ModelConnection) {
+  return `${sectionKey}.${connection.providerKey}.${connection.alias}`;
 }

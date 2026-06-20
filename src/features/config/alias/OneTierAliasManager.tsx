@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronRight, Loader2, Plus, Search, X } from "lucide-react";
+import {
+  Bot,
+  ChevronRight,
+  FolderOpen,
+  Loader2,
+  MessageSquare,
+  Plus,
+  Search,
+  Settings,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type { ConfigSectionInfo, PickerItem } from "@/api/config";
 import {
   configGetSummaries,
@@ -20,7 +31,6 @@ import {
   errorMessage,
 } from "../section-utils";
 import {
-  bundleCount,
   centsLabel,
   inheritNumber,
   secondsLabel,
@@ -238,7 +248,7 @@ export function OneTierAliasManager({
                 <LoadingInline label={`Opening ${noun}...`} />
               </div>
             ) : (
-              createContent ?? (
+              (createContent ?? (
                 <NewAliasDrawer
                   section={section}
                   newItemName={newItemName}
@@ -247,7 +257,7 @@ export function OneTierAliasManager({
                   onCreateItem={onCreateItem}
                   onClose={onCloseDrawer}
                 />
-              )
+              ))
             )}
           </div>
         </div>
@@ -280,6 +290,18 @@ function AliasRows({
     }
     return map;
   }, [summaries, summaryKind]);
+
+  if (summaryKind === "agents") {
+    return (
+      <AgentAliasRows
+        items={items}
+        selectedKey={selectedKey}
+        openingKey={openingKey}
+        summaries={summaryByAlias as Map<string, AgentSummary>}
+        onOpenItem={onOpenItem}
+      />
+    );
+  }
 
   return (
     <div className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
@@ -314,9 +336,7 @@ function AliasRows({
             </div>
 
             <div className="min-w-0">
-              {summaryKind === "agents" && summary ? (
-                <AgentSummaryLine summary={summary as AgentSummary} />
-              ) : summaryKind === "risk_profiles" && summary ? (
+              {summaryKind === "risk_profiles" && summary ? (
                 <RiskProfileSummaryLine summary={summary as RiskProfileSummary} />
               ) : summaryKind === "runtime_profiles" && summary ? (
                 <RuntimeProfileSummaryLine summary={summary as RuntimeProfileSummary} />
@@ -340,27 +360,142 @@ function AliasRows({
   );
 }
 
-function AgentSummaryLine({ summary }: { summary: AgentSummary }) {
+function AgentAliasRows({
+  items,
+  selectedKey,
+  openingKey,
+  summaries,
+  onOpenItem,
+}: {
+  items: PickerItem[];
+  selectedKey: string | null;
+  openingKey: string | null;
+  summaries: Map<string, AgentSummary>;
+  onOpenItem: (item: PickerItem) => void;
+}) {
   return (
-    <div className="space-y-1.5">
-      <div className="grid gap-1 text-[11px] text-neutral-400 lg:grid-cols-3">
-        <SummaryValue label="Model" value={summary.model_provider} />
-        <SummaryValue label="Safety" value={summary.risk_profile} />
-        <SummaryValue label="Runtime" value={summary.runtime_profile} />
-      </div>
-      <SummaryPills
-        items={[
-          summary.channels.length ? `${summary.channels.length} channels` : "No channels",
-          summary.peer_groups.length ? `${summary.peer_groups.length} groups` : "",
-          bundleCount(summary) ? `${bundleCount(summary)} bundles` : "",
-        ]}
-      />
-      {summary.missing.length > 0 && (
-        <div className="truncate text-[10px] text-amber-300">
-          Missing: {summary.missing.join(", ")}
-        </div>
-      )}
+    <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => {
+        const summary = summaries.get(item.key);
+        const selected = selectedKey === item.key;
+        const busy = openingKey === item.key;
+        return (
+          <section
+            key={item.key}
+            className={`min-w-0 rounded-lg border p-4 transition ${
+              selected
+                ? "border-cyan-400/35 bg-cyan-400/[0.06]"
+                : "border-white/10 bg-white/[0.025] hover:border-white/15"
+            }`}
+          >
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                  <Bot size={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-neutral-100">
+                    {item.label || item.key}
+                  </span>
+                  <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                    agents.{item.key}
+                  </span>
+                </span>
+              </div>
+              <span
+                className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
+                  summary?.enabled
+                    ? "bg-emerald-400/10 text-emerald-300"
+                    : "bg-white/[0.06] text-neutral-500"
+                }`}
+              >
+                {summary?.enabled ? "enabled" : "disabled"}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-2 text-[11px] text-neutral-400">
+              <SummaryValue label="Model" value={summary?.model_provider ?? ""} />
+              <SummaryValue label="Risk" value={summary?.risk_profile ?? ""} />
+              <SummaryValue label="Runtime" value={summary?.runtime_profile ?? ""} />
+              <SummaryValue
+                label="Memory"
+                value={
+                  summary
+                    ? `${summary.knowledge_bundles.length} knowledge / ${summary.mcp_bundles.length} MCP`
+                    : ""
+                }
+              />
+            </div>
+
+            <SummaryPills
+              items={[
+                summary?.channels.length ? `${summary.channels.length} channels` : "No channels",
+                summary?.skill_bundles.length ? `${summary.skill_bundles.length} skills` : "",
+                summary?.peer_groups.length ? `${summary.peer_groups.length} groups` : "",
+              ]}
+            />
+
+            {summary?.missing.length ? (
+              <div className="mt-2 truncate text-[10px] text-amber-300">
+                Missing: {summary.missing.join(", ")}
+              </div>
+            ) : null}
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <AgentActionButton
+                icon={MessageSquare}
+                label="Chat"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("zeroclaw://select-agent", { detail: item.key }),
+                  )
+                }
+              />
+              <AgentActionButton
+                icon={Settings}
+                label="Config"
+                busy={busy}
+                onClick={() => onOpenItem(item)}
+              />
+              <AgentActionButton
+                icon={FolderOpen}
+                label="Workspace"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("zeroclaw://open-agent-workspace", { detail: item.key }),
+                  )
+                }
+              />
+            </div>
+          </section>
+        );
+      })}
     </div>
+  );
+}
+
+function AgentActionButton({
+  icon: Icon,
+  label,
+  busy,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  busy?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-neutral-300 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+      title={label}
+    >
+      {busy ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Icon size={12} />}
+      <span className="min-w-0 truncate">{label}</span>
+    </button>
   );
 }
 

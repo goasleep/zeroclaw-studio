@@ -31,6 +31,7 @@ const CMD_SETTINGS_OPEN_SETUP_CENTER: &str = "settings.openSetupCenter";
 const CMD_SETTINGS_OPEN_GATEWAY_OVERVIEW: &str = "settings.openGatewayOverview";
 const CMD_SETTINGS_OPEN_MODELS_PROVIDERS: &str = "settings.openModelsProviders";
 const CMD_SETTINGS_OPEN_AGENTS: &str = "settings.openAgents";
+const CMD_SETTINGS_OPEN_AGENT_WORKSPACE: &str = "settings.openAgentWorkspace";
 const CMD_SETTINGS_OPEN_RUNTIME_SAFETY: &str = "settings.openRuntimeSafety";
 const CMD_SETTINGS_OPEN_TOOLS_SKILLS: &str = "settings.openToolsSkills";
 const CMD_DIAGNOSTICS_OPEN_LOGS: &str = "diagnostics.openLogs";
@@ -244,6 +245,13 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::setup::setup_run_action,
         commands::ssh::ssh_open_tunnel::<tauri::Wry>,
         commands::ssh::ssh_close_tunnel,
+        commands::agent_workspace::agent_workspace_list_agents,
+        commands::agent_workspace::agent_workspace_list_dir,
+        commands::agent_workspace::agent_workspace_read_file,
+        commands::agent_workspace::agent_workspace_write_file,
+        commands::agent_workspace::agent_workspace_create_file,
+        commands::agent_workspace::agent_workspace_create_dir,
+        commands::agent_workspace::agent_workspace_delete,
         commands::fs::workspace_open_root::<tauri::Wry>,
         commands::fs::workspace_get_state,
         commands::fs::workspace_import_legacy_state::<tauri::Wry>,
@@ -296,6 +304,9 @@ fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
         MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_MODELS_PROVIDERS, "Models & Providers")
             .build(app)?;
     let agents = MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_AGENTS, "Agents").build(app)?;
+    let agent_workspace =
+        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_AGENT_WORKSPACE, "Agent Workspace")
+            .build(app)?;
     let runtime_safety =
         MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_RUNTIME_SAFETY, "Runtime & Safety")
             .build(app)?;
@@ -325,6 +336,7 @@ fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
         .item(&gateway_overview)
         .item(&models_providers)
         .item(&agents)
+        .item(&agent_workspace)
         .item(&runtime_safety)
         .item(&tools_skills)
         .build()?;
@@ -426,6 +438,7 @@ fn handle_app_menu_event(app: &tauri::AppHandle<tauri::Wry>, id: &str) {
         | CMD_SETTINGS_OPEN_GATEWAY_OVERVIEW
         | CMD_SETTINGS_OPEN_MODELS_PROVIDERS
         | CMD_SETTINGS_OPEN_AGENTS
+        | CMD_SETTINGS_OPEN_AGENT_WORKSPACE
         | CMD_SETTINGS_OPEN_RUNTIME_SAFETY
         | CMD_SETTINGS_OPEN_TOOLS_SKILLS
         | CMD_DIAGNOSTICS_OPEN_LOGS

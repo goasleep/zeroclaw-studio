@@ -37,6 +37,8 @@ async function unwrap<T, E>(result: Promise<Result<T, E>>): Promise<T> {
 // ---- Types (generated, see ./bindings.ts) ----
 
 export type {
+  AgentWorkspaceAgent,
+  AgentWorkspaceEntry,
   AuthConfig,
   AuthMode,
   ChatCapabilities,
@@ -183,6 +185,28 @@ export const sshCloseTunnel = (id: string) => unwrap(commands.sshCloseTunnel(id)
 export const gatewayRequest = (req: GatewayHttpRequest) => unwrap(commands.gatewayRequest(req));
 
 export const configGetSummaries = () => unwrap(commands.configGetSummaries());
+
+// ---- Agent workspace FS commands ----
+
+export const agentWorkspaceListAgents = () => unwrap(commands.agentWorkspaceListAgents());
+
+export const agentWorkspaceListDir = (alias: string, path: string | null = null) =>
+  unwrap(commands.agentWorkspaceListDir(alias, path));
+
+export const agentWorkspaceReadFile = (alias: string, path: string) =>
+  unwrap(commands.agentWorkspaceReadFile(alias, path));
+
+export const agentWorkspaceWriteFile = (alias: string, path: string, content: string) =>
+  unwrap(commands.agentWorkspaceWriteFile(alias, path, content));
+
+export const agentWorkspaceCreateFile = (alias: string, path: string, content = "") =>
+  unwrap(commands.agentWorkspaceCreateFile(alias, path, content));
+
+export const agentWorkspaceCreateDir = (alias: string, path: string) =>
+  unwrap(commands.agentWorkspaceCreateDir(alias, path));
+
+export const agentWorkspaceDelete = (alias: string, path: string) =>
+  unwrap(commands.agentWorkspaceDelete(alias, path));
 
 // ---- Workspace FS commands ----
 

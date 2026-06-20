@@ -168,6 +168,15 @@ export function fieldPriority(entry: ConfigListEntry) {
     "risk_profile",
     "runtime_profile",
     "channels",
+    "approval_mode",
+    "allowed_commands",
+    "sandbox_mode",
+    "agentic",
+    "max_iterations",
+    "timeout_secs",
+    "max_cost_usd",
+    "max_tool_iterations",
+    "shell_timeout_secs",
   ];
   const idx = order.indexOf(leaf);
   return idx >= 0 ? idx : 100;

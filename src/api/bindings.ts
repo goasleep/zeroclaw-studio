@@ -231,6 +231,62 @@ async sshCloseTunnel(id: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async agentWorkspaceListAgents() : Promise<Result<AgentWorkspaceAgent[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_list_agents") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceListDir(alias: string, path: string | null) : Promise<Result<AgentWorkspaceEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_list_dir", { alias, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceReadFile(alias: string, path: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_read_file", { alias, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceWriteFile(alias: string, path: string, content: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_write_file", { alias, path, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceCreateFile(alias: string, path: string, content: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_create_file", { alias, path, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceCreateDir(alias: string, path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_create_dir", { alias, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async agentWorkspaceDelete(alias: string, path: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("agent_workspace_delete", { alias, path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async workspaceOpenRoot(path: string) : Promise<Result<WorkspaceLocalState, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("workspace_open_root", { path }) };
@@ -380,6 +436,8 @@ async chatLocalClearTranscript(workspaceRoot: string | null, mode: string, agent
 /** user-defined types **/
 
 export type AgentSummary = { alias: string; label: string; picker_badge: string | null; enabled: boolean; dispatchable: boolean; missing: string[]; model_provider: string; risk_profile: string; runtime_profile: string; channels: string[]; skill_bundles: string[]; knowledge_bundles: string[]; mcp_bundles: string[]; cron_jobs: string[]; peer_groups: string[] }
+export type AgentWorkspaceAgent = { alias: string; workspace_path: string; workspace_exists: boolean; file_count: number }
+export type AgentWorkspaceEntry = { name: string; path: string; isDir: boolean; size: number | null }
 export type AuthConfig = { mode: AuthMode; 
 /**
  * Stored bearer token. Persisted alongside the connection (Phase 2 will

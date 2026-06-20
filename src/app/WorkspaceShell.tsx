@@ -16,6 +16,7 @@ import { apiQuickstartState } from "@/api/quickstart";
 import { ChatWorkspace } from "./workspace-shell/ChatWorkspace";
 import { WorkspaceSidebar } from "./workspace-shell/WorkspaceSidebar";
 import { SettingsPage } from "./workspace-shell/SettingsPage";
+import { settingsSectionForConfigTarget } from "./workspace-shell/settings-routing";
 import { isSettingsSection } from "./workspace-shell/settings-sections";
 import { useThreads } from "./workspace-shell/use-threads";
 import type { SettingsSection, WorkspacePage } from "./workspace-shell/types";
@@ -26,6 +27,7 @@ export function WorkspaceShell() {
   const [page, setPage] = useState<WorkspacePage>("chat");
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("app");
   const [configFocusSection, setConfigFocusSection] = useState<string | null>(null);
+  const [agentWorkspaceFocusAlias, setAgentWorkspaceFocusAlias] = useState<string | null>(null);
   const [agents, setAgents] = useState<string[]>([]);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -77,12 +79,33 @@ export function WorkspaceShell() {
 
   const openSettings = useCallback((section: string) => {
     setSettingsSection(isSettingsSection(section) ? section : "app");
+    setConfigFocusSection(null);
+    setAgentWorkspaceFocusAlias(null);
+    setPage("settings");
+  }, []);
+
+  const openConfigTarget = useCallback((target: string) => {
+    const clean = target.trim();
+    if (!clean) return;
+    setConfigFocusSection(clean);
+    setAgentWorkspaceFocusAlias(null);
+    setSettingsSection(settingsSectionForConfigTarget(clean));
+    setPage("settings");
+  }, []);
+
+  const openAgentWorkspace = useCallback((alias: string) => {
+    const clean = alias.trim();
+    setConfigFocusSection(null);
+    setAgentWorkspaceFocusAlias(clean || null);
+    if (clean) setActiveAgent(clean);
+    setSettingsSection("agent-workspace");
     setPage("settings");
   }, []);
 
   const selectAgent = useCallback(
     (agent: string) => {
       setActiveAgent(agent);
+      setAgentWorkspaceFocusAlias(null);
       setActiveThreadId(null);
       setPendingSessionId(null);
       setPage("chat");
@@ -92,19 +115,25 @@ export function WorkspaceShell() {
   );
 
   const openThread = useCallback(
-    (thread: NormalizedSession, workspaceRoot: string | null) => {
+    async (thread: NormalizedSession, workspaceRoot: string | null) => {
       const agent = thread.agent_alias || activeAgent || agents[0];
       if (agent) setActiveAgent(agent);
+      if (workspaceRoot) {
+        await setRoot(workspaceRoot);
+      }
       setChatScopeRoot(workspaceRoot);
       setActiveThreadId(thread.session_id);
       setPendingSessionId(thread.session_id);
       setPage("chat");
     },
-    [activeAgent, agents],
+    [activeAgent, agents, setRoot],
   );
 
   const newThread = useCallback(
-    (workspaceRoot: string | null) => {
+    async (workspaceRoot: string | null) => {
+      if (workspaceRoot) {
+        await setRoot(workspaceRoot);
+      }
       setChatScopeRoot(workspaceRoot);
       setActiveThreadId(null);
       setPage("chat");
@@ -113,7 +142,7 @@ export function WorkspaceShell() {
         focusComposer();
       });
     },
-    [focusComposer],
+    [focusComposer, setRoot],
   );
 
   useEffect(() => {
@@ -154,7 +183,7 @@ export function WorkspaceShell() {
           void pickProject();
           break;
         case APP_COMMANDS.workspaceNewChat.id:
-          newThread(activeChatWorkspaceRoot);
+          void newThread(activeChatWorkspaceRoot);
           break;
         case APP_COMMANDS.workspaceRefreshChats.id:
           window.dispatchEvent(new CustomEvent("zeroclaw://refresh-sessions"));
@@ -171,6 +200,26 @@ export function WorkspaceShell() {
 
     function onOpenSettings(e: Event) {
       openSettings((e as CustomEvent<string>).detail);
+    }
+
+    function onOpenConfigTarget(e: Event) {
+      const target = String((e as CustomEvent<string>).detail ?? "");
+      openConfigTarget(target);
+    }
+
+    function onOpenAgentConfig(e: Event) {
+      const alias = String((e as CustomEvent<string>).detail ?? "").trim();
+      if (alias) openConfigTarget(`agents.${alias}`);
+    }
+
+    function onOpenAgentWorkspace(e: Event) {
+      const alias = String((e as CustomEvent<string>).detail ?? "");
+      openAgentWorkspace(alias);
+    }
+
+    function onSelectAgent(e: Event) {
+      const alias = String((e as CustomEvent<string>).detail ?? "").trim();
+      if (alias) selectAgent(alias);
     }
 
     function onDeepLink(e: Event) {
@@ -223,6 +272,10 @@ export function WorkspaceShell() {
     });
     window.addEventListener(APP_COMMAND_EVENT, onCommand);
     window.addEventListener("zeroclaw://open-settings", onOpenSettings);
+    window.addEventListener("zeroclaw://open-config-target", onOpenConfigTarget);
+    window.addEventListener("zeroclaw://open-agent-config", onOpenAgentConfig);
+    window.addEventListener("zeroclaw://open-agent-workspace", onOpenAgentWorkspace);
+    window.addEventListener("zeroclaw://select-agent", onSelectAgent);
     window.addEventListener("zeroclaw://deep-link", onDeepLink);
     window.addEventListener("zeroclaw://open-project", onOpenProject);
     window.addEventListener("zeroclaw://focus-chat", onFocusChat);
@@ -232,12 +285,26 @@ export function WorkspaceShell() {
       unlistenCommand?.();
       window.removeEventListener(APP_COMMAND_EVENT, onCommand);
       window.removeEventListener("zeroclaw://open-settings", onOpenSettings);
+      window.removeEventListener("zeroclaw://open-config-target", onOpenConfigTarget);
+      window.removeEventListener("zeroclaw://open-agent-config", onOpenAgentConfig);
+      window.removeEventListener("zeroclaw://open-agent-workspace", onOpenAgentWorkspace);
+      window.removeEventListener("zeroclaw://select-agent", onSelectAgent);
       window.removeEventListener("zeroclaw://deep-link", onDeepLink);
       window.removeEventListener("zeroclaw://open-project", onOpenProject);
       window.removeEventListener("zeroclaw://focus-chat", onFocusChat);
       window.removeEventListener("zeroclaw://focus-code", onFocusCode);
     };
-  }, [activeChatWorkspaceRoot, addFiles, focusComposer, newThread, openSettings, pickProject]);
+  }, [
+    activeChatWorkspaceRoot,
+    addFiles,
+    focusComposer,
+    newThread,
+    openAgentWorkspace,
+    openConfigTarget,
+    openSettings,
+    pickProject,
+    selectAgent,
+  ]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden text-slate-100">
@@ -277,6 +344,7 @@ export function WorkspaceShell() {
           onBackToChat={() => setPage("chat")}
           configFocusSection={configFocusSection}
           onConfigFocusSection={setConfigFocusSection}
+          agentWorkspaceFocusAlias={agentWorkspaceFocusAlias}
         />
       )}
     </div>

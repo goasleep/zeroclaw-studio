@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Loader2, Network, Search, Trash2 } from "lucide-react";
+import { ChevronRight, Loader2, Network, RotateCcw, Search, Trash2 } from "lucide-react";
 import {
-  apiConfigDeleteMapKey,
   apiConfigList,
   apiConfigSelectItem,
   type ConfigSectionInfo,
@@ -9,6 +8,7 @@ import {
 } from "@/api/config";
 import { Badge, ErrorBox, LoadingInline } from "@/ui/feedback";
 import type { ChannelConnection, FormTarget } from "../types";
+import { useConfigDrafts } from "../config-drafts";
 import { errorMessage } from "../section-utils";
 import {
   channelConnectionsFromEntries,
@@ -37,12 +37,12 @@ export function ChannelConnectionsPanel({
   onTarget: (target: FormTarget) => void;
   onSaved: () => void;
 }) {
+  const { isRemovalStaged, savedVersion, stageRemoval, unstageRemoval } = useConfigDrafts();
   const [connections, setConnections] = useState<ChannelConnection[]>([]);
   const [loadingConnections, setLoadingConnections] = useState(true);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
   const [name, setName] = useState("default");
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChannelConnection | null>(null);
   const recommended = useMemo(() => recommendedChannels(items), [items]);
 
@@ -62,6 +62,10 @@ export function ChannelConnectionsPanel({
   useEffect(() => {
     void loadConnections();
   }, [loadConnections]);
+
+  useEffect(() => {
+    if (savedVersion > 0) void loadConnections();
+  }, [loadConnections, savedVersion]);
 
   async function openConnection(item: PickerItem, nextName = name) {
     const clean = nextName.trim() || "default";
@@ -86,20 +90,14 @@ export function ChannelConnectionsPanel({
     }
   }
 
-  async function deleteConnection(connection: ChannelConnection) {
-    const key = `${connection.channelKey}:${connection.name}`;
-    setDeletingKey(key);
-    setConnectionsError(null);
-    try {
-      await apiConfigDeleteMapKey(`${section.key}.${connection.channelKey}`, connection.name);
-      setDeleteTarget(null);
-      onSaved();
-      await loadConnections();
-    } catch (e) {
-      setConnectionsError(errorMessage(e));
-    } finally {
-      setDeletingKey(null);
-    }
+  function deleteConnection(connection: ChannelConnection) {
+    stageRemoval(
+      section.key,
+      section.label,
+      channelConnectionPath(section.key, connection),
+      `${connection.channelLabel} / ${connection.name}`,
+    );
+    setDeleteTarget(null);
   }
 
   return (
@@ -130,11 +128,14 @@ export function ChannelConnectionsPanel({
               {connections.map((connection) => {
                 const item = items.find((candidate) => candidate.key === connection.channelKey);
                 const busy = busyKey === `${connection.channelKey}:${connection.name}`;
-                const deleting = deletingKey === `${connection.channelKey}:${connection.name}`;
+                const removalPath = channelConnectionPath(section.key, connection);
+                const deleteStaged = isRemovalStaged(removalPath);
                 return (
                   <div
                     key={`${connection.channelKey}:${connection.name}`}
-                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(120px,180px)_auto] md:items-center"
+                    className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(120px,180px)_auto] md:items-center ${
+                      deleteStaged ? "bg-red-500/[0.06] opacity-75" : ""
+                    }`}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
@@ -159,12 +160,13 @@ export function ChannelConnectionsPanel({
                     </span>
                     <span className="flex items-center justify-between gap-2 md:justify-end">
                       {connection.badge && <Badge label={connection.badge} />}
+                      {deleteStaged && <Badge label="delete staged" />}
                       <button
                         type="button"
                         onClick={() => {
                           if (item) void openConnection(item, connection.name);
                         }}
-                        disabled={!item || busy || deleting}
+                        disabled={!item || busy || deleteStaged}
                         className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {busy ? (
@@ -176,16 +178,22 @@ export function ChannelConnectionsPanel({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setDeleteTarget(connection)}
-                        disabled={busy || deleting}
-                        aria-label={`Remove ${connection.channelLabel} ${connection.name}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                          deleteStaged ? unstageRemoval(removalPath) : setDeleteTarget(connection)
+                        }
+                        disabled={busy}
+                        aria-label={
+                          deleteStaged
+                            ? `Undo removing ${connection.channelLabel} ${connection.name}`
+                            : `Remove ${connection.channelLabel} ${connection.name}`
+                        }
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-md border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          deleteStaged
+                            ? "border-amber-300/25 text-amber-200 hover:bg-amber-300/10"
+                            : "border-white/10 text-neutral-500 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+                        }`}
                       >
-                        {deleting ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={13} />
-                        )}
+                        {deleteStaged ? <RotateCcw size={13} /> : <Trash2 size={13} />}
                       </button>
                     </span>
                   </div>
@@ -351,12 +359,12 @@ export function ChannelConnectionsPanel({
                   Remove channel connection?
                 </h3>
                 <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-                  This removes{" "}
+                  This stages{" "}
                   <span className="font-medium text-neutral-100">
                     {deleteTarget.channelLabel} / {deleteTarget.name}
                   </span>{" "}
-                  from saved channels. Incoming messages for this connection will stop until it is
-                  configured again.
+                  for removal. It will not be removed until you use Save all. Incoming messages for
+                  this connection will stop until it is configured again.
                 </p>
               </div>
             </div>
@@ -365,23 +373,17 @@ export function ChannelConnectionsPanel({
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                disabled={Boolean(deletingKey)}
                 className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-neutral-300 hover:border-white/20 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={() => void deleteConnection(deleteTarget)}
-                disabled={Boolean(deletingKey)}
+                onClick={() => deleteConnection(deleteTarget)}
                 className="inline-flex items-center gap-1.5 rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {deletingKey ? (
-                  <Loader2 size={13} className="animate-spin" />
-                ) : (
-                  <Trash2 size={13} />
-                )}
-                Remove
+                <Trash2 size={13} />
+                Stage remove
               </button>
             </div>
           </section>
@@ -389,4 +391,8 @@ export function ChannelConnectionsPanel({
       )}
     </div>
   );
+}
+
+function channelConnectionPath(sectionKey: string, connection: ChannelConnection) {
+  return `${sectionKey}.${connection.channelKey}.${connection.name}`;
 }
