@@ -33,7 +33,7 @@ export function useChat({
   const [modelOverride, setModelOverride] = useState<ChatModelOverride | null>(null);
   const hydratedSessionRef = useRef<string | null>(null);
 
-  const sessions = useSessionService(agentAlias);
+  const sessions = useSessionService(agentAlias, workspaceRoot);
   const transcriptCache = useTranscriptCache({
     workspaceRoot,
     agentAlias,

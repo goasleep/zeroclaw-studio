@@ -131,13 +131,8 @@ impl LocalStateStore {
         agent_alias: &str,
     ) -> Result<Option<String>> {
         let key = selected_session_key(workspace_root, mode, agent_alias)?;
-        let fallback_key = selected_session_key(None, mode, agent_alias)?;
         let state = self.state.read().await;
-        Ok(state
-            .selected_sessions
-            .get(&key)
-            .or_else(|| state.selected_sessions.get(&fallback_key))
-            .cloned())
+        Ok(state.selected_sessions.get(&key).cloned())
     }
 
     pub async fn set_selected_session(
@@ -403,6 +398,31 @@ mod tests {
                     workspace_root: "/repo/b".into(),
                 },
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn workspace_selected_session_does_not_fall_back_to_unscoped_session() {
+        let store = LocalStateStore::new();
+        store
+            .set_selected_session(None, "chat", "zeroclaw", Some("legacy-session".into()))
+            .await
+            .unwrap();
+
+        assert!(
+            store
+                .selected_session(Some("/repo/a"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            store
+                .selected_session(None, "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("legacy-session")
         );
     }
 
