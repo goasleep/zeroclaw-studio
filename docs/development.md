@@ -129,6 +129,17 @@ pnpm fetch:zeroclaw-sidecar:offline
 The offline command only checks an existing
 `src-tauri/binaries/zeroclaw-${targetTriple}` file and never downloads.
 
+To bump the app version for a release, update all version manifests with one
+command:
+
+```bash
+pnpm version:set 0.1.1
+```
+
+This synchronizes `package.json`, `src-tauri/Cargo.toml`, and
+`src-tauri/tauri.conf.json`. Do not include the `v` prefix here; keep that for
+the Git tag, such as `v0.1.1`.
+
 ## Tauri command bindings
 
 Rust commands exposed to the frontend are collected through `tauri-specta`.

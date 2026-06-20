@@ -27,7 +27,8 @@
     "rust:fmt": "cd src-tauri && cargo fmt --all -- --check",
     "rust:test": "cd src-tauri && cargo test --all-targets",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "version:set": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "~6.5.0",
