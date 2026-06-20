@@ -1,27 +1,12 @@
 # 🦀 zeroclaw-workspace
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 > A distributed AI productivity workspace powered by
 > [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw).
 > Turn any local or remote `zeroclaw` node into part of one native workspace
 > for files, chat, tools, memory, scheduled tasks, clipboard, notifications,
 > and long-running agent work.
-
-**Status:** early development. See [`docs/architecture.md`](docs/architecture.md).
-
-## Highlights
-
-- Native Tauri 2 desktop app for macOS, Linux, and Windows.
-- Connects to local-managed, local-attached, and remote ZeroClaw gateways.
-- Supports direct HTTP(S), SSH tunnels, Tailscale, VPNs, and private network
-  routes.
-- Provides one workspace for chat, files, tools, memory, cron, logs, doctor,
-  devices, integrations, and config.
-- Keeps chat sessions project-scoped, with markdown responses, tool-call
-  progress, approval prompts, and per-session agent/model context.
-- Adds native desktop affordances: folder picker, file watcher, global
-  shortcut, clipboard, notifications, and `zeroclaw://` deep links.
-- Keeps the workspace client independent from the main `zeroclaw` repo; the
-  gateway contract is HTTP/WebSocket/SSE.
 
 ## What this is
 
@@ -29,6 +14,11 @@
 across local files, remote machines, tools, memory, and automations. The
 desktop app is the productivity layer; `zeroclaw` is the lightweight runtime
 underneath it.
+
+The app can start its own bundled `zeroclaw` gateway, attach to an existing
+local gateway, or connect to a remote gateway over trusted network paths. That
+means first-run local use does not require installing the `zeroclaw` CLI first,
+while remote and homelab workflows stay first-class.
 
 Instead of treating AI as a single chat box, the workspace lets you choose
 where work should run:
@@ -54,8 +44,28 @@ ZeroClaw's low deployment cost is the point: AI capabilities can live wherever
 your work already lives, while the desktop app gives you one place to connect,
 operate, observe, and intervene.
 
-The workspace UI itself runs everywhere. The bundled inner runtime keeps its
-own app-data config directory and never modifies your user-level `~/.zeroclaw/`.
+The workspace UI is cross-platform. The bundled inner runtime keeps its own
+app-data config directory and never modifies your user-level `~/.zeroclaw/`.
+
+## Features
+
+- **One native workspace** for local files, remote machines, tools, memory,
+  scheduled tasks, and long-running agent work.
+- **Built-in `zeroclaw` included** through a pinned sidecar used by the
+  app-private inner runtime.
+- **Flexible gateway topology** across bundled, local-managed, local-attached,
+  and remote gateways.
+- **Remote-first networking** through direct HTTP(S), SSH tunnels, Tailscale,
+  VPNs, and private network routes.
+- **Project-scoped chat sessions** with markdown responses, tool-call progress,
+  approval prompts, file attachments, and stable per-session agent/model
+  context.
+- **Operational panels** for tools, memory, cron, logs, doctor, devices,
+  integrations, and config.
+- **Native desktop affordances** including folder picker, file watcher, global
+  shortcut, clipboard, notifications, and `zeroclaw://` deep links.
+- **Independent client, simple gateway contract** with no Rust-level coupling
+  to the main `zeroclaw` repo.
 
 ## What this is NOT
 
@@ -74,10 +84,19 @@ Prebuilt desktop artifacts are produced by tag-triggered GitHub releases:
 - Linux: `.deb` / AppImage
 - Windows: `.msi` / NSIS `.exe`
 
-Download the latest draft or published build from
+Download the latest published build from
 [GitHub Releases](https://github.com/goasleep/zeroclaw-workspace/releases).
 
-Early releases are currently unsigned. On macOS, Gatekeeper may require
+Release builds include the pinned bundled `zeroclaw v0.8.0` sidecar used by the
+app-private inner runtime. You can still point the app at your own local or
+remote gateway when you want a different runtime.
+
+The built-in runtime stores its ZeroClaw data under the app's per-user Tauri
+data directory, in the `inner-zeroclaw/` subdirectory. At launch, the workspace
+sets both `ZEROCLAW_CONFIG_DIR` and `ZEROCLAW_HOME` to that directory, keeping
+the bundled runtime separate from your user-level `~/.zeroclaw/`.
+
+Current release artifacts are unsigned. On macOS, Gatekeeper may require
 removing the quarantine attribute after installation:
 
 ```bash
@@ -85,14 +104,13 @@ xattr -dr com.apple.quarantine /Applications/ZeroClaw\ Workspace.app
 ```
 
 Signed and notarized builds are planned for a later release.
-Intel macOS builds are paused while the pinned bundled `zeroclaw v0.8.0`
-release lacks an `x86_64-apple-darwin` artifact.
 
 ## Quick start
 
-You need a reachable ZeroClaw gateway. Fresh installs start with a bundled
-app-private gateway, and you can still connect to gateways on the same machine,
-on another host, or behind an SSH/Tailscale/VPN route.
+Fresh installs can start with the bundled app-private `zeroclaw` gateway, so
+you can try local workflows without installing `zeroclaw` separately. You can
+also connect to gateways on the same machine, on another host, or behind an
+SSH/Tailscale/VPN route.
 
 1. Launch ZeroClaw Workspace.
 2. Use the bundled inner runtime, or choose another connection mode:
@@ -106,18 +124,14 @@ on another host, or behind an SSH/Tailscale/VPN route.
 Each chat session keeps its agent context stable once messages exist. Start a
 new session when you want to switch to another agent for the same workspace.
 
-The desktop app does not require `zeroclaw` to be installed locally unless you
-want a managed external local connection.
+The desktop app does not require a user-installed `zeroclaw` unless you want a
+managed external local connection.
 
 ## Gateway compatibility
 
-ZeroClaw Workspace talks to the gateway over HTTP, WebSocket, and SSE. The
-current endpoint map lives in
-[`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md).
-
-The project is still before a stable compatibility promise. If a change touches
-the gateway contract, update the protocol notes and test against the matching
-`zeroclaw` gateway build.
+ZeroClaw Workspace talks to the gateway over HTTP, WebSocket, and SSE. Gateway
+compatibility is not stable yet; gateway contract changes should be tested
+against the matching `zeroclaw` build.
 
 ## Platform support
 
@@ -126,7 +140,6 @@ The project targets current stable Tauri 2 desktop platforms:
 | Platform | Architecture | Status |
 | --- | --- | --- |
 | macOS | arm64 | Supported by release builds |
-| macOS | x86_64 | Paused until bundled `zeroclaw` artifacts are available |
 | Linux | x86_64 | Supported by release builds |
 | Windows | x86_64 | Supported by release builds |
 
@@ -141,7 +154,7 @@ Requirements:
 - Rust stable (pinned in `rust-toolchain.toml`)
 - Node 22+ (pinned in `.nvmrc`)
 - pnpm
-- Tauri 2 system dependencies (see [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites))
+- Tauri 2 system dependencies for your OS
 
 ```bash
 pnpm install
@@ -169,8 +182,7 @@ For formatting, generated Tauri command bindings, and PR workflow, see
 - `src/` — React + Vite frontend.
 - `src-tauri/` — Tauri Rust backend, native commands, gateway client, runtime
   supervision, connection storage, and workspace file integration.
-- `docs/` — architecture, development guide, gateway protocol notes, and reuse
-  attribution.
+- `docs/` — architecture, development guide, and gateway protocol notes.
 - `.github/workflows/` — CI and release automation.
 
 ## Documentation
@@ -178,9 +190,7 @@ For formatting, generated Tauri command bindings, and PR workflow, see
 - [`docs/architecture.md`](docs/architecture.md) — product and technical model.
 - [`docs/development.md`](docs/development.md) — local development workflow.
 - [`docs/gateway-protocol-notes.md`](docs/gateway-protocol-notes.md) — gateway
-  HTTP/WS/SSE endpoint map.
-- [`docs/reuse-attribution.md`](docs/reuse-attribution.md) — copied or ported
-  upstream files.
+  protocol notes.
 - [`SECURITY.md`](SECURITY.md) — supported versions, vulnerability reporting,
   data boundaries, and security notes.
 
@@ -195,10 +205,20 @@ Only connect to gateways you administer or trust. See [`SECURITY.md`](SECURITY.m
 before using the app with sensitive repositories, private hosts, or shared
 diagnostic logs.
 
+## Data and privacy at a glance
+
+- Gateway tokens are stored in per-user app data, not the OS keychain yet.
+- Built-in `zeroclaw` data lives in the app data `inner-zeroclaw/` directory,
+  separate from your user-level `~/.zeroclaw/`.
+- Workspace file features operate on the folder you open in the app.
+- Remote gateways can influence data shown in the UI; connect only to gateways
+  you trust.
+- Redact tokens, private URLs, hostnames, file paths, and personal data before
+  sharing logs or diagnostic archives.
+
 ## Known limitations
 
-- The project is in early development; interfaces and gateway compatibility can
-  change before a stable release.
+- Interfaces and gateway compatibility can change before a stable release.
 - Release artifacts are not yet signed or notarized.
 - Gateway bearer tokens are currently stored in the per-user Tauri store rather
   than the OS keychain.
@@ -207,30 +227,15 @@ diagnostic logs.
 - Some gateway schemas are inferred from upstream source until broader OpenAPI
   coverage lands.
 
-## Roadmap and governance
-
-Current priorities are tracked through
-[GitHub Issues](https://github.com/goasleep/zeroclaw-workspace/issues) and
-[GitHub Milestones](https://github.com/goasleep/zeroclaw-workspace/milestones).
-Good first contributions include documentation fixes, focused UI polish,
-platform-specific build feedback, and small gateway-compatibility improvements.
-
-The repository is source-available and open for contributions, but the npm
-package and Rust crate are intentionally not published. Desktop releases are
-distributed through GitHub Releases.
-
-## Reuse attribution
-
-Some files are ported from `zeroclaw-labs/zeroclaw` under its dual MIT/Apache-2.0
-license. See [`docs/reuse-attribution.md`](docs/reuse-attribution.md) for the
-exact list.
-
 ## Contributing
 
 Contributions are welcome while the project is still taking shape. Start with
 [`CONTRIBUTING.md`](CONTRIBUTING.md), run the checks above, and update the
 relevant docs when changing gateway behavior, native capabilities, or reused
 upstream code.
+
+The npm package and Rust crate are intentionally not published. Desktop
+releases are distributed through GitHub Releases.
 
 ## License
 
