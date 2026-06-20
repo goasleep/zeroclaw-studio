@@ -81,6 +81,9 @@ export function useChatTransport({
       if (storedSessionId && workspaceRoot) {
         void assignWorkspace(storedSessionId);
       }
+      if (storedSessionId) {
+        void hydrateSession(storedSessionId);
+      }
       const newSessionModelOverride = storedSessionId ? null : modelOverride;
 
       client = new ChatClient({
@@ -104,7 +107,7 @@ export function useChatTransport({
     void startClient();
     return () => {
       cancelled = true;
-      client?.close();
+      client?.detach();
       if (clientRef.current === client) {
         clientRef.current = null;
       }

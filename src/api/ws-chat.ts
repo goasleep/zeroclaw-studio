@@ -86,6 +86,7 @@ interface ChatCloseEvent {
 export class ChatClient {
   private sessionId: string | null = null;
   private closed = false;
+  private detached = false;
   private retryAttempt = 0;
   private connectPromise: Promise<void> | null = null;
   private unlisten: (() => void) | null = null;
@@ -111,14 +112,25 @@ export class ChatClient {
 
   close() {
     this.closed = true;
-    this.unlisten?.();
-    this.unlisten = null;
-    this.closeListeners.forEach((u) => u());
-    this.closeListeners = [];
+    this.detachListeners();
     if (this.sessionId) {
       void chatDisconnect({ session_id: this.sessionId });
       this.sessionId = null;
     }
+  }
+
+  detach() {
+    this.detached = true;
+    this.closed = true;
+    this.detachListeners();
+    this.opts.onClose?.();
+  }
+
+  private detachListeners() {
+    this.unlisten?.();
+    this.unlisten = null;
+    this.closeListeners.forEach((u) => u());
+    this.closeListeners = [];
   }
 
   private async connect(): Promise<void> {
@@ -155,6 +167,10 @@ export class ChatClient {
       }
     });
     this.closeListeners.push(unlistenClose);
+    if (this.detached) {
+      this.detachListeners();
+      return;
+    }
 
     const info = await chatConnect({
       url: conn.url,
@@ -176,16 +192,17 @@ export class ChatClient {
 
     this.sessionId = info.session_id;
     this.retryAttempt = 0;
+    if (this.detached) {
+      this.detachListeners();
+      return;
+    }
     this.opts.onOpen?.();
   }
 
   private async reconnect(): Promise<void> {
     this.connectPromise = null;
     this.sessionId = null;
-    this.unlisten?.();
-    this.unlisten = null;
-    this.closeListeners.forEach((u) => u());
-    this.closeListeners = [];
+    this.detachListeners();
 
     const max = this.opts.maxBackoff ?? 30_000;
     const delay = Math.min(1000 * Math.pow(2, this.retryAttempt), max);

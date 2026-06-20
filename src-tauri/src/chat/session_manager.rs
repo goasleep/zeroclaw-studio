@@ -29,6 +29,10 @@ impl ChatSessionManager {
         sessions.insert(id, ChatSession { outbound, abort });
     }
 
+    pub async fn contains(&self, id: &str) -> bool {
+        self.sessions.read().await.contains_key(id)
+    }
+
     pub async fn remove(&self, id: &str) -> Option<tokio::sync::oneshot::Sender<()>> {
         let mut sessions = self.sessions.write().await;
         sessions.remove(id).map(|session| session.abort)

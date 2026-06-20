@@ -38,6 +38,9 @@ pub async fn open<R: Runtime>(
     let session_id = opts
         .session_id
         .unwrap_or_else(|| Uuid::new_v4().to_string());
+    if manager.contains(&session_id).await {
+        return Ok(session_id);
+    }
     let ws_url = build_ws_url(
         &opts.url,
         &opts.agent_alias,
