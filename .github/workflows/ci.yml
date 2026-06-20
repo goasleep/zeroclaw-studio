@@ -27,13 +27,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
 
       # Tauri 2 system deps (Linux only)
       - if: matrix.os == 'ubuntu-latest'
@@ -50,9 +63,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+      - uses: actions/cache@v4
+        with:
+          path: src-tauri/binaries/zeroclaw-${{ matrix.target }}*
+          key: zeroclaw-sidecar-${{ matrix.target }}-${{ hashFiles('scripts/zeroclaw-sidecars.json') }}
 
       - run: cargo fmt --all -- --check
         working-directory: src-tauri
+      - run: pnpm fetch:zeroclaw-sidecar -- --target ${{ matrix.target }}
       - run: cargo clippy --all-targets -- -D warnings
         working-directory: src-tauri
       - run: cargo test --all-targets
