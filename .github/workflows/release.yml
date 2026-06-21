@@ -71,6 +71,6 @@ jobs:
 
             > This release is unsigned. macOS users may need to `xattr -dr com.apple.quarantine /Applications/ZeroClaw\ Workspace.app`
             > after install. Signed + notarized builds land in a future release.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
