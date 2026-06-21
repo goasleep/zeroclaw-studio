@@ -123,7 +123,7 @@ export function WorkDashboard({
           icon={Clock3}
           label={t`Automations`}
           value={String(activeCron.length)}
-          detail={cronJobs.length > 0 ? t`${cronJobs.length} cron jobs` : t`No schedules`}
+          detail={cronJobs.length > 0 ? t`${cronJobs.length} automations` : t`No schedules`}
           onClick={() => onPage("automations")}
         />
       </section>
@@ -134,7 +134,7 @@ export function WorkDashboard({
             <div>
               <h2 className="text-sm font-semibold text-neutral-100">{t`Recent tasks`}</h2>
               <p className="mt-0.5 text-xs text-neutral-500">
-                {t`Task shells are stored locally; execution stays in ZeroClaw sessions.`}
+                {t`Task shells are stored locally; execution stays in ZeroClaw runtime runs.`}
               </p>
             </div>
             {renderCreateControl()}
@@ -147,7 +147,7 @@ export function WorkDashboard({
                 <EmptyState
                   icon={ListTodo}
                   title={t`No tasks yet`}
-                  body={t`Create a task to wrap the next ZeroClaw session in a product workflow.`}
+                  body={t`Create a task to wrap the next runtime run in a product workflow.`}
                   action={renderCreateControl()}
                 />
               </div>

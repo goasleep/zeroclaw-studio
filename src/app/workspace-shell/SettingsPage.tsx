@@ -6,7 +6,7 @@ import { useWorkspace } from "@/app/workspace-context";
 import { AgentWorkspacePanel } from "@/features/agent-workspace/AgentWorkspacePanel";
 import { ConfigDraftProvider, ConfigDraftStatusBar } from "@/features/config/config-drafts";
 import { ConfigPanel, type ConfigCategoryId } from "@/features/config/ConfigPanel";
-import { CronPanel } from "@/features/cron/CronPanel";
+import { RuntimeAutomationsPanel } from "@/features/cron/RuntimeAutomationsPanel";
 import { DevicesPanel } from "@/features/devices/DevicesPanel";
 import { DoctorPanel } from "@/features/doctor/DoctorPanel";
 import { IntegrationsPanel } from "@/features/integrations/IntegrationsPanel";
@@ -24,7 +24,7 @@ import {
 } from "@/workspace/preferences/preferences";
 import { applyAppTheme } from "@/workspace/preferences/theme";
 import { SETTINGS_SECTIONS, type SettingsGroup } from "./settings-sections";
-import { settingsSectionForConfigTarget } from "./settings-routing";
+import { normalizeSettingsSection, settingsSectionForConfigTarget } from "./settings-routing";
 import type { SettingsSection } from "./types";
 
 const SETTINGS_GROUPS: SettingsGroup[] = ["App", "Gateway", "Capabilities", "Operations"];
@@ -33,7 +33,7 @@ interface SettingsPageProps {
   section: SettingsSection;
   configFocusSection: string | null;
   onSection: (section: SettingsSection) => void;
-  onBackToChat: () => void;
+  onBackToApp: () => void;
   onConfigFocusSection: (section: string | null) => void;
   agentWorkspaceFocusAlias?: string | null;
 }
@@ -42,7 +42,7 @@ export function SettingsPage({
   section,
   configFocusSection,
   onSection,
-  onBackToChat,
+  onBackToApp,
   onConfigFocusSection,
   agentWorkspaceFocusAlias = null,
 }: SettingsPageProps) {
@@ -60,11 +60,7 @@ export function SettingsPage({
 
   return (
     <section className="grid h-full min-h-0 grid-cols-[280px_minmax(420px,1fr)] overflow-hidden bg-[#020818]/90">
-      <SettingsNav
-        section={effectiveSection}
-        onSection={selectSection}
-        onBackToChat={onBackToChat}
-      />
+      <SettingsNav section={effectiveSection} onSection={selectSection} onBackToApp={onBackToApp} />
       <main className="flex min-w-0 flex-col overflow-hidden border-l border-white/10">
         <ConfigDraftProvider>
           <ConfigDraftStatusBar />
@@ -92,7 +88,7 @@ export function SettingsPage({
               <AgentWorkspacePanel focusAlias={agentWorkspaceFocusAlias} />
             )}
             {effectiveSection === "memory" && <MemoryPanel />}
-            {effectiveSection === "cron" && <CronPanel />}
+            {effectiveSection === "automations" && <RuntimeAutomationsPanel />}
             {effectiveSection === "integrations" && (
               <IntegrationsPanel onConfigure={(targetSection) => openConfigTarget(targetSection)} />
             )}
@@ -104,12 +100,6 @@ export function SettingsPage({
       </main>
     </section>
   );
-}
-
-function normalizeSettingsSection(section: SettingsSection): SettingsSection {
-  if (section === "gateway-config") return "gateway-overview";
-  if (section === "tools") return "tools-skills";
-  return section;
 }
 
 function isConfigCategorySection(section: SettingsSection): section is ConfigCategoryId {
@@ -125,11 +115,11 @@ function isConfigCategorySection(section: SettingsSection): section is ConfigCat
 function SettingsNav({
   section,
   onSection,
-  onBackToChat,
+  onBackToApp,
 }: {
   section: SettingsSection;
   onSection: (section: SettingsSection) => void;
-  onBackToChat: () => void;
+  onBackToApp: () => void;
 }) {
   const { t } = useLingui();
 
@@ -151,7 +141,7 @@ function SettingsNav({
       <header className="shrink-0 border-b border-white/10 p-3">
         <button
           type="button"
-          onClick={onBackToChat}
+          onClick={onBackToApp}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-400 transition hover:bg-white/[0.05] hover:text-neutral-100"
         >
           <Home size={14} />

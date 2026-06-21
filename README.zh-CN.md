@@ -17,12 +17,12 @@ ZeroClaw Studio 内置一个固定版本、应用私有的 `zeroclaw` runtime。
 
 ## 这是什么
 
-`zeroclaw-studio` 是一个 Tauri 2 桌面应用，用来把本地文件、远程机器、工具、记忆、定时任务和长时间运行的 agent 会话放到一个可操作的工作区里。
+`zeroclaw-studio` 是一个 Tauri 2 桌面应用，用来把本地文件、远程机器、工具、记忆、定时任务和长时间运行的 agent 任务放到一个可操作的工作区里。
 它是 ZeroClaw-powered 工作的产品界面：桌面应用提供专注的工作区，`zeroclaw` 提供底层轻量 runtime 和 gateway。
 
-默认路径很简单：启动应用，使用 bundled 的应用私有 runtime，完成配对，打开文件夹，然后开始聊天。同一个应用也可以附加到用户自己管理的本地 gateway，或者通过可信网络路径连接远程 gateway。
+默认路径很简单：启动应用，使用 bundled 的应用私有 runtime，完成配对，打开文件夹，然后开始一个任务。同一个应用也可以附加到用户自己管理的本地 gateway，或者通过可信网络路径连接远程 gateway。
 
-它不是把 AI 当成单个聊天框，而是让你选择工作应该在哪里运行：
+它不是把 AI 当成单个提示框，而是让你选择工作应该在哪里运行：
 
 - 在笔记本上运行快速本地任务；
 - 在 homelab Pi 或 NAS 上保留长时间运行的自动化任务；
@@ -52,7 +52,7 @@ Bundled gateway 会把 ZeroClaw 的 runtime 模型带进桌面应用：在 pinne
 - **无需配置，先从本地开始**：下载桌面应用，使用内置 runtime，打开项目文件夹，然后开始工作。
 - **跨机器工作**：桌面 UI 留在笔记本上，gateway 可以运行在 homelab Pi、NAS、工作站或云 VM 上。
 - **让长任务靠近资源运行**：把定时任务和自动化放在私有文件、内部 API 或常驻主机附近。
-- **观察并介入**：在一个原生工作区里查看聊天、工具进度、记忆、cron、日志、doctor checks、配置和审批。
+- **观察并介入**：在一个原生工作区里查看任务运行、工具进度、记忆、自动化、日志、doctor checks、配置和审批。
 - **选择信任边界**：本地工作可以使用应用私有 runtime；远程工作只连接你管理和信任的 gateway。
 
 ## 特性
@@ -61,8 +61,8 @@ Bundled gateway 会把 ZeroClaw 的 runtime 模型带进桌面应用：在 pinne
 - **内置 `zeroclaw`**：通过 pinned sidecar 提供应用私有的内置运行时。
 - **灵活的 gateway 拓扑**：支持 bundled、本地托管、本地附加和远程 gateway。
 - **远程优先的网络路径**：支持直接 HTTP(S)、SSH tunnel、Tailscale、VPN 和私有网络路由。
-- **按项目隔离的聊天会话**：支持 Markdown 响应、工具调用进度、审批提示、文件附件，以及每个会话稳定的 agent/model 上下文。
-- **运维面板**：提供工具、记忆、cron、日志、doctor、设备、集成和配置等面板。
+- **按项目隔离的任务运行**：支持 Markdown 响应、工具调用进度、审批提示、文件附件，以及每次运行稳定的 agent/model 上下文。
+- **运维面板**：提供工具、记忆、自动化、日志、doctor、设备、集成和配置等面板。
 - **原生桌面能力**：文件夹选择器、文件监听、全局快捷键、剪贴板、通知和 `zeroclaw://` 深链接。
 - **独立客户端，简单 gateway 合约**：不在 Rust crate 层面耦合主 `zeroclaw` 仓库。
 
@@ -70,7 +70,7 @@ Bundled gateway 会把 ZeroClaw 的 runtime 模型带进桌面应用：在 pinne
 
 | 区域             | 说明                                                                                                                               | 预览                                                               |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 工作区聊天       | 面向项目的聊天会话，连接本地 `zeroclaw` runtime，并在一个桌面窗口里展示运行时状态、workspace 上下文、会话历史、附件和 agent 选择。 | ![ZeroClaw Studio 桌面端工作区聊天界面](images/workspace-chat.png) |
+| 任务工作区       | 面向项目的任务工作台，连接本地 `zeroclaw` runtime，并在一个桌面窗口里展示运行时状态、workspace 上下文、运行时间线、附件和 agent 选择。 | ![ZeroClaw Studio 桌面端任务工作区界面](images/workspace-chat.png) |
 | 运行时和应用设置 | 展示本地 runtime 状态、workspace 文件夹上下文、偏好设置、原生通知、托盘集成、深链接注册，以及运维和能力面板导航。                  | ![ZeroClaw Studio 桌面端设置面板](images/runtime-settings.png)     |
 
 ## 运行模式
@@ -119,9 +119,9 @@ xattr -dr com.apple.quarantine /Applications/ZeroClaw\ Studio.app
    - **本地附加**：连接到你已经启动的 gateway。
    - **远程**：输入可访问 URL，或配置 SSH tunneled target。
 3. 按提示将 workspace 与 gateway 配对。
-4. 打开 workspace 文件夹，选择 agent，然后开始聊天。
+4. 打开 workspace 文件夹，选择 agent，然后开始一个任务。
 
-每个聊天会话一旦有消息，就会保持稳定的 agent 上下文。想在同一个 workspace 里切换到另一个 agent 时，请新建会话。
+每个任务运行一旦有消息，就会保持稳定的 agent 上下文。想在同一个 workspace 里切换到另一个 agent 时，请新建运行。
 
 除非你想使用外部本地托管连接，否则桌面应用不要求用户级安装 `zeroclaw`。
 

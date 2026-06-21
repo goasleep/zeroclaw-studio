@@ -151,7 +151,7 @@ describe("session helpers", () => {
       }),
     ).toMatchObject({
       session_id: "abcdef123456",
-      name: "session abcdef12",
+      name: "run abcdef12",
       agent_alias: "agent",
     });
   });

@@ -49,7 +49,7 @@ export function AutomationsPage({
   async function toggle(job: CronJob) {
     const agent = job.agent_alias?.trim();
     if (!agent) {
-      setError("Cron job is missing agent_alias; cannot update it safely.");
+      setError("Automation is missing agent_alias; cannot update it safely.");
       return;
     }
     setBusyId(job.id);

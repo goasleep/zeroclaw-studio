@@ -1,5 +1,12 @@
 import type { SettingsSection } from "./types";
 
+export function normalizeSettingsSection(section: SettingsSection): SettingsSection {
+  if (section === "gateway-config") return "gateway-overview";
+  if (section === "tools") return "tools-skills";
+  if (section === "cron") return "automations";
+  return section;
+}
+
 export function settingsSectionForConfigTarget(targetSection: string): SettingsSection {
   if (targetSection === "providers.models" || targetSection.startsWith("providers.models.")) {
     return "models-providers";
@@ -15,6 +22,7 @@ export function settingsSectionForConfigTarget(targetSection: string): SettingsS
     return "runtime-safety";
   }
   if (targetSection === "channels" || targetSection.startsWith("channels.")) return "channels";
+  if (targetSection === "cron" || targetSection.startsWith("cron.")) return "automations";
   if (
     targetSection === "tools" ||
     targetSection.startsWith("tools.") ||

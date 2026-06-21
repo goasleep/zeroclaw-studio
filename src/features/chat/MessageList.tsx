@@ -273,7 +273,7 @@ function ApprovalCard({
             onClick={() => void onApprove(approval.request_id, "always")}
             disabled={locked}
             className="rounded border border-emerald-500/20 px-2 py-1 text-emerald-300 hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-            title={t`Allow this tool for the current gateway session policy`}
+            title={t`Allow this tool for the current runtime policy`}
           >
             {t`Always allow`}
           </button>

@@ -5,6 +5,8 @@ import {
   taskStatusLabel,
   visibleTasks,
 } from "./task-model";
+import { deriveTaskRunStatus, deriveTaskTimelineItems } from "./task-run";
+import type { ChatMessage } from "@/features/chat/chat-types";
 
 describe("task model", () => {
   it("creates Studio-owned draft metadata", () => {
@@ -50,4 +52,73 @@ describe("task model", () => {
   it("labels statuses", () => {
     expect(taskStatusLabel("needs_approval")).toBe("Needs approval");
   });
+
+  it("derives run status from chat messages", () => {
+    expect(deriveTaskRunStatus([])).toBe("draft");
+    expect(deriveTaskRunStatus([assistant({ status: "pending" })])).toBe("running");
+    expect(
+      deriveTaskRunStatus([
+        assistant({
+          approval: {
+            request_id: "approval-1",
+            tool: "shell",
+            arguments_summary: "pnpm test",
+          },
+        }),
+      ]),
+    ).toBe("needs_approval");
+    expect(deriveTaskRunStatus([assistant({ status: "error", error: "boom" })])).toBe("failed");
+    expect(deriveTaskRunStatus([assistant({ status: "done", content: "Finished" })])).toBe("done");
+  });
+
+  it("maps messages into task timeline items", () => {
+    const items = deriveTaskTimelineItems([
+      user({ id: "u1", content: "Ship it" }),
+      assistant({
+        id: "a1",
+        content: "Done",
+        thinking: "Checking",
+        toolCalls: [{ name: "shell", args: { cmd: "pnpm test" }, result: "ok" }],
+        approval: {
+          request_id: "approval-1",
+          tool: "shell",
+          arguments_summary: "pnpm test",
+          response: { decision: "approve", status: "sent" },
+        },
+      }),
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual([
+      "user_message",
+      "thinking",
+      "tool_call",
+      "tool_result",
+      "approval_request",
+      "approval_decision",
+      "assistant_message",
+      "done",
+    ]);
+  });
 });
+
+function user(overrides: Partial<ChatMessage> = {}): ChatMessage {
+  return {
+    id: "user",
+    role: "user",
+    content: "",
+    toolCalls: [],
+    status: "done",
+    ...overrides,
+  };
+}
+
+function assistant(overrides: Partial<ChatMessage> = {}): ChatMessage {
+  return {
+    id: "assistant",
+    role: "assistant",
+    content: "",
+    toolCalls: [],
+    status: "done",
+    ...overrides,
+  };
+}

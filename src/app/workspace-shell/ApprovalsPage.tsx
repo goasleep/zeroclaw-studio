@@ -34,7 +34,7 @@ export function ApprovalsPage({ approvals, onOpenTask, onResolved }: ApprovalsPa
         <header className="mb-4">
           <h1 className="text-lg font-semibold text-neutral-100">{t`Approvals`}</h1>
           <p className="mt-1 text-xs text-neutral-500">
-            {t`Live approvals captured from active task sessions on the current gateway.`}
+            {t`Live approvals captured from active task runs on the current gateway.`}
           </p>
         </header>
 

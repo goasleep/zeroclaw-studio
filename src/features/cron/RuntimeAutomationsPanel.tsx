@@ -18,7 +18,7 @@ import { Dialog } from "@/ui/dialog";
 import { Tooltip } from "@/ui/tooltip";
 import { formatCronDateTime, formatCronRunDuration, formatCronSchedule } from "./format";
 
-export function CronPanel() {
+export function RuntimeAutomationsPanel() {
   const { t, i18n } = useLingui();
   const { active } = useConnections();
   const queryClient = useQueryClient();
@@ -28,12 +28,12 @@ export function CronPanel() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const refreshCron = () => queryClient.invalidateQueries({ queryKey: cronQueryKey });
+  const refreshAutomations = () => queryClient.invalidateQueries({ queryKey: cronQueryKey });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ job, enabled }: { job: CronJob; enabled: boolean }) => {
       const agent = job.agent_alias?.trim();
-      if (!agent) throw new Error("Cron job is missing agent_alias; cannot update it safely.");
+      if (!agent) throw new Error("Automation is missing agent_alias; cannot update it safely.");
       const updated = await apiCronPatch(job.id, { agent, enabled });
       if (updated.enabled !== enabled) {
         throw new Error("Gateway did not apply the requested enabled state.");
@@ -45,8 +45,8 @@ export function CronPanel() {
       setNotice(null);
     },
     onSuccess: (_job, variables) => {
-      setNotice(variables.enabled ? t`Cron job resumed.` : t`Cron job paused.`);
-      void refreshCron();
+      setNotice(variables.enabled ? t`Automation resumed.` : t`Automation paused.`);
+      void refreshAutomations();
     },
     onError: (error) => setActionError(errorMessage(error)),
   });
@@ -58,10 +58,10 @@ export function CronPanel() {
       setNotice(null);
     },
     onSuccess: (_result, job) => {
-      setNotice(t`Cron job deleted.`);
+      setNotice(t`Automation deleted.`);
       setDeleteTarget(null);
       if (runsTarget?.id === job.id) setRunsTarget(null);
-      void refreshCron();
+      void refreshAutomations();
     },
     onError: (error) => setActionError(errorMessage(error)),
   });
@@ -74,7 +74,7 @@ export function CronPanel() {
     },
     onSuccess: (result, job) => {
       setNotice(t`Manual run finished: ${result.status}`);
-      void refreshCron();
+      void refreshAutomations();
       void queryClient.invalidateQueries({
         queryKey: queryKeys.gateway.cronRuns(active?.id ?? null, job.id),
       });
@@ -87,7 +87,7 @@ export function CronPanel() {
   return (
     <>
       <DataPanel
-        what={t`cron jobs`}
+        what={t`automations`}
         queryKey={cronQueryKey}
         load={apiCron}
         render={(data) => (
@@ -123,12 +123,23 @@ export function CronPanel() {
                           {job.agent_alias}
                         </span>
                       )}
+                      <span className="mt-0.5 block truncate text-[10px] text-neutral-600">
+                        {t`ZeroClaw cron id`}: {job.id}
+                      </span>
                     </td>
                     <td className="py-2 pr-2">
-                      <CronStatusBadge job={job} />
+                      <AutomationStatusBadge job={job} />
                     </td>
                     <td className="py-2 pr-2 font-mono text-neutral-400">
                       <span className="block truncate">{formatCronSchedule(job.schedule)}</span>
+                      <details className="mt-1 text-[10px] text-neutral-600">
+                        <summary className="cursor-pointer text-neutral-500 hover:text-neutral-300">
+                          {t`Raw ZeroClaw schedule`}
+                        </summary>
+                        <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap rounded border border-white/10 bg-black/20 p-2 zc-scrollbar">
+                          {formatRawSchedule(job.schedule)}
+                        </pre>
+                      </details>
                     </td>
                     <td className="py-2 pr-2 font-mono text-neutral-400">
                       {job.enabled === false
@@ -171,7 +182,7 @@ export function CronPanel() {
                           <History size={13} />
                         </IconButton>
                         <IconButton
-                          label={t`Delete`}
+                          label={t`Delete automation`}
                           disabled={busy}
                           tone="danger"
                           onClick={() => setDeleteTarget(job)}
@@ -187,13 +198,13 @@ export function CronPanel() {
           </div>
         )}
       />
-      <DeleteCronDialog
+      <DeleteAutomationDialog
         job={deleteTarget}
         busy={deleteMutation.isPending}
         onCancel={() => setDeleteTarget(null)}
         onDelete={(job) => deleteMutation.mutate(job)}
       />
-      <CronRunsDialog
+      <AutomationRunsDialog
         job={runsTarget}
         connectionId={active?.id ?? null}
         locale={i18n.locale}
@@ -205,7 +216,7 @@ export function CronPanel() {
   );
 }
 
-function CronStatusBadge({ job }: { job: CronJob }) {
+function AutomationStatusBadge({ job }: { job: CronJob }) {
   const { t } = useLingui();
   const label = job.enabled === false ? t`Paused` : String(job.last_status ?? t`Active`);
   const className =
@@ -255,7 +266,7 @@ function IconButton({
   );
 }
 
-function DeleteCronDialog({
+function DeleteAutomationDialog({
   job,
   busy,
   onCancel,
@@ -270,7 +281,7 @@ function DeleteCronDialog({
   return (
     <Dialog
       open={Boolean(job)}
-      title={t`Delete cron job`}
+      title={t`Delete automation`}
       onOpenChange={(open) => !open && onCancel()}
     >
       <section className="rounded-lg border border-red-400/25 bg-[#060b1a] p-5 shadow-2xl shadow-black/50">
@@ -279,9 +290,9 @@ function DeleteCronDialog({
             <Trash2 size={16} />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-neutral-100">{t`Delete cron job?`}</h3>
+            <h3 className="text-sm font-semibold text-neutral-100">{t`Delete automation?`}</h3>
             <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-              {t`This removes the scheduled job from the gateway. Recent run history may no longer be reachable from this page.`}
+              {t`This removes the scheduled automation from the gateway. Recent run history may no longer be reachable from this page.`}
             </p>
             {job && (
               <p className="mt-3 truncate font-mono text-xs text-cyan-300">
@@ -314,7 +325,7 @@ function DeleteCronDialog({
   );
 }
 
-function CronRunsDialog({
+function AutomationRunsDialog({
   job,
   connectionId,
   locale,
@@ -335,7 +346,7 @@ function CronRunsDialog({
   return (
     <Dialog
       open={Boolean(job)}
-      title={t`Cron run history`}
+      title={t`Automation run history`}
       className="max-w-5xl"
       onOpenChange={onOpenChange}
     >
@@ -345,10 +356,15 @@ function CronRunsDialog({
             <History size={16} />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-neutral-100">{t`Cron run history`}</h3>
+            <h3 className="text-sm font-semibold text-neutral-100">{t`Automation run history`}</h3>
             <p className="mt-1 truncate font-mono text-xs text-cyan-300">
               {job ? String(job.name ?? job.id) : ""}
             </p>
+            {job && (
+              <p className="mt-1 truncate font-mono text-[10px] text-neutral-600">
+                {t`ZeroClaw cron id`}: {job.id}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -425,4 +441,14 @@ function CronRunRow({ run, locale }: { run: CronRun; locale?: string }) {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function formatRawSchedule(schedule: unknown) {
+  if (typeof schedule === "string") return schedule;
+  if (schedule == null) return "";
+  try {
+    return JSON.stringify(schedule, null, 2);
+  } catch {
+    return String(schedule);
+  }
 }

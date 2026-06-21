@@ -19,7 +19,7 @@ msgstr "(unnamed)"
 
 #. placeholder {0}: gitStatus.branch
 #. placeholder {1}: gitStatus.changed_count
-#: src/features/chat/ChatPanel.tsx:505
+#: src/features/chat/ChatPanel.tsx:559
 msgid "{0} · {1} changed"
 msgstr "{0} · {1} changed"
 
@@ -33,8 +33,13 @@ msgstr "{0} agents"
 msgid "{0} attachments"
 msgstr "{0} attachments"
 
+#. placeholder {0}: cronJobs.length
+#: src/app/workspace-shell/WorkDashboard.tsx:126
+msgid "{0} automations"
+msgstr "{0} automations"
+
 #. placeholder {0}: gitStatus.changed_count
-#: src/features/chat/ChatPanel.tsx:507
+#: src/features/chat/ChatPanel.tsx:561
 msgid "{0} changed"
 msgstr "{0} changed"
 
@@ -42,6 +47,11 @@ msgstr "{0} changed"
 #: src/features/config/overview/ConfigOverview.tsx:103
 msgid "{0} configured"
 msgstr "{0} configured"
+
+#. placeholder {0}: items.length
+#: src/features/chat/ChatPanel.tsx:742
+msgid "{0} events"
+msgstr "{0} events"
 
 #. placeholder {0}: peerGroups.length
 #: src/features/chat/AgentSetupWizard.tsx:256
@@ -75,11 +85,10 @@ msgid "{0} lines"
 msgstr "{0} lines"
 
 #. placeholder {0}: thread.message_count
-msgid "{0} message"
-msgstr "{0} message"
+#~ msgid "{0} message"
+#~ msgstr "{0} message"
 
 #. placeholder {0}: channel.message_count
-#. placeholder {0}: thread.message_count
 #: src/features/integrations/IntegrationsPanel.tsx:312
 msgid "{0} messages"
 msgstr "{0} messages"
@@ -129,6 +138,8 @@ msgid "{0} sections"
 msgstr "{0} sections"
 
 #. placeholder {0}: channels.length
+#. placeholder {0}: selectedFiles.length
+#: src/app/workspace-shell/WorkSidebar.tsx:150
 #: src/features/chat/AgentSetupWizard.tsx:249
 msgid "{0} selected"
 msgstr "{0} selected"
@@ -137,6 +148,11 @@ msgstr "{0} selected"
 #: src/features/config/SetupDoctorTab.tsx:387
 msgid "{0} setup"
 msgstr "{0} setup"
+
+#. placeholder {0}: group.tasks.length
+#: src/app/workspace-shell/TasksPage.tsx:108
+msgid "{0} tasks"
+msgstr "{0} tasks"
 
 #. placeholder {0}: filtered.length
 #: src/features/tools/ToolsPanel.tsx:58
@@ -153,6 +169,14 @@ msgstr "{0} untouched"
 msgid "{0} will not save persistent memory."
 msgstr "{0} will not save persistent memory."
 
+#: src/features/chat/ChatPanel.tsx:744
+msgid "{approvalCount} approvals"
+msgstr "{approvalCount} approvals"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:193
+msgid "{approvalCount} approvals waiting"
+msgstr "{approvalCount} approvals waiting"
+
 #. placeholder {0}: sections.length
 #: src/features/config/overview/ConfigOverview.tsx:321
 msgid "{ready} ready / {0} sections"
@@ -162,20 +186,24 @@ msgstr "{ready} ready / {0} sections"
 msgid "{readyCount} ready"
 msgstr "{readyCount} ready"
 
+#: src/features/chat/ChatPanel.tsx:743
+msgid "{toolCount} tool calls"
+msgstr "{toolCount} tool calls"
+
 #: src/features/chat/AttachmentTray.tsx:36
 msgid "1 attachment"
 msgstr "1 attachment"
 
 #: src/features/chat/SessionControls.tsx:70
-msgid "Abort current turn"
-msgstr "Abort current turn"
+#~ msgid "Abort current turn"
+#~ msgstr "Abort current turn"
 
 #: src/features/config/SetupDoctorTab.tsx:286
-#: src/features/cron/CronPanel.tsx:113
+#: src/features/cron/RuntimeAutomationsPanel.tsx:113
 msgid "Actions"
 msgstr "Actions"
 
-#: src/app/workspace-shell/SettingsPage.tsx:294
+#: src/app/workspace-shell/SettingsPage.tsx:284
 msgid "Activation"
 msgstr "Activation"
 
@@ -184,10 +212,14 @@ msgstr "Activation"
 msgid "active"
 msgstr "active"
 
-#: src/features/cron/CronPanel.tsx:210
+#: src/features/cron/RuntimeAutomationsPanel.tsx:221
 #: src/features/integrations/IntegrationsPanel.tsx:407
 msgid "Active"
 msgstr "Active"
+
+#: src/app/workspace-shell/RuntimeDetail.tsx:143
+msgid "Active automations"
+msgstr "Active automations"
 
 #: src/features/chat/AgentSetupWizard.tsx:701
 #: src/features/chat/AgentSetupWizard.tsx:885
@@ -203,7 +235,7 @@ msgstr "Add a {0} or open an existing one."
 msgid "Add capabilities, connect tools, and check setup."
 msgstr "Add capabilities, connect tools, and check setup."
 
-#: src/features/chat/ChatComposer.tsx:132
+#: src/features/chat/ChatComposer.tsx:130
 msgid "Add file attachment"
 msgstr "Add file attachment"
 
@@ -246,7 +278,16 @@ msgstr "Advanced fields"
 msgid "Advanced raw paths"
 msgstr "Advanced raw paths"
 
-#: src/features/chat/ChatComposer.tsx:150
+#: src/app/workspace-shell/RuntimeDetail.tsx:115
+msgid "Advanced settings"
+msgstr "Advanced settings"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:74
+#: src/app/workspace-shell/AutomationsPage.tsx:167
+#: src/app/workspace-shell/TaskDetail.tsx:200
+#: src/app/workspace-shell/WorkCreatePopover.tsx:249
+#: src/app/workspace-shell/WorkCreatePopover.tsx:309
+#: src/features/chat/ChatComposer.tsx:148
 #: src/features/config/config-categories.ts:148
 #: src/features/memory/MemoryPanel.tsx:390
 msgid "Agent"
@@ -296,6 +337,7 @@ msgstr "Alias"
 msgid "Aliases"
 msgstr "Aliases"
 
+#: src/app/workspace-shell/TasksPage.tsx:62
 #: src/features/config/ConfigPanel.tsx:205
 msgid "All"
 msgstr "All"
@@ -313,16 +355,20 @@ msgid "All statuses"
 msgstr "All statuses"
 
 #: src/features/chat/MessageList.tsx:276
-msgid "Allow this tool for the current gateway session policy"
-msgstr "Allow this tool for the current gateway session policy"
+#~ msgid "Allow this tool for the current gateway session policy"
+#~ msgstr "Allow this tool for the current gateway session policy"
+
+#: src/features/chat/MessageList.tsx:276
+msgid "Allow this tool for the current runtime policy"
+msgstr "Allow this tool for the current runtime policy"
 
 #: src/features/chat/MessageList.tsx:278
 msgid "Always allow"
 msgstr "Always allow"
 
 #: src/app/workspace-shell/settings-sections.ts:29
-#: src/app/workspace-shell/SettingsPage.tsx:139
-#: src/app/workspace-shell/SettingsPage.tsx:228
+#: src/app/workspace-shell/SettingsPage.tsx:129
+#: src/app/workspace-shell/SettingsPage.tsx:218
 msgid "App"
 msgstr "App"
 
@@ -331,7 +377,7 @@ msgstr "App"
 msgid "Applied {0}"
 msgstr "Applied {0}"
 
-#: src/features/chat/ChatPanel.tsx:594
+#: src/features/chat/ChatPanel.tsx:648
 #: src/features/config/SetupDoctorTab.tsx:348
 msgid "Apply"
 msgstr "Apply"
@@ -350,6 +396,16 @@ msgstr "Applying..."
 msgid "Approval required"
 msgstr "Approval required"
 
+#: src/app/workspace-shell/ApprovalsPage.tsx:35
+#: src/app/workspace-shell/WorkDashboard.tsx:117
+#: src/app/workspace-shell/WorkSidebar.tsx:102
+msgid "Approvals"
+msgstr "Approvals"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:92
+msgid "Approve"
+msgstr "Approve"
+
 #: src/features/chat/MessageList.tsx:261
 msgid "Approve once"
 msgstr "Approve once"
@@ -358,13 +414,17 @@ msgstr "Approve once"
 msgid "Areas"
 msgstr "Areas"
 
-#: src/app/workspace-shell/SettingsPage.tsx:292
+#: src/app/workspace-shell/ApprovalsPage.tsx:78
+msgid "Arguments summary"
+msgstr "Arguments summary"
+
+#: src/app/workspace-shell/SettingsPage.tsx:282
 msgid "Attachments"
 msgstr "Attachments"
 
 #. placeholder {0}: formatBytes(totalSize)
 #. placeholder {1}: formatBytes(totalLimit)
-#: src/features/chat/ChatPanel.tsx:388
+#: src/features/chat/ChatPanel.tsx:441
 msgid "Attachments total {0} exceeds upload limit {1}."
 msgstr "Attachments total {0} exceeds upload limit {1}."
 
@@ -372,6 +432,43 @@ msgstr "Attachments total {0} exceeds upload limit {1}."
 #: src/features/chat/MessageList.tsx:216
 msgid "Auto-denies after {0}s without a response."
 msgstr "Auto-denies after {0}s without a response."
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:360
+msgid "Automation"
+msgstr "Automation"
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:61
+msgid "Automation deleted."
+msgstr "Automation deleted."
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:48
+msgid "Automation paused."
+msgstr "Automation paused."
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:48
+msgid "Automation resumed."
+msgstr "Automation resumed."
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:349
+#: src/features/cron/RuntimeAutomationsPanel.tsx:359
+msgid "Automation run history"
+msgstr "Automation run history"
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:90
+msgid "automations"
+msgstr "automations"
+
+#: src/app/workspace-shell/AutomationsPage.tsx:93
+#: src/app/workspace-shell/RuntimeDetail.tsx:87
+#: src/app/workspace-shell/settings-sections.ts:39
+#: src/app/workspace-shell/WorkDashboard.tsx:124
+#: src/app/workspace-shell/WorkSidebar.tsx:109
+msgid "Automations"
+msgstr "Automations"
+
+#: src/app/workspace-shell/AutomationsPage.tsx:95
+msgid "Automations are scheduled agent jobs on this runtime."
+msgstr "Automations are scheduled agent jobs on this runtime."
 
 #: src/features/memory/MemoryPanel.tsx:1517
 msgid "available"
@@ -385,6 +482,7 @@ msgstr "Available"
 msgid "Available to manage"
 msgstr "Available to manage"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:179
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:344
 #: src/features/memory/MemoryPanel.tsx:1200
 msgid "Back"
@@ -395,14 +493,19 @@ msgstr "Back"
 msgid "Back to agents"
 msgstr "Back to agents"
 
-#: src/app/workspace-shell/SettingsPage.tsx:159
+#: src/app/workspace-shell/SettingsPage.tsx:149
 msgid "Back to app"
 msgstr "Back to app"
 
 #: src/features/chat/AgentSetupWizard.tsx:539
 #: src/features/chat/AgentSetupWizard.tsx:544
-msgid "Back to sessions"
-msgstr "Back to sessions"
+#~ msgid "Back to sessions"
+#~ msgstr "Back to sessions"
+
+#: src/features/chat/AgentSetupWizard.tsx:539
+#: src/features/chat/AgentSetupWizard.tsx:544
+msgid "Back to task"
+msgstr "Back to task"
 
 #. placeholder {0}: formatBytes(maxAttachmentBytes)
 #. placeholder {1}: formatBytes(maxAttachmentRequestBytes)
@@ -410,7 +513,7 @@ msgstr "Back to sessions"
 msgid "Before upload: each file up to {0}, total up to {1}."
 msgstr "Before upload: each file up to {0}, total up to {1}."
 
-#: src/features/chat/ChatPanel.tsx:602
+#: src/features/chat/ChatPanel.tsx:656
 msgid "Browse"
 msgstr "Browse"
 
@@ -430,11 +533,12 @@ msgstr "Browser agent-browser"
 msgid "bytes"
 msgstr "bytes"
 
-#: src/features/cron/CronPanel.tsx:300
+#: src/app/workspace-shell/WorkCreatePopover.tsx:483
+#: src/features/cron/RuntimeAutomationsPanel.tsx:311
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/app/workspace-shell/SettingsPage.tsx:143
+#: src/app/workspace-shell/SettingsPage.tsx:133
 msgid "Capabilities"
 msgstr "Capabilities"
 
@@ -446,7 +550,7 @@ msgstr "Category"
 msgid "Change"
 msgstr "Change"
 
-#: src/app/workspace-shell/SettingsPage.tsx:313
+#: src/app/workspace-shell/SettingsPage.tsx:303
 msgid "Change the app interface language."
 msgstr "Change the app interface language."
 
@@ -470,6 +574,8 @@ msgstr "Channels reviewed: none."
 msgid "Channels reviewed."
 msgstr "Channels reviewed."
 
+#: src/app/workspace-shell/TasksPage.tsx:138
+#: src/app/workspace-shell/WorkCreatePopover.tsx:243
 #: src/features/integrations/IntegrationsPanel.tsx:391
 msgid "Chat"
 msgstr "Chat"
@@ -506,9 +612,17 @@ msgstr "Checks"
 msgid "Choose a memory option"
 msgstr "Choose a memory option"
 
+#: src/app/workspace-shell/AutomationsPage.tsx:115
+msgid "Choose a runtime before inspecting scheduled work."
+msgstr "Choose a runtime before inspecting scheduled work."
+
 #: src/features/config/sections/SectionExplorer.tsx:32
 msgid "Choose a section to inspect its picker, aliases, and editable fields."
 msgstr "Choose a section to inspect its picker, aliases, and editable fields."
+
+#: src/app/workspace-shell/TaskDetail.tsx:71
+msgid "Choose a task from the sidebar or create a new one from the dashboard."
+msgstr "Choose a task from the sidebar or create a new one from the dashboard."
 
 #: src/features/tools/ToolsPanel.tsx:130
 msgid "Choose a tool to inspect its metadata, schema, and available fields."
@@ -524,8 +638,8 @@ msgid "Choose an agent to see its memory setting."
 msgstr "Choose an agent to see its memory setting."
 
 #: src/app/workspace-shell/ChatWorkspace.tsx:83
-msgid "Choose an existing session from the sidebar, or create an agent when you are ready to start a new one."
-msgstr "Choose an existing session from the sidebar, or create an agent when you are ready to start a new one."
+#~ msgid "Choose an existing session from the sidebar, or create an agent when you are ready to start a new one."
+#~ msgstr "Choose an existing session from the sidebar, or create an agent when you are ready to start a new one."
 
 #: src/features/integrations/IntegrationsPanel.tsx:208
 msgid "Choose an integration to inspect status, configured aliases, and the related config section."
@@ -535,20 +649,32 @@ msgstr "Choose an integration to inspect status, configured aliases, and the rel
 msgid "Choose an option above to create, choose, or inspect its config fields."
 msgstr "Choose an option above to create, choose, or inspect its config fields."
 
+#: src/app/workspace-shell/WorkDashboard.tsx:83
+msgid "Choose or create a ZeroClaw runtime before starting task work."
+msgstr "Choose or create a ZeroClaw runtime before starting task work."
+
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:315
 msgid "Choose skills folder"
 msgstr "Choose skills folder"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:197
+msgid "Choose what kind of work to create."
+msgstr "Choose what kind of work to create."
 
 #. placeholder {0}: usage.label
 #: src/features/memory/MemoryPanel.tsx:1627
 msgid "Choose where memories are saved for {0}."
 msgstr "Choose where memories are saved for {0}."
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:272
+msgid "Choose..."
+msgstr "Choose..."
+
 #: src/features/chat/AttachmentTray.tsx:42
 msgid "Clear attachments"
 msgstr "Clear attachments"
 
-#: src/features/chat/SessionControls.tsx:78
+#: src/features/chat/RunControls.tsx:76
 msgid "Clear local view"
 msgstr "Clear local view"
 
@@ -560,10 +686,20 @@ msgstr "Click \"Run doctor\" to start."
 msgid "clipboard"
 msgstr "clipboard"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:204
 #: src/features/chat/AgentSetupWizard.tsx:539
-#: src/features/cron/CronPanel.tsx:369
+#: src/features/cron/RuntimeAutomationsPanel.tsx:385
 msgid "Close"
 msgstr "Close"
+
+#: src/app/workspace-shell/TasksPage.tsx:138
+#: src/app/workspace-shell/WorkCreatePopover.tsx:244
+msgid "Code"
+msgstr "Code"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:277
+msgid "Code tasks work best with a project workspace."
+msgstr "Code tasks work best with a project workspace."
 
 #: src/features/chat/AgentSetupWizard.tsx:936
 #: src/features/chat/AgentSetupWizard.tsx:948
@@ -650,7 +786,8 @@ msgstr "Connect to local zeroclaw"
 msgid "Connected"
 msgstr "Connected"
 
-#: src/app/workspace-shell/SettingsPage.tsx:242
+#: src/app/workspace-shell/SettingsPage.tsx:232
+#: src/app/workspace-shell/WorkDashboard.tsx:216
 msgid "Connection"
 msgstr "Connection"
 
@@ -660,11 +797,15 @@ msgstr "Connection"
 msgid "Connection name"
 msgstr "Connection name"
 
-#: src/features/chat/ChatComposer.tsx:104
-msgid "Continue this session..."
-msgstr "Continue this session..."
+#: src/features/chat/ChatComposer.tsx:103
+msgid "Continue this run..."
+msgstr "Continue this run..."
 
-#: src/features/chat/ChatPanel.tsx:692
+#: src/features/chat/ChatComposer.tsx:104
+#~ msgid "Continue this session..."
+#~ msgstr "Continue this session..."
+
+#: src/features/chat/ChatPanel.tsx:768
 #: src/features/chat/MessageList.tsx:303
 msgid "Copy path"
 msgstr "Copy path"
@@ -673,19 +814,43 @@ msgstr "Copy path"
 msgid "cost"
 msgstr "cost"
 
+#: src/app/WorkspaceShell.tsx:476
+#: src/app/WorkspaceShell.tsx:522
+msgid "Create"
+msgstr "Create"
+
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:332
 msgid "Create a server entry when you want agents to use an external tool."
 msgstr "Create a server entry when you want agents to use an external tool."
 
-#: src/app/workspace-shell/ChatWorkspace.tsx:91
+#: src/app/workspace-shell/TasksPage.tsx:86
+msgid "Create a task and choose whether it belongs to a project or general work."
+msgstr "Create a task and choose whether it belongs to a project or general work."
+
+#: src/app/workspace-shell/TasksPage.tsx:85
+msgid "Create a task for the current project to keep its work together."
+msgstr "Create a task for the current project to keep its work together."
+
+#: src/app/workspace-shell/WorkDashboard.tsx:150
+msgid "Create a task to wrap the next runtime run in a product workflow."
+msgstr "Create a task to wrap the next runtime run in a product workflow."
+
 #: src/features/chat/AgentSetupWizard.tsx:524
 #: src/features/chat/AgentSetupWizard.tsx:1000
 msgid "Create agent"
 msgstr "Create agent"
 
+#: src/app/workspace-shell/AutomationsPage.tsx:134
+msgid "Create an automation to run repeated agent work on this runtime."
+msgstr "Create an automation to run repeated agent work on this runtime."
+
 #: src/features/memory/MemoryPanel.tsx:990
 msgid "Create another entry"
 msgstr "Create another entry"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:334
+msgid "Create automation"
+msgstr "Create automation"
 
 #: src/app/AddConnectionDialog.tsx:234
 #: src/app/AddConnectionDialog.tsx:316
@@ -712,6 +877,14 @@ msgstr "Create or open alias"
 #: src/features/config/picker/PickerSection.tsx:396
 msgid "Create or select {0}"
 msgstr "Create or select {0}"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:285
+msgid "Create task"
+msgstr "Create task"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:190
+msgid "Create work"
+msgstr "Create work"
 
 #: src/features/memory/MemoryPanel.tsx:1509
 msgid "created"
@@ -741,45 +914,57 @@ msgid "Created new {0}"
 msgstr "Created new {0}"
 
 #: src/app/workspace-shell/settings-sections.ts:39
-msgid "Cron"
-msgstr "Cron"
+#~ msgid "Cron"
+#~ msgstr "Cron"
 
 #: src/features/cron/CronPanel.tsx:61
-msgid "Cron job deleted."
-msgstr "Cron job deleted."
+#~ msgid "Cron job deleted."
+#~ msgstr "Cron job deleted."
 
 #: src/features/cron/CronPanel.tsx:48
-msgid "Cron job paused."
-msgstr "Cron job paused."
+#~ msgid "Cron job paused."
+#~ msgstr "Cron job paused."
 
 #: src/features/cron/CronPanel.tsx:48
-msgid "Cron job resumed."
-msgstr "Cron job resumed."
+#~ msgid "Cron job resumed."
+#~ msgstr "Cron job resumed."
 
 #: src/features/cron/CronPanel.tsx:90
-msgid "cron jobs"
-msgstr "cron jobs"
+#~ msgid "cron jobs"
+#~ msgstr "cron jobs"
 
 #: src/features/cron/CronPanel.tsx:338
 #: src/features/cron/CronPanel.tsx:348
-msgid "Cron run history"
-msgstr "Cron run history"
+#~ msgid "Cron run history"
+#~ msgstr "Cron run history"
 
-#: src/app/workspace-shell/SettingsPage.tsx:245
+#: src/app/workspace-shell/TasksPage.tsx:69
+msgid "Current project"
+msgstr "Current project"
+
+#: src/app/workspace-shell/SettingsPage.tsx:235
 msgid "Current runtime selected in the title bar."
 msgstr "Current runtime selected in the title bar."
 
-#: src/app/workspace-shell/SettingsPage.tsx:336
+#: src/app/workspace-shell/WorkCreatePopover.tsx:320
+msgid "Daily"
+msgstr "Daily"
+
+#: src/app/workspace-shell/SettingsPage.tsx:326
 msgid "Dark"
 msgstr "Dark"
 
-#: src/app/workspace-shell/SettingsPage.tsx:388
+#: src/app/workspace-shell/WorkSidebar.tsx:89
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: src/app/workspace-shell/SettingsPage.tsx:378
 msgid "Deep link scheme"
 msgstr "Deep link scheme"
 
+#: src/app/workspace-shell/AutomationsPage.tsx:202
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:428
-#: src/features/cron/CronPanel.tsx:174
-#: src/features/cron/CronPanel.tsx:309
+#: src/features/cron/RuntimeAutomationsPanel.tsx:320
 msgid "Delete"
 msgstr "Delete"
 
@@ -792,20 +977,38 @@ msgstr "Delete {0}?"
 msgid "Delete {selectedFile}?"
 msgstr "Delete {selectedFile}?"
 
+#: src/features/cron/RuntimeAutomationsPanel.tsx:185
+#: src/features/cron/RuntimeAutomationsPanel.tsx:284
+msgid "Delete automation"
+msgstr "Delete automation"
+
+#. placeholder {0}: job.name ?? job.id
+#: src/app/workspace-shell/AutomationsPage.tsx:78
+msgid "Delete automation \"{0}\"?"
+msgstr "Delete automation \"{0}\"?"
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:293
+msgid "Delete automation?"
+msgstr "Delete automation?"
+
 #: src/features/cron/CronPanel.tsx:273
-msgid "Delete cron job"
-msgstr "Delete cron job"
+#~ msgid "Delete cron job"
+#~ msgstr "Delete cron job"
 
 #: src/features/cron/CronPanel.tsx:282
-msgid "Delete cron job?"
-msgstr "Delete cron job?"
+#~ msgid "Delete cron job?"
+#~ msgstr "Delete cron job?"
 
-msgid "Delete session"
-msgstr "Delete session"
+#~ msgid "Delete session"
+#~ msgstr "Delete session"
 
 #. placeholder {0}: thread.name
-msgid "Delete session \"{0}\"?"
-msgstr "Delete session \"{0}\"?"
+#~ msgid "Delete session \"{0}\"?"
+#~ msgstr "Delete session \"{0}\"?"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:100
+msgid "Deny"
+msgstr "Deny"
 
 #: src/app/AddConnectionDialog.tsx:390
 msgid "Detect again"
@@ -827,6 +1030,7 @@ msgstr "Detect sandbox backends and enable auto sandbox config."
 msgid "devices"
 msgstr "devices"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:105
 #: src/app/workspace-shell/settings-sections.ts:42
 msgid "Devices"
 msgstr "Devices"
@@ -856,6 +1060,7 @@ msgid "Docker Runtime"
 msgstr "Docker Runtime"
 
 #: src/app/ConnectionPicker.tsx:155
+#: src/app/workspace-shell/RuntimeDetail.tsx:99
 #: src/app/workspace-shell/settings-sections.ts:41
 msgid "Doctor"
 msgstr "Doctor"
@@ -864,11 +1069,16 @@ msgstr "Doctor"
 msgid "Doctor a stdio MCP server command and transport."
 msgstr "Doctor a stdio MCP server command and transport."
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:144
+#: src/app/workspace-shell/WorkDashboard.tsx:227
+msgid "Doctor issues"
+msgstr "Doctor issues"
+
 #: src/features/chat/AttachmentTray.tsx:37
 msgid "drop files here or use the file button"
 msgstr "drop files here or use the file button"
 
-#: src/features/cron/CronPanel.tsx:390
+#: src/features/cron/RuntimeAutomationsPanel.tsx:406
 msgid "Duration"
 msgstr "Duration"
 
@@ -891,6 +1101,10 @@ msgstr "Empty directory"
 msgid "Enable Skills"
 msgstr "Enable Skills"
 
+#: src/app/workspace-shell/AutomationsPage.tsx:163
+msgid "Enabled"
+msgstr "Enabled"
+
 #: src/features/memory/MemoryPanel.tsx:1417
 msgid "Enter secret value"
 msgstr "Enter secret value"
@@ -908,6 +1122,10 @@ msgstr "error"
 msgid "Execution"
 msgstr "Execution"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:317
+msgid "Execution time"
+msgstr "Execution time"
+
 #: src/features/chat/agent-setup-wizard/components.tsx:262
 msgid "Existing"
 msgstr "Existing"
@@ -916,7 +1134,7 @@ msgstr "Existing"
 msgid "External peers"
 msgstr "External peers"
 
-#: src/app/workspace-shell/SettingsPage.tsx:276
+#: src/app/workspace-shell/SettingsPage.tsx:266
 msgid "Files and runtime activity visible to the app."
 msgstr "Files and runtime activity visible to the app."
 
@@ -933,7 +1151,7 @@ msgstr "Filter"
 msgid "Filter {0}s..."
 msgstr "Filter {0}s..."
 
-#: src/app/workspace-shell/SettingsPage.tsx:285
+#: src/app/workspace-shell/SettingsPage.tsx:275
 msgid "Folder"
 msgstr "Folder"
 
@@ -945,9 +1163,13 @@ msgstr "Found"
 msgid "Foundation"
 msgstr "Foundation"
 
-#: src/app/workspace-shell/SettingsPage.tsx:141
+#: src/app/workspace-shell/SettingsPage.tsx:131
 msgid "Gateway"
 msgstr "Gateway"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:105
+msgid "Gateway {gatewayVersion}"
+msgstr "Gateway {gatewayVersion}"
 
 #: src/features/integrations/IntegrationsPanel.tsx:254
 msgid "Gateway catalog"
@@ -984,30 +1206,47 @@ msgid "Gateway URL"
 msgstr "Gateway URL"
 
 #: src/app/ConnectionPicker.tsx:147
+#: src/app/workspace-shell/RuntimeDetail.tsx:141
 msgid "Gateway version"
 msgstr "Gateway version"
 
-#: src/features/chat/ChatPanel.tsx:557
+#: src/app/workspace-shell/TasksPage.tsx:72
+#: src/features/chat/ChatPanel.tsx:611
 msgid "General"
 msgstr "General"
 
 #: src/features/chat/ChatComposer.tsx:218
-msgid "General session"
-msgstr "General session"
+#~ msgid "General session"
+#~ msgstr "General session"
 
-msgid "General Sessions"
-msgstr "General Sessions"
+#~ msgid "General Sessions"
+#~ msgstr "General Sessions"
 
-#: src/app/workspace-shell/SettingsPage.tsx:348
+#: src/app/workspace-shell/WorkCreatePopover.tsx:91
+msgid "General task"
+msgstr "General task"
+
+#: src/features/chat/ChatComposer.tsx:216
+msgid "General task run"
+msgstr "General task run"
+
+#: src/app/workspace-shell/SettingsPage.tsx:338
 msgid "Global shortcut"
 msgstr "Global shortcut"
+
+#: src/app/workspace-shell/RuntimeDetail.tsx:132
+#: src/app/workspace-shell/WorkDashboard.tsx:218
+msgid "Health"
+msgstr "Health"
 
 #. placeholder {0}: channel.health
 #: src/features/integrations/IntegrationsPanel.tsx:318
 msgid "health {0}"
 msgstr "health {0}"
 
-#: src/app/workspace-shell/SettingsPage.tsx:294
+#: src/app/workspace-shell/SettingsPage.tsx:284
+#: src/app/workspace-shell/WorkDashboard.tsx:104
+#: src/app/workspace-shell/WorkSidebar.tsx:74
 msgid "idle"
 msgstr "idle"
 
@@ -1049,7 +1288,7 @@ msgstr "Install, configure, and verify local capabilities without opening raw co
 msgid "Integrations"
 msgstr "Integrations"
 
-#: src/app/workspace-shell/SettingsPage.tsx:378
+#: src/app/workspace-shell/SettingsPage.tsx:368
 msgid "Keep the desktop menu bar integration enabled."
 msgstr "Keep the desktop menu bar integration enabled."
 
@@ -1059,21 +1298,33 @@ msgstr "Keep the desktop menu bar integration enabled."
 msgid "Known attachment total {0} exceeds upload limit {1}."
 msgstr "Known attachment total {0} exceeds upload limit {1}."
 
-#: src/app/workspace-shell/SettingsPage.tsx:312
+#: src/app/workspace-shell/SettingsPage.tsx:302
 msgid "Language"
 msgstr "Language"
+
+#: src/app/workspace-shell/AutomationsPage.tsx:169
+msgid "Last run"
+msgstr "Last run"
+
+#: src/app/workspace-shell/AutomationsPage.tsx:170
+msgid "Last status"
+msgstr "Last status"
 
 #: src/features/_shared/DataPanel.tsx:26
 msgid "Last updated when refreshed."
 msgstr "Last updated when refreshed."
 
-#: src/app/workspace-shell/SettingsPage.tsx:261
+#: src/app/workspace-shell/SettingsPage.tsx:251
 msgid "Lifecycle"
 msgstr "Lifecycle"
 
-#: src/app/workspace-shell/SettingsPage.tsx:337
+#: src/app/workspace-shell/SettingsPage.tsx:327
 msgid "Light"
 msgstr "Light"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:37
+msgid "Live approvals captured from active task runs on the current gateway."
+msgstr "Live approvals captured from active task runs on the current gateway."
 
 #. placeholder {0}: configCategoryLabel(category.id, i18n)
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:164
@@ -1087,6 +1338,10 @@ msgstr "Loading agents..."
 #: src/features/memory/MemoryPanel.tsx:898
 msgid "Loading aliases..."
 msgstr "Loading aliases..."
+
+#: src/app/workspace-shell/AutomationsPage.tsx:121
+msgid "Loading automations..."
+msgstr "Loading automations..."
 
 #: src/features/config/ConfigPanel.tsx:226
 #: src/features/config/overview/ConfigOverview.tsx:95
@@ -1110,17 +1365,22 @@ msgid "Loading memory config..."
 msgstr "Loading memory config..."
 
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:438
-#: src/features/chat/ChatPanel.tsx:708
+#: src/features/chat/ChatPanel.tsx:784
 msgid "Loading preview..."
 msgstr "Loading preview..."
 
-#: src/features/cron/CronPanel.tsx:380
+#: src/features/cron/RuntimeAutomationsPanel.tsx:396
 msgid "Loading run history..."
 msgstr "Loading run history..."
 
 #: src/features/chat/AgentSetupWizard.tsx:475
 msgid "Loading setup..."
 msgstr "Loading setup..."
+
+#: src/app/workspace-shell/TasksPage.tsx:76
+#: src/app/workspace-shell/WorkDashboard.tsx:143
+msgid "Loading tasks..."
+msgstr "Loading tasks..."
 
 #: src/features/tools/ToolsPanel.tsx:74
 msgid "Loading tools..."
@@ -1137,7 +1397,7 @@ msgstr "Loading…"
 msgid "Local"
 msgstr "Local"
 
-#: src/app/workspace-shell/SettingsPage.tsx:231
+#: src/app/workspace-shell/SettingsPage.tsx:221
 msgid "Local app state, workspace context, and preferences for this desktop client."
 msgstr "Local app state, workspace context, and preferences for this desktop client."
 
@@ -1158,6 +1418,7 @@ msgstr "Local memory"
 msgid "Local single-file memory for a workstation runtime."
 msgstr "Local single-file memory for a workstation runtime."
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:93
 #: src/app/workspace-shell/settings-sections.ts:40
 msgid "Logs"
 msgstr "Logs"
@@ -1190,12 +1451,16 @@ msgstr "Manage skills"
 msgid "Managed runtime"
 msgstr "Managed runtime"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:355
+msgid "Manual agent work you start now."
+msgstr "Manual agent work you start now."
+
 #: src/features/config/SetupDoctorTab.tsx:360
 msgid "Manual remediation"
 msgstr "Manual remediation"
 
 #. placeholder {0}: result.status
-#: src/features/cron/CronPanel.tsx:76
+#: src/features/cron/RuntimeAutomationsPanel.tsx:76
 msgid "Manual run finished: {0}"
 msgstr "Manual run finished: {0}"
 
@@ -1223,6 +1488,7 @@ msgstr "MCP Servers"
 msgid "MCP stdio Doctor"
 msgstr "MCP stdio Doctor"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:81
 #: src/app/workspace-shell/settings-sections.ts:36
 #: src/features/chat/AgentSetupWizard.tsx:674
 #: src/features/config/overview/ConfigOverview.tsx:286
@@ -1285,8 +1551,10 @@ msgstr "Models & Providers"
 msgid "Multi-agent"
 msgstr "Multi-agent"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:222
+#: src/app/workspace-shell/WorkCreatePopover.tsx:292
 #: src/features/chat/AgentSetupWizard.tsx:906
-#: src/features/cron/CronPanel.tsx:108
+#: src/features/cron/RuntimeAutomationsPanel.tsx:108
 msgid "Name"
 msgstr "Name"
 
@@ -1294,6 +1562,8 @@ msgstr "Name"
 msgid "Needs"
 msgstr "Needs"
 
+#: src/app/workspace-shell/WorkDashboard.tsx:119
+#: src/app/workspace-shell/WorkDashboard.tsx:186
 #: src/features/config/overview/ConfigOverview.tsx:142
 msgid "Needs attention"
 msgstr "Needs attention"
@@ -1316,9 +1586,19 @@ msgstr "Needs setup"
 msgid "Network"
 msgstr "Network"
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:61
+#: src/app/workspace-shell/WorkCreatePopover.tsx:74
+#: src/app/workspace-shell/WorkCreatePopover.tsx:187
+msgid "New automation"
+msgstr "New automation"
+
 #: src/features/chat/ChatPanel.tsx:502
-msgid "New code"
-msgstr "New code"
+#~ msgid "New code"
+#~ msgstr "New code"
+
+#: src/features/chat/ChatPanel.tsx:555
+msgid "New code run"
+msgstr "New code run"
 
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:200
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:315
@@ -1330,21 +1610,42 @@ msgstr "New file"
 msgid "New folder"
 msgstr "New folder"
 
-msgid "New general session"
-msgstr "New general session"
+#~ msgid "New general session"
+#~ msgstr "New general session"
 
-msgid "New project session"
-msgstr "New project session"
+#~ msgid "New project session"
+#~ msgstr "New project session"
+
+#: src/features/chat/ChatPanel.tsx:555
+#: src/features/chat/RunControls.tsx:60
+msgid "New run"
+msgstr "New run"
+
+#. placeholder {0}: selectedModelChoice.value
+#: src/features/chat/RunControls.tsx:60
+msgid "New run with {0}"
+msgstr "New run with {0}"
 
 #: src/features/chat/ChatPanel.tsx:502
 #: src/features/chat/SessionControls.tsx:61
-msgid "New session"
-msgstr "New session"
+#~ msgid "New session"
+#~ msgstr "New session"
 
 #. placeholder {0}: selectedModelChoice.value
 #: src/features/chat/SessionControls.tsx:61
-msgid "New session with {0}"
-msgstr "New session with {0}"
+#~ msgid "New session with {0}"
+#~ msgstr "New session with {0}"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:60
+#: src/app/workspace-shell/WorkCreatePopover.tsx:73
+#: src/app/workspace-shell/WorkCreatePopover.tsx:189
+msgid "New task"
+msgstr "New task"
+
+#: src/app/WorkspaceShell.tsx:398
+#: src/app/WorkspaceShell.tsx:424
+msgid "New Task"
+msgstr "New Task"
 
 #: src/features/config/sections/section-status.tsx:8
 msgid "next"
@@ -1354,7 +1655,8 @@ msgstr "next"
 msgid "Next"
 msgstr "Next"
 
-#: src/features/cron/CronPanel.tsx:111
+#: src/app/workspace-shell/AutomationsPage.tsx:168
+#: src/features/cron/RuntimeAutomationsPanel.tsx:111
 msgid "Next run"
 msgstr "Next run"
 
@@ -1363,12 +1665,17 @@ msgstr "Next run"
 msgid "No {0}s match this filter."
 msgstr "No {0}s match this filter."
 
-#: src/app/workspace-shell/SettingsPage.tsx:265
-#: src/features/chat/ChatPanel.tsx:432
+#: src/app/workspace-shell/AutomationsPage.tsx:114
+#: src/app/workspace-shell/WorkDashboard.tsx:82
+msgid "No active connection"
+msgstr "No active connection"
+
+#: src/app/workspace-shell/SettingsPage.tsx:255
+#: src/features/chat/ChatPanel.tsx:485
 msgid "No active connection."
 msgstr "No active connection."
 
-#: src/features/chat/ChatPanel.tsx:358
+#: src/features/chat/ChatPanel.tsx:411
 msgid "No active workspace."
 msgstr "No active workspace."
 
@@ -1376,7 +1683,8 @@ msgstr "No active workspace."
 msgid "No additional metadata reported."
 msgstr "No additional metadata reported."
 
-#: src/app/workspace-shell/ChatWorkspace.tsx:81
+#: src/app/workspace-shell/TaskDetail.tsx:160
+#: src/app/workspace-shell/WorkCreatePopover.tsx:409
 msgid "No agent configured"
 msgstr "No agent configured"
 
@@ -1389,6 +1697,7 @@ msgstr "No agent memory setting is available yet."
 msgid "No agent sections"
 msgstr "No agent sections"
 
+#: src/app/workspace-shell/TaskDetail.tsx:201
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:304
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:373
 #: src/features/memory/MemoryPanel.tsx:393
@@ -1404,6 +1713,14 @@ msgstr "No agents match this search."
 msgid "No aliases configured."
 msgstr "No aliases configured."
 
+#: src/app/workspace-shell/WorkDashboard.tsx:188
+msgid "No approvals, failed tasks, or recent log errors."
+msgstr "No approvals, failed tasks, or recent log errors."
+
+#: src/app/workspace-shell/AutomationsPage.tsx:133
+msgid "No automations yet"
+msgstr "No automations yet"
+
 #: src/features/config/config-categories.ts:122
 msgid "No channel sections"
 msgstr "No channel sections"
@@ -1417,6 +1734,11 @@ msgid "No configured aliases reported for this channel type."
 msgstr "No configured aliases reported for this channel type."
 
 #: src/app/ConnectionPicker.tsx:218
+#: src/app/workspace-shell/ApprovalsPage.tsx:68
+#: src/app/workspace-shell/RuntimeDetail.tsx:124
+#: src/app/workspace-shell/TaskDetail.tsx:106
+#: src/app/workspace-shell/TaskDetail.tsx:191
+#: src/app/workspace-shell/WorkSidebar.tsx:66
 msgid "No connection"
 msgstr "No connection"
 
@@ -1424,7 +1746,7 @@ msgstr "No connection"
 msgid "No editable memory fields"
 msgstr "No editable memory fields"
 
-#: src/app/workspace-shell/SettingsPage.tsx:288
+#: src/app/workspace-shell/SettingsPage.tsx:278
 msgid "No folder open"
 msgstr "No folder open"
 
@@ -1432,8 +1754,8 @@ msgstr "No folder open"
 msgid "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
 msgstr "No gateway running on port {DEFAULT_PORT} right now. That's fine — if a local zeroclaw binary is installed, the workspace will start it automatically when you save this connection."
 
-msgid "No general sessions yet."
-msgstr "No general sessions yet."
+#~ msgid "No general sessions yet."
+#~ msgstr "No general sessions yet."
 
 #: src/features/integrations/IntegrationsPanel.tsx:138
 msgid "No integrations match your filters."
@@ -1463,12 +1785,28 @@ msgstr "No model provider sections"
 msgid "No options"
 msgstr "No options"
 
-#: src/features/chat/ChatComposer.tsx:198
-#: src/features/chat/ChatPanel.tsx:501
+#: src/app/workspace-shell/ApprovalsPage.tsx:45
+msgid "No pending approvals"
+msgstr "No pending approvals"
+
+#: src/app/workspace-shell/TaskDetail.tsx:230
+msgid "No pinned result yet."
+msgstr "No pinned result yet."
+
+#: src/features/chat/ChatComposer.tsx:196
+#: src/features/chat/ChatPanel.tsx:554
 msgid "No project"
 msgstr "No project"
 
-#: src/features/cron/CronPanel.tsx:383
+#: src/app/workspace-shell/TasksPage.tsx:128
+msgid "No requirement captured"
+msgstr "No requirement captured"
+
+#: src/app/workspace-shell/TaskDetail.tsx:217
+msgid "No requirement captured yet."
+msgstr "No requirement captured yet."
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:399
 msgid "No runs recorded yet."
 msgstr "No runs recorded yet."
 
@@ -1480,9 +1818,29 @@ msgstr "No runtime or safety sections"
 msgid "No saved connections yet."
 msgstr "No saved connections yet."
 
+#: src/app/workspace-shell/WorkDashboard.tsx:126
+msgid "No schedules"
+msgstr "No schedules"
+
 #: src/features/config/SetupDoctorTab.tsx:92
 msgid "No setup doctor"
 msgstr "No setup doctor"
+
+#: src/app/workspace-shell/TaskDetail.tsx:69
+msgid "No task selected"
+msgstr "No task selected"
+
+#: src/app/workspace-shell/TasksPage.tsx:82
+msgid "No tasks here yet"
+msgstr "No tasks here yet"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:149
+msgid "No tasks yet"
+msgstr "No tasks yet"
+
+#: src/app/workspace-shell/WorkSidebar.tsx:158
+msgid "No tasks yet."
+msgstr "No tasks yet."
 
 #: src/features/tools/ToolsPanel.tsx:85
 msgid "No tools match your search."
@@ -1492,6 +1850,20 @@ msgstr "No tools match your search."
 msgid "No tools or skills sections"
 msgstr "No tools or skills sections"
 
+#: src/app/workspace-shell/TasksPage.tsx:104
+msgid "No workspace bound"
+msgstr "No workspace bound"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:71
+#: src/app/workspace-shell/TaskDetail.tsx:109
+#: src/app/workspace-shell/TaskDetail.tsx:195
+#: src/app/workspace-shell/WorkDashboard.tsx:112
+#: src/app/workspace-shell/WorkDashboard.tsx:170
+#: src/app/workspace-shell/WorkDashboard.tsx:228
+msgid "No workspace selected"
+msgstr "No workspace selected"
+
+#: src/app/workspace-shell/WorkSidebar.tsx:78
 msgid "No workspace selected for this runtime."
 msgstr "No workspace selected for this runtime."
 
@@ -1507,6 +1879,10 @@ msgstr "none"
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:253
 msgid "Not configured yet"
 msgstr "Not configured yet"
+
+#: src/app/workspace-shell/TaskDetail.tsx:206
+msgid "Not linked yet"
+msgstr "Not linked yet"
 
 #: src/features/chat/AgentSetupWizard.tsx:253
 msgid "Not named"
@@ -1525,11 +1901,15 @@ msgstr "Not reviewed"
 msgid "Not selected"
 msgstr "Not selected"
 
-#: src/app/workspace-shell/SettingsPage.tsx:366
+#: src/app/workspace-shell/WorkDashboard.tsx:119
+msgid "Nothing waiting"
+msgstr "Nothing waiting"
+
+#: src/app/workspace-shell/SettingsPage.tsx:356
 msgid "Notifications"
 msgstr "Notifications"
 
-#: src/app/workspace-shell/SettingsPage.tsx:367
+#: src/app/workspace-shell/SettingsPage.tsx:357
 msgid "Notify on hidden-window approvals and completed turns."
 msgstr "Notify on hidden-window approvals and completed turns."
 
@@ -1537,8 +1917,15 @@ msgstr "Notify on hidden-window approvals and completed turns."
 msgid "Off"
 msgstr "Off"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:137
+#: src/app/workspace-shell/WorkDashboard.tsx:104
+#: src/app/workspace-shell/WorkDashboard.tsx:223
+#: src/app/workspace-shell/WorkSidebar.tsx:74
+msgid "offline"
+msgstr "offline"
+
 #: src/app/ConnectionPicker.tsx:307
-#: src/app/workspace-shell/SettingsPage.tsx:409
+#: src/app/workspace-shell/SettingsPage.tsx:399
 msgid "Offline"
 msgstr "Offline"
 
@@ -1546,8 +1933,15 @@ msgstr "Offline"
 msgid "On"
 msgstr "On"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:136
+#: src/app/workspace-shell/WorkDashboard.tsx:104
+#: src/app/workspace-shell/WorkDashboard.tsx:222
+#: src/app/workspace-shell/WorkSidebar.tsx:74
+msgid "online"
+msgstr "online"
+
 #: src/app/ConnectionPicker.tsx:307
-#: src/app/workspace-shell/SettingsPage.tsx:409
+#: src/app/workspace-shell/SettingsPage.tsx:399
 msgid "Online"
 msgstr "Online"
 
@@ -1555,13 +1949,13 @@ msgstr "Online"
 msgid "open"
 msgstr "open"
 
-#: src/features/chat/SessionControls.tsx:41
-#: src/features/chat/SessionControls.tsx:42
+#: src/features/chat/RunControls.tsx:41
+#: src/features/chat/RunControls.tsx:42
 msgid "Open agent config"
 msgstr "Open agent config"
 
-#: src/features/chat/SessionControls.tsx:51
-#: src/features/chat/SessionControls.tsx:52
+#: src/features/chat/RunControls.tsx:51
+#: src/features/chat/RunControls.tsx:52
 msgid "Open agent workspace"
 msgstr "Open agent workspace"
 
@@ -1573,22 +1967,48 @@ msgstr "Open configured entry"
 msgid "Open console"
 msgstr "Open console"
 
+#: src/app/workspace-shell/TaskDetail.tsx:78
+msgid "Open dashboard"
+msgstr "Open dashboard"
+
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:318
 #: src/features/memory/MemoryPanel.tsx:1048
 msgid "Open fields"
 msgstr "Open fields"
 
-#: src/features/chat/ChatComposer.tsx:202
+#: src/app/workspace-shell/WorkSidebar.tsx:132
+#: src/features/chat/ChatComposer.tsx:200
 msgid "Open project"
 msgstr "Open project"
 
-#: src/features/chat/ChatPanel.tsx:652
+#: src/features/chat/ChatPanel.tsx:706
 msgid "Open Project"
 msgstr "Open Project"
 
-#: src/features/chat/ChatComposer.tsx:242
+#: src/features/chat/ChatComposer.tsx:240
 msgid "Open project..."
 msgstr "Open project..."
+
+#: src/app/workspace-shell/TaskDetail.tsx:238
+msgid "Open runtime diagnostics"
+msgstr "Open runtime diagnostics"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:90
+msgid "Open runtime settings"
+msgstr "Open runtime settings"
+
+#: src/app/workspace-shell/RuntimeDetail.tsx:162
+msgid "Open settings"
+msgstr "Open settings"
+
+#: src/app/workspace-shell/TaskDetail.tsx:179
+#: src/app/workspace-shell/WorkCreatePopover.tsx:426
+msgid "Open Setup Center"
+msgstr "Open Setup Center"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:107
+msgid "Open task"
+msgstr "Open task"
 
 #. placeholder {0}: entryNoun(section)
 #: src/features/config/picker/PickerSection.tsx:382
@@ -1599,7 +2019,7 @@ msgstr "Opening {0}..."
 msgid "Opening fields..."
 msgstr "Opening fields..."
 
-#: src/app/workspace-shell/SettingsPage.tsx:145
+#: src/app/workspace-shell/SettingsPage.tsx:135
 #: src/features/config/config-categories.ts:160
 msgid "Operations"
 msgstr "Operations"
@@ -1614,10 +2034,11 @@ msgstr "optional"
 msgid "Other"
 msgstr "Other"
 
-#: src/features/cron/CronPanel.tsx:391
+#: src/features/cron/RuntimeAutomationsPanel.tsx:407
 msgid "Output"
 msgstr "Output"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:69
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:140
 msgid "Overview"
 msgstr "Overview"
@@ -1638,7 +2059,7 @@ msgstr "Pairing…"
 msgid "partial"
 msgstr "partial"
 
-#: src/features/chat/ChatComposer.tsx:140
+#: src/features/chat/ChatComposer.tsx:138
 msgid "Paste clipboard into message"
 msgstr "Paste clipboard into message"
 
@@ -1646,13 +2067,15 @@ msgstr "Paste clipboard into message"
 msgid "path"
 msgstr "path"
 
-#: src/features/cron/CronPanel.tsx:144
+#: src/app/workspace-shell/AutomationsPage.tsx:193
+#: src/features/cron/RuntimeAutomationsPanel.tsx:155
 #: src/features/logs/LogsPanel.tsx:31
 msgid "Pause"
 msgstr "Pause"
 
-#: src/features/cron/CronPanel.tsx:135
-#: src/features/cron/CronPanel.tsx:210
+#: src/app/workspace-shell/AutomationsPage.tsx:163
+#: src/features/cron/RuntimeAutomationsPanel.tsx:146
+#: src/features/cron/RuntimeAutomationsPanel.tsx:221
 msgid "Paused"
 msgstr "Paused"
 
@@ -1666,7 +2089,7 @@ msgstr "Peer groups are optional and will not block agent creation."
 
 #: src/app/ConnectionPicker.tsx:252
 #: src/app/ConnectionPicker.tsx:319
-#: src/app/workspace-shell/SettingsPage.tsx:256
+#: src/app/workspace-shell/SettingsPage.tsx:246
 msgid "pending tunnel"
 msgstr "pending tunnel"
 
@@ -1690,6 +2113,10 @@ msgstr "Pick where local skill markdown and community bundles should live."
 msgid "Pick where this workspace should save memories."
 msgstr "Pick where this workspace should save memories."
 
+#: src/app/workspace-shell/TaskDetail.tsx:221
+msgid "Pinned result"
+msgstr "Pinned result"
+
 #: src/features/integrations/IntegrationsPanel.tsx:397
 msgid "Platform"
 msgstr "Platform"
@@ -1698,7 +2125,7 @@ msgstr "Platform"
 msgid "Postgres"
 msgstr "Postgres"
 
-#: src/app/workspace-shell/SettingsPage.tsx:303
+#: src/app/workspace-shell/SettingsPage.tsx:293
 msgid "Preferences"
 msgstr "Preferences"
 
@@ -1726,14 +2153,14 @@ msgstr "probe pending"
 msgid "Probing localhost:{DEFAULT_PORT}…"
 msgstr "Probing localhost:{DEFAULT_PORT}…"
 
-msgid "Project"
-msgstr "Project"
+#~ msgid "Project"
+#~ msgstr "Project"
 
-#: src/features/chat/ChatComposer.tsx:202
+#: src/features/chat/ChatComposer.tsx:200
 msgid "Project: {workspaceName}"
 msgstr "Project: {workspaceName}"
 
-#: src/features/cron/CronPanel.tsx:112
+#: src/features/cron/RuntimeAutomationsPanel.tsx:112
 msgid "Prompt"
 msgstr "Prompt"
 
@@ -1757,7 +2184,7 @@ msgstr "Python Skills"
 msgid "Qdrant"
 msgstr "Qdrant"
 
-#: src/app/workspace-shell/SettingsPage.tsx:349
+#: src/app/workspace-shell/SettingsPage.tsx:339
 msgid "Quickly bring ZeroClaw Studio to the front."
 msgstr "Quickly bring ZeroClaw Studio to the front."
 
@@ -1780,6 +2207,10 @@ msgstr "Raw paths"
 #: src/features/tools/ToolsPanel.tsx:195
 msgid "Raw payload"
 msgstr "Raw payload"
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:137
+msgid "Raw ZeroClaw schedule"
+msgstr "Raw ZeroClaw schedule"
 
 #: src/app/ConnectionPicker.tsx:359
 msgid "Re-run activation"
@@ -1818,6 +2249,18 @@ msgstr "Ready to use"
 msgid "Recent log error"
 msgstr "Recent log error"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:145
+msgid "Recent log warnings"
+msgstr "Recent log warnings"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:135
+msgid "Recent tasks"
+msgstr "Recent tasks"
+
+#: src/app/workspace-shell/WorkSidebar.tsx:155
+msgid "Recent Tasks"
+msgstr "Recent Tasks"
+
 #: src/features/memory/MemoryPanel.tsx:730
 msgid "recommended"
 msgstr "recommended"
@@ -1834,13 +2277,14 @@ msgstr "Recommended next steps"
 msgid "Recommended. Saves memory on this device and works out of the box."
 msgstr "Recommended. Saves memory on this device and works out of the box."
 
+#: src/app/workspace-shell/AutomationsPage.tsx:106
 #: src/features/_shared/DataPanel.tsx:35
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:328
 #: src/features/config/ConfigPanel.tsx:220
 #: src/features/config/overview/ConfigCategoryWorkspace.tsx:103
 #: src/features/config/overview/ConfigOverview.tsx:82
 #: src/features/config/SetupDoctorTab.tsx:249
-#: src/features/cron/CronPanel.tsx:357
+#: src/features/cron/RuntimeAutomationsPanel.tsx:373
 #: src/features/integrations/IntegrationsPanel.tsx:118
 #: src/features/logs/LogsPanel.tsx:43
 #: src/features/memory/MemoryPanel.tsx:289
@@ -1852,14 +2296,14 @@ msgstr "Refresh"
 msgid "Refresh {what}"
 msgstr "Refresh {what}"
 
-msgid "Refresh sessions"
-msgstr "Refresh sessions"
+#~ msgid "Refresh sessions"
+#~ msgstr "Refresh sessions"
 
 #: src/features/chat/AgentSetupWizard.tsx:493
 msgid "Refreshing..."
 msgstr "Refreshing..."
 
-#: src/app/workspace-shell/SettingsPage.tsx:390
+#: src/app/workspace-shell/SettingsPage.tsx:380
 msgid "Registered"
 msgstr "Registered"
 
@@ -1880,13 +2324,17 @@ msgstr "Remote database"
 msgid "Remote gateway port"
 msgstr "Remote gateway port"
 
-#: src/features/chat/ChatPanel.tsx:330
-#: src/features/chat/ChatPanel.tsx:586
+#: src/features/chat/ChatPanel.tsx:383
+#: src/features/chat/ChatPanel.tsx:640
 msgid "Remote working directory"
 msgstr "Remote working directory"
 
-msgid "Rename session"
-msgstr "Rename session"
+#~ msgid "Rename session"
+#~ msgstr "Rename session"
+
+#: src/app/workspace-shell/TaskDetail.tsx:122
+msgid "Rename task"
+msgstr "Rename task"
 
 #. placeholder {0}: field.label
 #: src/features/chat/AgentSetupWizard.tsx:347
@@ -1897,11 +2345,18 @@ msgstr "Required field missing: {0}"
 msgid "required steps ready"
 msgstr "required steps ready"
 
+#: src/app/workspace-shell/TaskDetail.tsx:211
+#: src/app/workspace-shell/WorkCreatePopover.tsx:230
+#: src/app/workspace-shell/WorkCreatePopover.tsx:300
+msgid "Requirement"
+msgstr "Requirement"
+
 #: src/features/chat/MessageList.tsx:212
 msgid "requires approval before the agent can continue."
 msgstr "requires approval before the agent can continue."
 
-#: src/features/cron/CronPanel.tsx:144
+#: src/app/workspace-shell/AutomationsPage.tsx:193
+#: src/features/cron/RuntimeAutomationsPanel.tsx:155
 #: src/features/logs/LogsPanel.tsx:31
 msgid "Resume"
 msgstr "Resume"
@@ -1909,6 +2364,10 @@ msgstr "Resume"
 #: src/app/ConnectionPicker.tsx:362
 msgid "Retry"
 msgstr "Retry"
+
+#: src/app/workspace-shell/RuntimeDetail.tsx:155
+msgid "Retry activation"
+msgstr "Retry activation"
 
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:422
 msgid "Revert"
@@ -1939,11 +2398,12 @@ msgstr "Run"
 msgid "Run doctor"
 msgstr "Run doctor"
 
-#: src/features/cron/CronPanel.tsx:167
+#: src/features/cron/RuntimeAutomationsPanel.tsx:178
 msgid "Run history"
 msgstr "Run history"
 
-#: src/features/cron/CronPanel.tsx:156
+#: src/app/workspace-shell/AutomationsPage.tsx:185
+#: src/features/cron/RuntimeAutomationsPanel.tsx:167
 msgid "Run now"
 msgstr "Run now"
 
@@ -1959,11 +2419,24 @@ msgstr "Run this command?\n"
 "\n"
 "{command}"
 
+#: src/features/chat/ChatPanel.tsx:740
+msgid "Run Timeline"
+msgstr "Run Timeline"
+
 #: src/features/config/SetupDoctorTab.tsx:221
 msgid "Running local setup checks..."
 msgstr "Running local setup checks..."
 
+#: src/app/workspace-shell/WorkDashboard.tsx:110
+msgid "Running tasks"
+msgstr "Running tasks"
+
 #: src/app/ConnectionPicker.tsx:204
+#: src/app/workspace-shell/ApprovalsPage.tsx:68
+#: src/app/workspace-shell/RuntimeDetail.tsx:64
+#: src/app/workspace-shell/TaskDetail.tsx:191
+#: src/app/workspace-shell/WorkDashboard.tsx:103
+#: src/app/workspace-shell/WorkSidebar.tsx:205
 msgid "Runtime"
 msgstr "Runtime"
 
@@ -1972,12 +2445,28 @@ msgstr "Runtime"
 msgid "Runtime & Safety"
 msgstr "Runtime & Safety"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:148
+msgid "Runtime actions"
+msgstr "Runtime actions"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:214
+msgid "Runtime health"
+msgstr "Runtime health"
+
 #: src/features/chat/AgentSetupWizard.tsx:662
 msgid "Runtime profile"
 msgstr "Runtime profile"
 
+#: src/app/workspace-shell/TaskDetail.tsx:205
+msgid "Runtime reference"
+msgstr "Runtime reference"
+
+#: src/app/workspace-shell/RuntimeDetail.tsx:127
+msgid "Runtime state comes from the selected ZeroClaw gateway."
+msgstr "Runtime state comes from the selected ZeroClaw gateway."
+
 #: src/app/ConnectionPicker.tsx:233
-#: src/app/workspace-shell/SettingsPage.tsx:293
+#: src/app/workspace-shell/SettingsPage.tsx:283
 msgid "Runtimes"
 msgstr "Runtimes"
 
@@ -1999,9 +2488,17 @@ msgstr "Saved"
 msgid "Saving"
 msgstr "Saving"
 
-#: src/features/cron/CronPanel.tsx:110
+#: src/features/cron/RuntimeAutomationsPanel.tsx:110
 msgid "Schedule"
 msgstr "Schedule"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:194
+msgid "Schedule repeat work on this runtime."
+msgstr "Schedule repeat work on this runtime."
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:361
+msgid "Scheduled work that repeats daily."
+msgstr "Scheduled work that repeats daily."
 
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:258
 #: src/features/memory/MemoryPanel.tsx:493
@@ -2058,7 +2555,7 @@ msgstr "Select a tool"
 msgid "Select an integration"
 msgstr "Select an integration"
 
-#: src/features/chat/ChatComposer.tsx:161
+#: src/features/chat/ChatComposer.tsx:159
 msgid "Send"
 msgstr "Send"
 
@@ -2076,12 +2573,25 @@ msgstr "Set up {0} memory."
 msgid "Set up a new local zeroclaw"
 msgstr "Set up a new local zeroclaw"
 
+#: src/app/workspace-shell/TaskDetail.tsx:171
+#: src/app/workspace-shell/WorkCreatePopover.tsx:419
+msgid "Set up agent"
+msgstr "Set up agent"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:411
+msgid "Set up an agent before creating task work."
+msgstr "Set up an agent before creating task work."
+
+#: src/app/workspace-shell/TaskDetail.tsx:162
+msgid "Set up an agent for this runtime before starting the task run."
+msgstr "Set up an agent for this runtime before starting the task run."
+
 #: src/features/memory/MemoryPanel.tsx:708
 msgid "Set up and use"
 msgstr "Set up and use"
 
-msgid "Settings"
-msgstr "Settings"
+#~ msgid "Settings"
+#~ msgstr "Settings"
 
 #: src/app/workspace-shell/settings-sections.ts:30
 #: src/features/setup/SetupCenterPanel.tsx:98
@@ -2145,15 +2655,23 @@ msgstr "Start from scratch"
 msgid "Start here if you are setting up tools and skills for the first time."
 msgstr "Start here if you are setting up tools and skills for the first time."
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:196
+msgid "Start one piece of agent work."
+msgstr "Start one piece of agent work."
+
 #: src/features/chat/ChatComposer.tsx:104
-msgid "Start this session..."
-msgstr "Start this session..."
+#~ msgid "Start this session..."
+#~ msgstr "Start this session..."
+
+#: src/features/chat/ChatComposer.tsx:103
+msgid "Start this task..."
+msgstr "Start this task..."
 
 #: src/features/chat/AgentSetupWizard.tsx:848
 msgid "Start with template"
 msgstr "Start with template"
 
-#: src/features/cron/CronPanel.tsx:388
+#: src/features/cron/RuntimeAutomationsPanel.tsx:404
 msgid "Started"
 msgstr "Started"
 
@@ -2161,8 +2679,8 @@ msgstr "Started"
 msgid "Starting gateway…"
 msgstr "Starting gateway…"
 
-#: src/features/cron/CronPanel.tsx:109
-#: src/features/cron/CronPanel.tsx:389
+#: src/features/cron/RuntimeAutomationsPanel.tsx:109
+#: src/features/cron/RuntimeAutomationsPanel.tsx:405
 #: src/features/integrations/IntegrationsPanel.tsx:257
 msgid "Status"
 msgstr "Status"
@@ -2172,11 +2690,15 @@ msgstr "Status"
 msgid "status {0}"
 msgstr "status {0}"
 
+#: src/features/chat/RunControls.tsx:68
+msgid "Stop current run"
+msgstr "Stop current run"
+
 #: src/features/config/config-categories.ts:158
 msgid "Storage"
 msgstr "Storage"
 
-#: src/app/workspace-shell/SettingsPage.tsx:306
+#: src/app/workspace-shell/SettingsPage.tsx:296
 msgid "Stored locally on this device."
 msgstr "Stored locally on this device."
 
@@ -2192,7 +2714,7 @@ msgstr "Structured graph-oriented memory."
 msgid "Summary"
 msgstr "Summary"
 
-#: src/app/workspace-shell/SettingsPage.tsx:331
+#: src/app/workspace-shell/SettingsPage.tsx:321
 msgid "Switch between the dark workspace and a lighter workspace surface."
 msgstr "Switch between the dark workspace and a lighter workspace surface."
 
@@ -2208,6 +2730,28 @@ msgstr "System prompt"
 msgid "Tailscale"
 msgstr "Tailscale"
 
+#: src/app/workspace-shell/ApprovalsPage.tsx:67
+#: src/app/workspace-shell/WorkCreatePopover.tsx:354
+msgid "Task"
+msgstr "Task"
+
+#: src/app/workspace-shell/TaskDetail.tsx:189
+msgid "Task Inspector"
+msgstr "Task Inspector"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:137
+msgid "Task shells are stored locally; execution stays in ZeroClaw runtime runs."
+msgstr "Task shells are stored locally; execution stays in ZeroClaw runtime runs."
+
+#: src/app/workspace-shell/TasksPage.tsx:52
+#: src/app/workspace-shell/WorkSidebar.tsx:95
+msgid "Tasks"
+msgstr "Tasks"
+
+#: src/app/workspace-shell/TasksPage.tsx:54
+msgid "Tasks stay grouped by project when a workspace is attached."
+msgstr "Tasks stay grouped by project when a workspace is attached."
+
 #: src/features/memory/MemoryPanel.tsx:146
 msgid "The gateway did not report a memory config section."
 msgstr "The gateway did not report a memory config section."
@@ -2216,7 +2760,7 @@ msgstr "The gateway did not report a memory config section."
 msgid "The gateway did not report editable fields for this memory target."
 msgstr "The gateway did not report editable fields for this memory target."
 
-#: src/app/workspace-shell/SettingsPage.tsx:330
+#: src/app/workspace-shell/SettingsPage.tsx:320
 msgid "Theme"
 msgstr "Theme"
 
@@ -2252,9 +2796,13 @@ msgstr "This gateway did not report risk profile or runtime profile sections."
 msgid "This gateway did not report tools, skills, bundles, or MCP sections."
 msgstr "This gateway did not report tools, skills, bundles, or MCP sections."
 
+#: src/features/cron/RuntimeAutomationsPanel.tsx:295
+msgid "This removes the scheduled automation from the gateway. Recent run history may no longer be reachable from this page."
+msgstr "This removes the scheduled automation from the gateway. Recent run history may no longer be reachable from this page."
+
 #: src/features/cron/CronPanel.tsx:284
-msgid "This removes the scheduled job from the gateway. Recent run history may no longer be reachable from this page."
-msgstr "This removes the scheduled job from the gateway. Recent run history may no longer be reachable from this page."
+#~ msgid "This removes the scheduled job from the gateway. Recent run history may no longer be reachable from this page."
+#~ msgstr "This removes the scheduled job from the gateway. Recent run history may no longer be reachable from this page."
 
 #: src/features/chat/AgentSetupWizard.tsx:789
 msgid "Token"
@@ -2268,6 +2816,8 @@ msgstr "Tool"
 msgid "tool input"
 msgstr "tool input"
 
+#: src/app/workspace-shell/RuntimeDetail.tsx:75
+#: src/app/workspace-shell/RuntimeDetail.tsx:142
 #: src/features/config/config-categories.ts:152
 msgid "Tools"
 msgstr "Tools"
@@ -2281,11 +2831,11 @@ msgstr "Tools & Skills"
 msgid "Tools and automation"
 msgstr "Tools and automation"
 
-#: src/app/workspace-shell/SettingsPage.tsx:260
+#: src/app/workspace-shell/SettingsPage.tsx:250
 msgid "Transport"
 msgstr "Transport"
 
-#: src/app/workspace-shell/SettingsPage.tsx:377
+#: src/app/workspace-shell/SettingsPage.tsx:367
 msgid "Tray / menu bar"
 msgstr "Tray / menu bar"
 
@@ -2301,6 +2851,7 @@ msgstr "Turn off memory"
 msgid "Turn on the skills system before managing or installing skills."
 msgstr "Turn on the skills system before managing or installing skills."
 
+#: src/app/workspace-shell/WorkCreatePopover.tsx:239
 #: src/features/chat/AgentSetupWizard.tsx:759
 msgid "Type"
 msgstr "Type"
@@ -2311,9 +2862,14 @@ msgid "type {0}"
 msgstr "type {0}"
 
 #: src/app/ConnectionPicker.tsx:147
+#: src/app/workspace-shell/RuntimeDetail.tsx:138
+#: src/app/workspace-shell/WorkDashboard.tsx:224
 msgid "unknown"
 msgstr "unknown"
 
+#: src/app/workspace-shell/AutomationsPage.tsx:167
+#: src/app/workspace-shell/AutomationsPage.tsx:170
+#: src/app/workspace-shell/RuntimeDetail.tsx:141
 #: src/features/integrations/IntegrationsPanel.tsx:405
 msgid "Unknown"
 msgstr "Unknown"
@@ -2346,7 +2902,7 @@ msgstr "Use this when you know the exact config path you want to inspect or edit
 msgid "Used by"
 msgstr "Used by"
 
-#: src/app/workspace-shell/SettingsPage.tsx:389
+#: src/app/workspace-shell/SettingsPage.tsx:379
 msgid "Used by zeroclaw:// links from the operating system."
 msgstr "Used by zeroclaw:// links from the operating system."
 
@@ -2392,10 +2948,40 @@ msgid "Welcome to ZeroClaw Studio"
 msgstr "Welcome to ZeroClaw Studio"
 
 #: src/features/chat/ChatPanel.tsx:642
-msgid "What do you want to work on in this session?"
-msgstr "What do you want to work on in this session?"
+#~ msgid "What do you want to work on in this session?"
+#~ msgstr "What do you want to work on in this session?"
 
-#: src/app/workspace-shell/SettingsPage.tsx:273
+#: src/app/workspace-shell/WorkCreatePopover.tsx:305
+msgid "What should run every day?"
+msgstr "What should run every day?"
+
+#: src/app/workspace-shell/WorkCreatePopover.tsx:235
+msgid "What should the agent do?"
+msgstr "What should the agent do?"
+
+#: src/features/chat/ChatPanel.tsx:696
+msgid "What should this task do?"
+msgstr "What should this task do?"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:47
+msgid "When an active task requests a tool approval, it will appear here with runtime and workspace context."
+msgstr "When an active task requests a tool approval, it will appear here with runtime and workspace context."
+
+#: src/app/workspace-shell/WorkSidebar.tsx:85
+msgid "Work"
+msgstr "Work"
+
+#: src/app/workspace-shell/WorkDashboard.tsx:79
+#: src/app/workspace-shell/WorkDashboard.tsx:99
+msgid "Work Dashboard"
+msgstr "Work Dashboard"
+
+#: src/app/workspace-shell/ApprovalsPage.tsx:70
+#: src/app/workspace-shell/SettingsPage.tsx:263
+#: src/app/workspace-shell/TaskDetail.tsx:194
+#: src/app/workspace-shell/WorkCreatePopover.tsx:257
+#: src/app/workspace-shell/WorkDashboard.tsx:228
+#: src/app/workspace-shell/WorkSidebar.tsx:115
 #: src/features/agent-workspace/AgentWorkspacePanel.tsx:310
 msgid "Workspace"
 msgstr "Workspace"
@@ -2407,6 +2993,11 @@ msgstr "Workspace will spawn zeroclaw gateway --port {port} when this connection
 #: src/workspace/notifications/useNotifications.ts:44
 msgid "ZeroClaw approval needed"
 msgstr "ZeroClaw approval needed"
+
+#: src/features/cron/RuntimeAutomationsPanel.tsx:127
+#: src/features/cron/RuntimeAutomationsPanel.tsx:365
+msgid "ZeroClaw cron id"
+msgstr "ZeroClaw cron id"
 
 #: src/workspace/notifications/useNotifications.ts:51
 msgid "ZeroClaw turn finished"

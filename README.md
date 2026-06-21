@@ -21,16 +21,16 @@ attached, or remote ZeroClaw gateway over HTTP, WebSocket, and SSE.
 
 `zeroclaw-studio` is a Tauri 2 desktop app for getting real work done across
 local files, remote machines, tools, memory, scheduled jobs, and long-running
-agent sessions. It is the product surface for ZeroClaw-powered work: the desktop
+agent tasks. It is the product surface for ZeroClaw-powered work: the desktop
 app gives you a focused workspace, while `zeroclaw` provides the lightweight
 runtime and gateway underneath.
 
 The default path is local and simple: launch the app, use the bundled
-app-private runtime, pair the workspace, open a folder, and start a chat. The
+app-private runtime, pair the workspace, open a folder, and start a task. The
 same app can also attach to a user-managed local gateway or connect to a remote
 gateway over trusted network paths.
 
-Instead of treating AI as a single chat box, the workspace lets you choose
+Instead of treating AI as a single prompt box, the workspace lets you choose
 where work should run:
 
 - run quick local tasks on your laptop,
@@ -71,8 +71,8 @@ supported by the pinned runtime.
   gateway runs on a homelab Pi, NAS, workstation, or cloud VM.
 - **Keep long-running tasks close to the resources they need** — run scheduled
   jobs and automations near private files, internal APIs, or always-on hosts.
-- **Observe and intervene** — use one native workspace for chat, tool progress,
-  memory, cron, logs, doctor checks, config, and approvals.
+- **Observe and intervene** — use one native workspace for task runs, tool
+  progress, memory, automations, logs, doctor checks, config, and approvals.
 - **Choose the trust boundary** — use the app-private runtime for local work, or
   connect only to remote gateways you administer and trust.
 
@@ -86,10 +86,9 @@ supported by the pinned runtime.
   and remote gateways.
 - **Remote-first networking** through direct HTTP(S), SSH tunnels, Tailscale,
   VPNs, and private network routes.
-- **Project-scoped chat sessions** with markdown responses, tool-call progress,
-  approval prompts, file attachments, and stable per-session agent/model
-  context.
-- **Operational panels** for tools, memory, cron, logs, doctor, devices,
+- **Project-scoped task runs** with markdown responses, tool-call progress,
+  approval prompts, file attachments, and stable per-run agent/model context.
+- **Operational panels** for tools, memory, automations, logs, doctor, devices,
   integrations, and config.
 - **Native desktop affordances** including folder picker, file watcher, global
   shortcut, clipboard, notifications, and `zeroclaw://` deep links.
@@ -100,7 +99,7 @@ supported by the pinned runtime.
 
 | Area                     | What it shows                                                                                                                                                                             | Preview                                                                |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Workspace chat           | A project-scoped chat session connected to the local `zeroclaw` runtime, with runtime status, workspace context, session history, attachments, and agent selection in one desktop window. | ![ZeroClaw Studio desktop chat workspace](images/workspace-chat.png)   |
+| Task workspace           | A project-scoped task workbench connected to the local `zeroclaw` runtime, with runtime status, workspace context, run timeline, attachments, and agent selection in one desktop window. | ![ZeroClaw Studio desktop task workspace](images/workspace-chat.png)   |
 | Runtime and app settings | Local runtime state, workspace folder context, preferences, native notifications, tray integration, deep-link registration, and the operations/capabilities navigation surface.           | ![ZeroClaw Studio desktop settings panel](images/runtime-settings.png) |
 
 ## Runtime modes
@@ -164,10 +163,10 @@ SSH/Tailscale/VPN route.
    - **Local & attached** — connect to a gateway you already started.
    - **Remote** — enter a reachable URL or configure an SSH-tunneled target.
 3. Pair the workspace with the gateway when prompted.
-4. Open a workspace folder, pick an agent, and start a chat.
+4. Open a workspace folder, pick an agent, and start a task.
 
-Each chat session keeps its agent context stable once messages exist. Start a
-new session when you want to switch to another agent for the same workspace.
+Each task run keeps its agent context stable once messages exist. Start a new
+run when you want to switch to another agent for the same workspace.
 
 The desktop app does not require a user-installed `zeroclaw` unless you want a
 managed external local connection.

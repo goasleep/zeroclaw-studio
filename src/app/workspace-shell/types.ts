@@ -20,6 +20,7 @@ export type SettingsSection =
   | "memory"
   | "tools-skills"
   | "tools"
+  | "automations"
   | "cron"
   | "integrations"
   | "logs"

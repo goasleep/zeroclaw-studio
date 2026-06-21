@@ -490,7 +490,7 @@ export function WorkspaceShell() {
             key={connectionId ?? "no-connection"}
             section={settingsSection}
             onSection={setSettingsSection}
-            onBackToChat={() => setPage("dashboard")}
+            onBackToApp={() => setPage("dashboard")}
             configFocusSection={configFocusSection}
             onConfigFocusSection={setConfigFocusSection}
             agentWorkspaceFocusAlias={agentWorkspaceFocusAlias}

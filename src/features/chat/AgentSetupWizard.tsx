@@ -536,12 +536,12 @@ export function AgentSetupWizard({
                   ? "inline-flex h-8 items-center gap-1.5 rounded-md border border-white/10 px-2.5 text-xs text-neutral-300 hover:border-cyan-400/50 hover:text-cyan-100"
                   : "inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-100"
               }
-              aria-label={surface === "chat" ? t`Back to sessions` : t`Close`}
+              aria-label={surface === "chat" ? t`Back to task` : t`Close`}
             >
               {surface === "chat" ? (
                 <>
                   <ArrowLeft size={13} />
-                  <span>{t`Back to sessions`}</span>
+                  <span>{t`Back to task`}</span>
                 </>
               ) : (
                 <X size={14} />

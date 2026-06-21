@@ -100,9 +100,7 @@ export function ChatComposer({
               }
             }}
             rows={variant === "center" ? 4 : 2}
-            placeholder={
-              variant === "center" ? t`Start this session...` : t`Continue this session...`
-            }
+            placeholder={variant === "center" ? t`Start this task...` : t`Continue this run...`}
             className={
               variant === "center"
                 ? "min-h-20 flex-1 resize-none bg-transparent px-2 py-1 text-base text-neutral-100 outline-none placeholder:text-neutral-600"
@@ -215,7 +213,7 @@ function WorkspaceMenu({
             }`}
           >
             <FolderOpen size={12} className="text-neutral-500" />
-            <span className="min-w-0 flex-1 truncate">{t`General session`}</span>
+            <span className="min-w-0 flex-1 truncate">{t`General task run`}</span>
           </button>
           {recentRoots.slice(0, 8).map((path) => (
             <button

@@ -1,9 +1,18 @@
-// Chat/Code panel — session list + messages + composer.
+// Task run panel — messages + composer.
 
 import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { useLingui } from "@lingui/react/macro";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { Copy, FileText, FolderOpen, Loader2, Sparkles, TerminalSquare, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Copy,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Sparkles,
+  TerminalSquare,
+  X,
+} from "lucide-react";
 import { useChat, type ChatModelOverride } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
@@ -23,7 +32,9 @@ import type { ChatMode, FileEntry } from "@/api/ws-chat";
 import { ChatComposer } from "./ChatComposer";
 import { MessageList } from "./MessageList";
 import { MODEL_FOLLOWS_AGENT, type ConfiguredModelChoice } from "./ModelOverrideSelect";
-import { SessionControls } from "./SessionControls";
+import { RunControls } from "./RunControls";
+import { deriveTaskRunStatus, deriveTaskTimelineItems } from "@/features/tasks/task-run";
+import type { TaskTimelineItem } from "@/features/tasks/task-run";
 import {
   CLIENT_MAX_ATTACHMENT_REQUEST_BYTES,
   CLIENT_MAX_CLIPBOARD_ATTACHMENT_BYTES,
@@ -212,18 +223,8 @@ export function ChatPanel({
 
   useEffect(() => {
     if (!onTaskStatus || chat.messages.length === 0) return;
-    if (chat.messages.some((message) => message.approval && !message.approval.response)) {
-      onTaskStatus("needs_approval");
-      return;
-    }
-    const last = chat.messages[chat.messages.length - 1];
-    if (last.status === "pending" || last.status === "streaming") {
-      onTaskStatus("running");
-    } else if (last.status === "error" || last.status === "aborted") {
-      onTaskStatus("failed");
-    } else if (last.status === "done") {
-      onTaskStatus("done");
-    }
+    const status = deriveTaskRunStatus(chat.messages);
+    if (status !== "draft") onTaskStatus(status);
   }, [chat.messages, onTaskStatus]);
 
   useEffect(() => {
@@ -551,7 +552,8 @@ export function ChatPanel({
   const selectedModelChoice = modelChoices.find((choice) => choice.value === selectedModelProvider);
   const agentOptions = agents.map((agent) => ({ value: agent, label: agent }));
   const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : t`No project`;
-  const sessionName = currentSession?.name ?? (isCode ? t`New code` : t`New session`);
+  const runName = currentSession?.name ?? (isCode ? t`New code run` : t`New run`);
+  const timelineItems = deriveTaskTimelineItems(chat.messages);
   const gitLabel =
     gitStatus?.is_repo && gitStatus.branch
       ? t`${gitStatus.branch} · ${gitStatus.changed_count} changed`
@@ -608,7 +610,7 @@ export function ChatPanel({
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-neutral-100">
                   <span className="truncate">{workspaceRoot ? workspaceName : t`General`}</span>
                   <span className="shrink-0 text-neutral-600">/</span>
-                  <span className="truncate text-neutral-300">{sessionName}</span>
+                  <span className="truncate text-neutral-300">{runName}</span>
                 </div>
                 {gitLabel && (
                   <div className="mt-0.5 truncate font-mono text-[10px] text-neutral-500">
@@ -617,7 +619,7 @@ export function ChatPanel({
                 )}
               </div>
             </div>
-            <SessionControls
+            <RunControls
               selectedModelProvider={selectedModelProvider}
               selectedModelChoice={selectedModelChoice}
               modelChoices={modelChoices}
@@ -625,7 +627,7 @@ export function ChatPanel({
               agentAlias={agentAlias}
               onOpenAgentConfig={openAgentConfig}
               onOpenAgentWorkspace={openAgentWorkspace}
-              onNewSession={() => newSession(modelOverrideFor(selectedModelProvider))}
+              onNewRun={() => newSession(modelOverrideFor(selectedModelProvider))}
               onAbort={() => void chat.abort()}
               onClear={chat.clear}
             />
@@ -691,7 +693,7 @@ export function ChatPanel({
           {!hasMessages && (
             <div className="w-full max-w-4xl">
               <h1 className="mb-4 text-center text-2xl font-medium tracking-normal text-neutral-100">
-                {t`What do you want to work on in this session?`}
+                {t`What should this task do?`}
               </h1>
               {!workspaceRoot && (
                 <div className="mx-auto mb-4 flex max-w-xl items-center justify-center">
@@ -708,6 +710,7 @@ export function ChatPanel({
               {renderComposer("center")}
             </div>
           )}
+          {hasMessages && <RunTimelineSummary items={timelineItems} />}
           <MessageList messages={chat.messages} onApprove={chat.respondToApproval} />
           <div ref={messageBottomRef} aria-hidden="true" />
         </div>
@@ -720,6 +723,27 @@ export function ChatPanel({
       </div>
       {preview && <FilePreviewDialog preview={preview} onClose={() => setPreview(null)} />}
     </div>
+  );
+}
+
+function RunTimelineSummary({ items }: { items: TaskTimelineItem[] }) {
+  const { t } = useLingui();
+  const toolCount = items.filter((item) => item.kind === "tool_call").length;
+  const approvalCount = items.filter((item) => item.kind === "approval_request").length;
+  const completed = items.some((item) => item.kind === "done");
+
+  return (
+    <section className="mb-3 rounded-md border border-white/10 bg-white/[0.025] px-3 py-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-neutral-500">
+        <span className="inline-flex items-center gap-1 font-medium text-neutral-200">
+          <CheckCircle2 size={12} className={completed ? "text-emerald-300" : "text-cyan-300"} />
+          {t`Run Timeline`}
+        </span>
+        <span>{t`${items.length} events`}</span>
+        {toolCount > 0 && <span>{t`${toolCount} tool calls`}</span>}
+        {approvalCount > 0 && <span>{t`${approvalCount} approvals`}</span>}
+      </div>
+    </section>
   );
 }
 

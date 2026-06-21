@@ -159,7 +159,7 @@ export function TaskDetail({
                 </div>
                 <h2 className="text-sm font-semibold text-neutral-100">{t`No agent configured`}</h2>
                 <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                  {t`Set up an agent for this runtime before starting the task session.`}
+                  {t`Set up an agent for this runtime before starting the task run.`}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <button
@@ -202,7 +202,7 @@ export function TaskDetail({
           />
           <InspectorItem
             icon={FileText}
-            label={t`Session`}
+            label={t`Runtime reference`}
             value={task.session_id ?? t`Not linked yet`}
             mono
           />

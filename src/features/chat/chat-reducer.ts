@@ -276,7 +276,7 @@ export function isVisibleSession(session: NormalizedSession) {
 }
 
 export function shortSessionName(id: string) {
-  return `session ${id.slice(0, 8)}`;
+  return `run ${id.slice(0, 8)}`;
 }
 
 function parseTimestamp(value: string | null | undefined) {

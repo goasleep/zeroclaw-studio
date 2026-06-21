@@ -2,7 +2,7 @@ import { CircleStop, FolderOpen, Plus, RotateCcw, Wrench } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
 import { ModelOverrideSelect, type ConfiguredModelChoice } from "./ModelOverrideSelect";
 
-export function SessionControls({
+export function RunControls({
   selectedModelProvider,
   selectedModelChoice,
   modelChoices,
@@ -10,7 +10,7 @@ export function SessionControls({
   agentAlias,
   onOpenAgentConfig,
   onOpenAgentWorkspace,
-  onNewSession,
+  onNewRun,
   onAbort,
   onClear,
 }: {
@@ -21,7 +21,7 @@ export function SessionControls({
   agentAlias: string;
   onOpenAgentConfig: () => void;
   onOpenAgentWorkspace: () => void;
-  onNewSession: () => void;
+  onNewRun: () => void;
   onAbort: () => void;
   onClear: () => void;
 }) {
@@ -55,11 +55,9 @@ export function SessionControls({
       </button>
       <button
         type="button"
-        onClick={onNewSession}
+        onClick={onNewRun}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:bg-white/[0.05] hover:text-cyan-300"
-        title={
-          selectedModelChoice ? t`New session with ${selectedModelChoice.value}` : t`New session`
-        }
+        title={selectedModelChoice ? t`New run with ${selectedModelChoice.value}` : t`New run`}
       >
         <Plus size={13} />
       </button>
@@ -67,7 +65,7 @@ export function SessionControls({
         type="button"
         onClick={onAbort}
         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:bg-white/[0.05] hover:text-red-300"
-        title={t`Abort current turn`}
+        title={t`Stop current run`}
       >
         <CircleStop size={13} />
       </button>

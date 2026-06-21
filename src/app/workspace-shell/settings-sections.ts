@@ -36,7 +36,7 @@ export const SETTINGS_SECTIONS: Array<{
   { id: "memory", label: msg`Memory`, group: "Capabilities", icon: Database },
   { id: "tools-skills", label: msg`Tools & Skills`, group: "Capabilities", icon: Wrench },
   { id: "integrations", label: msg`Integrations`, group: "Capabilities", icon: PlugZap },
-  { id: "cron", label: msg`Cron`, group: "Operations", icon: Clock },
+  { id: "automations", label: msg`Automations`, group: "Operations", icon: Clock },
   { id: "logs", label: msg`Logs`, group: "Operations", icon: Terminal },
   { id: "doctor", label: msg`Doctor`, group: "Operations", icon: Stethoscope },
   { id: "devices", label: msg`Devices`, group: "Operations", icon: HardDrive },
@@ -46,6 +46,7 @@ export function isSettingsSection(value: string): value is SettingsSection {
   return (
     SETTINGS_SECTIONS.some((section) => section.id === value) ||
     value === "gateway-config" ||
-    value === "tools"
+    value === "tools" ||
+    value === "cron"
   );
 }
