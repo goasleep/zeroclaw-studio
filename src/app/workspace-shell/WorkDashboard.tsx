@@ -2,7 +2,6 @@ import { Activity, AlertTriangle, Clock3, Gauge, Inbox, ListTodo } from "lucide-
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLingui } from "@lingui/react/macro";
 import { apiCron, apiDoctor, apiStatus, type CronJob } from "@/api/tools";
-import { apiLogs, type LogEvent } from "@/api/logs";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
 import type { StudioTask } from "@/features/tasks/task-model";
@@ -33,28 +32,21 @@ export function WorkDashboard({
   const { root } = useWorkspace();
   const activeId = active?.id ?? null;
   const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
-  const [logErrors, setLogErrors] = useState<LogEvent[]>([]);
   const [doctorIssues, setDoctorIssues] = useState(0);
   const [gatewayVersion, setGatewayVersion] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeId) {
       setCronJobs([]);
-      setLogErrors([]);
       setDoctorIssues(0);
       setGatewayVersion(null);
       return;
     }
     let cancelled = false;
-    void Promise.allSettled([apiCron(), apiLogs(), apiDoctor(), apiStatus()]).then((results) => {
+    void Promise.allSettled([apiCron(), apiDoctor(), apiStatus()]).then((results) => {
       if (cancelled) return;
-      const [cron, logs, doctor, status] = results;
+      const [cron, doctor, status] = results;
       if (cron.status === "fulfilled") setCronJobs(cron.value.jobs);
-      if (logs.status === "fulfilled") {
-        setLogErrors(
-          logs.value.events.filter((event) => /error|warn/i.test(event.severity_text)).slice(0, 5),
-        );
-      }
       if (doctor.status === "fulfilled") {
         setDoctorIssues(doctor.value.results.filter((item) => item.severity !== "ok").length);
       }
@@ -139,7 +131,6 @@ export function WorkDashboard({
                 {t`Saved chats and tasks stay here.`}
               </p>
             </div>
-            {renderCreateControl()}
           </header>
           <div className="divide-y divide-white/10">
             {loading && <RowMuted>{t`Loading tasks...`}</RowMuted>}
@@ -188,8 +179,8 @@ export function WorkDashboard({
 
         <section className="space-y-4">
           <SummaryPanel title={t`Needs attention`} icon={AlertTriangle}>
-            {approvalCount === 0 && failed.length === 0 && logErrors.length === 0 ? (
-              <p className="text-xs text-neutral-500">{t`No approvals, failed tasks, or recent log errors.`}</p>
+            {approvalCount === 0 && failed.length === 0 ? (
+              <p className="text-xs text-neutral-500">{t`No approvals or failed tasks.`}</p>
             ) : (
               <div className="space-y-2">
                 {approvalCount > 0 && (
@@ -201,15 +192,6 @@ export function WorkDashboard({
                   <AttentionButton key={task.id} onClick={() => onTask(task)}>
                     {task.title}
                   </AttentionButton>
-                ))}
-                {logErrors.slice(0, 3).map((event) => (
-                  <div
-                    key={`${event["@timestamp"]}-${event.message}`}
-                    className="text-xs text-red-200"
-                  >
-                    <span className="font-mono text-red-300">{event.severity_text}</span>{" "}
-                    {event.message}
-                  </div>
                 ))}
               </div>
             )}

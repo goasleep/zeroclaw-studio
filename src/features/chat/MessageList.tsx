@@ -16,6 +16,15 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import type { ApprovalDecision, ChatMessage } from "./use-chat";
 import { formatBytes } from "./use-attachments";
+import {
+  cleanToolText,
+  hasMessageToolEventBlock,
+  parseMessageContentBlocks,
+  type MessageContentBlock,
+  type MessageToolCallBlock,
+  type MessageToolResultBlock,
+  type MessageToolResultStatus,
+} from "./tool-result-blocks";
 
 type ToolCallView = ChatMessage["toolCalls"][number];
 
@@ -46,15 +55,20 @@ function MessageRow({
   onApprove: (request_id: string, decision: ApprovalDecision) => Promise<void>;
 }) {
   const { t } = useLingui();
-  const isUser = message.role === "user" && !isExternalMessage(message);
   const parsed = splitMessageTimestamp(message.content);
   const timestamp = message.timestamp ?? parsed.timestamp;
+  const contentBlocks = useMemo(
+    () => (parsed.content ? parseMessageContentBlocks(parsed.content) : []),
+    [parsed.content],
+  );
+  const hasStructuredToolCalls = message.toolCalls.length > 0;
+  const isHuman = messageAuthor(message, contentBlocks) === "human";
   return (
-    <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
-      <div className={`flex max-w-[90%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+    <div className={`flex min-w-0 gap-3 ${isHuman ? "justify-end" : ""}`}>
+      <div className={`flex min-w-0 max-w-[90%] flex-col ${isHuman ? "items-end" : "items-start"}`}>
         <div
-          className={`rounded-lg px-3 py-2 text-sm ${
-            isUser ? "bg-cyan-400/10 text-neutral-100" : "bg-white/[0.06] text-neutral-200"
+          className={`max-w-full overflow-hidden rounded-lg px-3 py-2 text-sm ${
+            isHuman ? "bg-cyan-400/10 text-neutral-100" : "bg-white/[0.06] text-neutral-200"
           }`}
         >
           {message.attachments && message.attachments.length > 0 && (
@@ -95,12 +109,23 @@ function MessageRow({
             />
           )}
 
-          {parsed.content && (
-            <div className="prose prose-invert prose-sm max-w-none prose-pre:bg-[#020818]/90 prose-pre:text-[12px]">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                {parsed.content}
-              </ReactMarkdown>
-            </div>
+          {contentBlocks.map((block, index) =>
+            block.kind === "tool_result" ? (
+              <ToolResultBlock key={`tool-result-${index}`} block={block} />
+            ) : block.kind === "tool_call" ? (
+              hasStructuredToolCalls ? null : (
+                <ToolCallBlock key={`tool-call-${index}`} block={block} />
+              )
+            ) : (
+              <div
+                key={`text-${index}`}
+                className="prose prose-invert prose-sm max-w-none overflow-hidden prose-pre:overflow-x-hidden prose-pre:whitespace-pre-wrap prose-pre:break-words prose-pre:bg-[#020818]/90 prose-pre:text-[12px]"
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                  {block.content}
+                </ReactMarkdown>
+              </div>
+            ),
           )}
 
           {message.cost_usd !== undefined && (
@@ -121,6 +146,143 @@ function MessageRow({
       </div>
     </div>
   );
+}
+
+type MessageAuthor = "agent" | "human";
+
+function messageAuthor(message: ChatMessage, contentBlocks: MessageContentBlock[]): MessageAuthor {
+  if (
+    message.role === "user" &&
+    !isExternalMessage(message) &&
+    !hasMessageToolEventBlock(contentBlocks)
+  ) {
+    return "human";
+  }
+  return "agent";
+}
+
+function ToolCallBlock({ block }: { block: MessageToolCallBlock }) {
+  const { t } = useLingui();
+  const args = block.args !== undefined ? stringifyValue(block.args) : block.raw;
+  const summary = compactText(args, 180);
+  const multiline = args.includes("\n") || args.length > 140;
+
+  return (
+    <div className="my-1.5 overflow-hidden rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] text-xs">
+      <div className="flex min-w-0 items-center gap-2 border-b border-cyan-500/15 bg-cyan-500/[0.07] px-3 py-2">
+        <Wrench size={13} className="shrink-0 text-cyan-300" />
+        <span className="shrink-0 text-[10px] font-semibold uppercase text-neutral-400">
+          {t`Tool call`}
+        </span>
+        <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-neutral-200">
+          {block.name}
+        </code>
+      </div>
+      <div className="px-3 py-2">
+        {multiline ? (
+          <>
+            <p className="mb-2 truncate text-neutral-400" title={summary}>
+              {summary}
+            </p>
+            <pre className="max-h-52 overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded bg-[#020818]/75 p-2 font-mono text-[11px] leading-relaxed text-neutral-300 zc-scrollbar">
+              {args}
+            </pre>
+          </>
+        ) : (
+          <p className="break-words font-mono text-[11px] leading-relaxed text-neutral-300">
+            {args}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ToolResultBlock({ block }: { block: MessageToolResultBlock }) {
+  const { t } = useLingui();
+  const tone = toolResultTone(block.status);
+  const Icon = tone.icon;
+  const output = block.output || t`No output`;
+  const multiline = output.includes("\n") || output.length > 140;
+  const summary = compactText(output, 180);
+  const statusLabel =
+    block.status === "error"
+      ? t`error`
+      : block.status === "success"
+        ? t`ok`
+        : block.status === "running"
+          ? t`running`
+          : t`result`;
+
+  return (
+    <div className={`my-1.5 overflow-hidden rounded-lg border ${tone.card} text-xs`}>
+      <div className={`flex min-w-0 items-center gap-2 border-b px-3 py-2 ${tone.header}`}>
+        <Icon size={13} className={`shrink-0 ${tone.iconClass}`} />
+        <span className="shrink-0 text-[10px] font-semibold uppercase text-neutral-400">
+          {t`Tool result`}
+        </span>
+        <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-neutral-200">
+          {block.name}
+        </code>
+        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${tone.badge}`}>
+          {statusLabel}
+        </span>
+      </div>
+      <div className="px-3 py-2">
+        {multiline ? (
+          <>
+            <p className="mb-2 truncate text-neutral-400" title={summary}>
+              {summary}
+            </p>
+            <pre className="max-h-72 overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded bg-[#020818]/75 p-2 font-mono text-[11px] leading-relaxed text-neutral-300 zc-scrollbar">
+              {output}
+            </pre>
+          </>
+        ) : (
+          <p className="break-words font-mono text-[11px] leading-relaxed text-neutral-300">
+            {output}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function toolResultTone(status: MessageToolResultStatus) {
+  if (status === "error") {
+    return {
+      icon: AlertTriangle,
+      iconClass: "text-red-300",
+      card: "border-red-500/25 bg-red-500/[0.07]",
+      header: "border-red-500/20 bg-red-500/[0.08]",
+      badge: "bg-red-500/15 text-red-200",
+    };
+  }
+  if (status === "success") {
+    return {
+      icon: CheckCircle2,
+      iconClass: "text-emerald-300",
+      card: "border-emerald-500/20 bg-emerald-500/[0.06]",
+      header: "border-emerald-500/15 bg-emerald-500/[0.07]",
+      badge: "bg-emerald-500/15 text-emerald-200",
+    };
+  }
+  if (status === "running") {
+    return {
+      icon: Loader2,
+      iconClass: "animate-spin text-cyan-300",
+      card: "border-cyan-500/20 bg-cyan-500/[0.06]",
+      header: "border-cyan-500/15 bg-cyan-500/[0.07]",
+      badge: "bg-cyan-500/15 text-cyan-200",
+    };
+  }
+  return {
+    icon: Wrench,
+    iconClass: "text-cyan-300",
+    card: "border-white/10 bg-[#020818]/55",
+    header: "border-white/10 bg-white/[0.03]",
+    badge: "bg-white/[0.06] text-neutral-300",
+  };
 }
 
 function isExternalMessage(message: ChatMessage) {
@@ -160,12 +322,12 @@ function ExecutionStream({ toolCalls }: { toolCalls: ToolCallView[] }) {
               <details className="mt-1 pl-5 text-[10px] text-neutral-500">
                 <summary className="cursor-pointer hover:text-neutral-300">{t`raw details`}</summary>
                 {toolCall.args !== undefined && (
-                  <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
+                  <pre className="mt-1 max-h-52 overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded bg-[#020818]/80 p-2 zc-scrollbar">
                     {stringifyValue(toolCall.args)}
                   </pre>
                 )}
                 {toolCall.result !== undefined && (
-                  <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 text-neutral-400 zc-scrollbar">
+                  <pre className="mt-1 max-h-52 overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded bg-[#020818]/80 p-2 text-neutral-400 zc-scrollbar">
                     {stringifyValue(toolCall.result)}
                   </pre>
                 )}
@@ -220,7 +382,7 @@ function ApprovalCard({
       <div className="p-3">
         <div className="mb-2 rounded border border-white/10 bg-[#020818]/75 p-2">
           <div className="mb-1 text-[10px] uppercase tracking-wide text-neutral-500">{t`Summary`}</div>
-          <pre className="whitespace-pre-wrap text-[11px] text-neutral-300 zc-scrollbar">
+          <pre className="whitespace-pre-wrap break-words text-[11px] text-neutral-300 zc-scrollbar">
             {approval.arguments_summary}
           </pre>
         </div>
@@ -233,7 +395,7 @@ function ApprovalCard({
         {recentArgs !== undefined && (
           <details className="mb-2 text-[10px] text-neutral-500">
             <summary className="cursor-pointer hover:text-neutral-300">{t`tool input`}</summary>
-            <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-[#020818]/80 p-2 zc-scrollbar">
+            <pre className="mt-1 max-h-56 overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded bg-[#020818]/80 p-2 zc-scrollbar">
               {stringifyValue(recentArgs)}
             </pre>
           </details>
@@ -306,7 +468,7 @@ function DiffPreviewBlock({
           </button>
         )}
       </div>
-      <pre className="max-h-72 overflow-auto p-2 text-[10px] leading-relaxed zc-scrollbar">
+      <pre className="max-h-72 overflow-x-hidden overflow-y-auto p-2 text-[10px] leading-relaxed zc-scrollbar">
         {lines.map((line, idx) => (
           <div
             key={idx}
@@ -352,14 +514,14 @@ function valueFromKeys(value: unknown, keys: string[]) {
 }
 
 function compactText(value: unknown, max = 110) {
-  const raw = typeof value === "string" ? value : JSON.stringify(value);
+  const raw = typeof value === "string" ? cleanToolText(value) : JSON.stringify(value);
   const singleLine = raw.replace(/\s+/g, " ").trim();
   return singleLine.length > max ? `${singleLine.slice(0, max - 3)}...` : singleLine;
 }
 
 function stringifyValue(value: unknown) {
   if (value === undefined) return "";
-  return typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  return typeof value === "string" ? cleanToolText(value) : JSON.stringify(value, null, 2);
 }
 
 function formatToolCallSummary(toolCall: ToolCallView) {

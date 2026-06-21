@@ -2,7 +2,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { describe, expect, it } from "vitest";
-import { useMemo } from "react";
 import { createDraftTask, type StudioTask } from "./task-model";
 import { useTasks } from "./use-tasks";
 
@@ -14,13 +13,7 @@ const baseTask: StudioTask = {
 };
 
 function Probe({ connectionId = "conn-a" }: { connectionId?: string }) {
-  const workspaceMap = useMemo(() => new Map<string, string>(), []);
-  const tasks = useTasks({
-    connectionId,
-    sessions: [],
-    sessionSnapshotVersion: 0,
-    workspaceMap,
-  });
+  const tasks = useTasks({ connectionId });
   return <output>{JSON.stringify(tasks.tasks)}</output>;
 }
 

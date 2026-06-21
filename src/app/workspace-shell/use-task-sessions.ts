@@ -7,31 +7,21 @@ import {
   sessionSort,
   type NormalizedSession,
 } from "@/features/chat/use-chat";
-import {
-  forgetSessionLocalState,
-  loadSessionWorkspaceMap,
-  pruneMissingSessionLocalState,
-} from "@/features/chat/chat-local-state";
+import { forgetSessionLocalState } from "@/features/chat/chat-local-state";
 import { useConnections } from "../connection-context";
 
 export function useTaskSessions() {
   const { active } = useConnections();
   const connectionId = active?.id ?? null;
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
-  const [allSessions, setAllSessions] = useState<NormalizedSession[]>([]);
-  const [workspaceMap, setWorkspaceMap] = useState<Map<string, string>>(() => new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [snapshotVersion, setSnapshotVersion] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!connectionId) {
       setSessions([]);
-      setAllSessions([]);
-      setWorkspaceMap(new Map());
       setLoading(false);
       setError(null);
-      setSnapshotVersion(0);
       return;
     }
     setLoading(true);
@@ -42,15 +32,7 @@ export function useTaskSessions() {
         .map(normalizeSession)
         .filter((session): session is NormalizedSession => session !== null)
         .sort(sessionSort);
-      await pruneMissingSessionLocalState(
-        connectionId,
-        normalized.map((session) => session.session_id),
-      );
-      const workspaceMap = await loadSessionWorkspaceMap(connectionId);
-      setWorkspaceMap(workspaceMap);
-      setAllSessions(normalized);
       setSessions(normalized.filter(isVisibleSession));
-      setSnapshotVersion((version) => version + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -99,14 +81,7 @@ export function useTaskSessions() {
     async (sessionId: string) => {
       if (!connectionId) return;
       await forgetSessionLocalState(connectionId, sessionId);
-      setWorkspaceMap((prev) => {
-        const next = new Map(prev);
-        next.delete(sessionId);
-        return next;
-      });
       setSessions((prev) => prev.filter((session) => session.session_id !== sessionId));
-      setAllSessions((prev) => prev.filter((session) => session.session_id !== sessionId));
-      setSnapshotVersion((version) => version + 1);
     },
     [connectionId],
   );
@@ -114,11 +89,8 @@ export function useTaskSessions() {
   return useMemo(
     () => ({
       sessions,
-      allSessions,
-      workspaceMap,
       loading,
       error,
-      snapshotVersion,
       refresh,
       rename,
       remove,
@@ -126,11 +98,8 @@ export function useTaskSessions() {
     }),
     [
       sessions,
-      allSessions,
-      workspaceMap,
       loading,
       error,
-      snapshotVersion,
       refresh,
       rename,
       remove,

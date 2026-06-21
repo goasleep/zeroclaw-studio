@@ -67,7 +67,15 @@ export function useChat({
 
   useEffect(() => {
     hydratedSessionRef.current = null;
-  }, [agentAlias, connectionId, initialSessionId, mode, workspaceRoot, workspaceDir, connectionSeed]);
+  }, [
+    agentAlias,
+    connectionId,
+    initialSessionId,
+    mode,
+    workspaceRoot,
+    workspaceDir,
+    connectionSeed,
+  ]);
 
   const hydrateSession = useCallback(
     async (sessionId: string, messageCount?: number) => {
@@ -147,7 +155,7 @@ export function useChat({
 
   const send = useCallback(
     (content: string, attachments?: FileEntry[]) => {
-      if (!clientRef.current) return;
+      if (!clientRef.current) throw new Error("chat socket not open");
       const client = clientRef.current;
       const attachmentSummary = attachments?.map((a) => ({
         filename: a.filename,

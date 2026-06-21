@@ -3,15 +3,18 @@
 
 import { useEffect } from "react";
 import { msg } from "@lingui/core/macro";
+import { listen } from "@tauri-apps/api/event";
 import {
   isPermissionGranted,
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+import type { ApprovalsUpdatedEvent } from "@/api/tauri";
 import { loadPreferences } from "@/workspace/preferences/preferences";
 import { i18n } from "@/i18n/i18n";
 
 let permissionState: "unknown" | "granted" | "denied" = "unknown";
+const notifiedApprovals = new Set<string>();
 
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (permissionState === "granted") return true;
@@ -45,6 +48,23 @@ export function useNotifications() {
         i18n._(msg`${detail.tool} is waiting for approval.`),
       );
     }
+    const unlistenApprovals = listen<ApprovalsUpdatedEvent>(
+      "zeroclaw://approvals-updated",
+      (event) => {
+        const detail = event.payload;
+        if (document.visibilityState === "visible") return;
+        const approval = detail.approvals.find((item) => {
+          const key = `${item.connection_id}:${item.request_id}`;
+          return !notifiedApprovals.has(key);
+        });
+        if (!approval) return;
+        notifiedApprovals.add(`${approval.connection_id}:${approval.request_id}`);
+        void notify(
+          i18n._(msg`ZeroClaw approval needed`),
+          i18n._(msg`${approval.tool ?? "A task"} is waiting for approval.`),
+        );
+      },
+    );
     function onDone(e: Event) {
       if (document.visibilityState === "visible") return;
       const detail = (e as CustomEvent<{ agent: string }>).detail;
@@ -55,6 +75,7 @@ export function useNotifications() {
     return () => {
       window.removeEventListener("zeroclaw://approval-request", onApproval);
       window.removeEventListener("zeroclaw://chat-done", onDone);
+      void unlistenApprovals.then((dispose) => dispose());
     };
   }, []);
 }

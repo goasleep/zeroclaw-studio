@@ -14,6 +14,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useConnections } from "@/app/connection-context";
+import { useRuntimeSummaries } from "@/app/use-runtime-summaries";
 import {
   connectionProbe,
   runtimeStatus,
@@ -31,6 +32,7 @@ interface Props {
 export function ConnectionPicker({ onAdd }: Props) {
   const { t } = useLingui();
   const { connections, active, activate, health, activation, retry } = useConnections();
+  const runtimeSummaries = useRuntimeSummaries();
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [probes, setProbes] = useState<Record<string, ConnectionProbeResult>>({});
@@ -42,6 +44,7 @@ export function ConnectionPicker({ onAdd }: Props) {
 
   const healthy = health?.healthy ?? false;
   const showingActive = active && health?.connection_id === active.id ? healthy : false;
+  const activeSummary = active ? runtimeSummaries.byConnectionId.get(active.id) : null;
 
   function transportLabel(c: Connection): string {
     switch (c.transport) {
@@ -86,6 +89,39 @@ export function ConnectionPicker({ onAdd }: Props) {
     }
     const latency = probe.latency_ms == null ? "" : ` (${probe.latency_ms} ms)`;
     return probe.reachable ? t`reachable${latency}` : `${probe.status}${latency}`;
+  }
+
+  function summaryBadges(connectionId: string) {
+    const summary = runtimeSummaries.byConnectionId.get(connectionId);
+    if (!summary) return null;
+    return (
+      <span className="ml-auto flex shrink-0 items-center gap-1">
+        {summary.running_count > 0 && (
+          <span
+            className="rounded bg-cyan-400/10 px-1.5 py-0.5 text-[10px] text-cyan-200"
+            title={t`Running tasks`}
+          >
+            run {summary.running_count}
+          </span>
+        )}
+        {summary.approval_count > 0 && (
+          <span
+            className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200"
+            title={t`Approvals waiting`}
+          >
+            ask {summary.approval_count}
+          </span>
+        )}
+        {summary.sync_error && (
+          <span
+            className="rounded bg-red-400/10 px-1.5 py-0.5 text-[10px] text-red-200"
+            title={summary.sync_error}
+          >
+            sync
+          </span>
+        )}
+      </span>
+    );
   }
 
   const stepLabel = activationLabel(activation);
@@ -221,6 +257,22 @@ export function ConnectionPicker({ onAdd }: Props) {
             {transportLabel(active)}
           </span>
         )}
+        {activeSummary && activeSummary.approval_count > 0 && (
+          <span
+            className="rounded bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200"
+            title={t`Approvals waiting`}
+          >
+            {activeSummary.approval_count}
+          </span>
+        )}
+        {activeSummary?.sync_error && (
+          <span
+            className="rounded bg-red-400/10 px-1.5 py-0.5 text-[10px] text-red-200"
+            title={activeSummary.sync_error}
+          >
+            !
+          </span>
+        )}
         <ChevronDown size={13} className="shrink-0 text-neutral-500" />
       </button>
 
@@ -258,6 +310,7 @@ export function ConnectionPicker({ onAdd }: Props) {
                   <span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] text-neutral-500">
                     {transportLabel(c)}
                   </span>
+                  {summaryBadges(c.id)}
                 </button>
               ))}
             </div>

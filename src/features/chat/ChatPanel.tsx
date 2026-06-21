@@ -1,18 +1,16 @@
 // Chat panel — messages + composer.
 
-import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type DragEvent,
+} from "react";
 import { useLingui } from "@lingui/react/macro";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import {
-  CheckCircle2,
-  Copy,
-  FileText,
-  FolderOpen,
-  Loader2,
-  Sparkles,
-  TerminalSquare,
-  X,
-} from "lucide-react";
+import { CheckCircle2, Copy, FileText, Loader2, Sparkles, TerminalSquare, X } from "lucide-react";
 import { useChat, type ChatModelOverride } from "./use-chat";
 import { useWorkspace } from "@/app/workspace-context";
 import { useConnections } from "@/app/connection-context";
@@ -84,7 +82,6 @@ export function ChatPanel({
   initialSessionId = null,
   onWorkspaceRoot,
   workspaceDir,
-  taskId = null,
   taskTitle = null,
   onTaskSession,
   onTaskTitle,
@@ -99,7 +96,6 @@ export function ChatPanel({
   initialSessionId?: string | null;
   onWorkspaceRoot?: (path: string | null) => void;
   workspaceDir?: string | null;
-  taskId?: string | null;
   taskTitle?: string | null;
   onTaskSession?: (sessionId: string) => void;
   onTaskTitle?: (title: string) => void;
@@ -146,13 +142,23 @@ export function ChatPanel({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const messageBottomRef = useRef<HTMLDivElement | null>(null);
-  const emittedApprovals = useRef<Set<string>>(new Set());
+  const submittedMessageRef = useRef(false);
+  const notifiedTaskSessionRef = useRef<string | null>(null);
   const { attachmentDrafts, clipboardAttachments, setClipboardAttachments, clearAttachments } =
     useAttachments({
       active,
       selectedFiles,
       clearSelection,
     });
+
+  const notifyTaskSession = useCallback(
+    (sessionId: string) => {
+      if (notifiedTaskSessionRef.current === sessionId) return;
+      notifiedTaskSessionRef.current = sessionId;
+      onTaskSession?.(sessionId);
+    },
+    [onTaskSession],
+  );
 
   useEffect(() => {
     setCwd(workspaceDir ?? "");
@@ -226,31 +232,9 @@ export function ChatPanel({
   }, [chat.messages]);
 
   useEffect(() => {
-    if (chat.sessionId && chat.messages.length > 0) onTaskSession?.(chat.sessionId);
-  }, [chat.messages.length, chat.sessionId, onTaskSession]);
-
-  useEffect(() => {
-    if (!taskId) return;
-    for (const message of chat.messages) {
-      const approval = message.approval;
-      if (!approval || emittedApprovals.current.has(approval.request_id)) continue;
-      emittedApprovals.current.add(approval.request_id);
-      window.dispatchEvent(
-        new CustomEvent("zeroclaw://task-approval-request", {
-          detail: {
-            requestId: approval.request_id,
-            taskId,
-            taskTitle,
-            tool: approval.tool,
-            argumentsSummary: approval.arguments_summary,
-            workspaceRoot,
-            agentAlias,
-            respond: chat.respondToApproval,
-          },
-        }),
-      );
-    }
-  }, [agentAlias, chat.messages, chat.respondToApproval, taskId, taskTitle, workspaceRoot]);
+    if (!chat.sessionId || !submittedMessageRef.current) return;
+    notifyTaskSession(chat.sessionId);
+  }, [chat.sessionId, notifyTaskSession]);
 
   useEffect(() => {
     function handleSelectSession(e: Event) {
@@ -487,6 +471,10 @@ export function ChatPanel({
       setComposerError(t`No active connection.`);
       return;
     }
+    if (!chat.connected) {
+      setComposerError(t`Chat is still connecting. Try again in a moment.`);
+      return;
+    }
     setSending(true);
     setComposerError(null);
     try {
@@ -525,6 +513,8 @@ export function ChatPanel({
         }
       }
       chat.send(trimmed, attachments);
+      submittedMessageRef.current = true;
+      if (chat.sessionId) notifyTaskSession(chat.sessionId);
       setDraft("");
       clearAttachments();
     } catch (e) {
@@ -561,6 +551,7 @@ export function ChatPanel({
   const agentOptions = agents.map((agent) => ({ value: agent, label: agent }));
   const workspaceName = workspaceRoot ? filenameFromPath(workspaceRoot) : t`No project`;
   const chatName = currentSession?.name ?? (isCode ? t`New code task` : t`New chat`);
+  const modeLabel = isCode ? t`Code` : t`Chat`;
   const timelineItems = deriveTaskTimelineItems(chat.messages);
   const gitLabel =
     gitStatus?.is_repo && gitStatus.branch
@@ -571,6 +562,7 @@ export function ChatPanel({
   const renderComposer = (variant: "center" | "footer") => (
     <ChatComposer
       variant={variant}
+      mode={mode === "acp" ? "acp" : "chat"}
       files={attachmentDrafts}
       maxAttachmentBytes={maxAttachmentBytes}
       maxAttachmentRequestBytes={maxAttachmentRequestBytes}
@@ -596,6 +588,7 @@ export function ChatPanel({
       agentOptions={agentOptions}
       onAgentChange={onAgentChange}
       sending={sending}
+      sendDisabled={sending || !chat.connected}
     />
   );
 
@@ -616,7 +609,7 @@ export function ChatPanel({
               )}
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-neutral-100">
-                  <span className="truncate">{workspaceRoot ? workspaceName : t`General`}</span>
+                  <span className="truncate">{modeLabel}</span>
                   <span className="shrink-0 text-neutral-600">/</span>
                   <span className="truncate text-neutral-300">{chatName}</span>
                 </div>
@@ -694,8 +687,8 @@ export function ChatPanel({
           ref={messageScrollRef}
           className={
             hasMessages
-              ? "flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm zc-scrollbar"
-              : "flex flex-1 items-center justify-center overflow-y-auto px-6 py-10 zc-scrollbar"
+              ? "min-w-0 flex-1 space-y-3 overflow-x-hidden overflow-y-auto px-4 py-4 text-sm zc-scrollbar"
+              : "flex min-w-0 flex-1 items-center justify-center overflow-x-hidden overflow-y-auto px-6 py-10 zc-scrollbar"
           }
         >
           {!hasMessages && (
@@ -703,18 +696,6 @@ export function ChatPanel({
               <h1 className="mb-4 text-center text-2xl font-medium tracking-normal text-neutral-100">
                 {isCode ? t`What should this code task do?` : t`What do you want to do?`}
               </h1>
-              {!workspaceRoot && (
-                <div className="mx-auto mb-4 flex max-w-xl items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => void pickWorkspaceRoot()}
-                    className="flex items-center gap-2 rounded border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-sm font-medium text-cyan-200 hover:border-cyan-300"
-                  >
-                    <FolderOpen size={14} />
-                    {t`Open Project`}
-                  </button>
-                </div>
-              )}
               {renderComposer("center")}
             </div>
           )}

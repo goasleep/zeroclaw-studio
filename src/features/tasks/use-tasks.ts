@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   taskArchive,
-  taskBackfillSessions,
   taskDeleteLocal,
   taskLinkSession,
   taskList,
@@ -10,20 +9,13 @@ import {
   taskUpsert,
   type TasksUpdatedEvent,
 } from "@/api/tauri";
-import type { NormalizedSession } from "@/features/chat/use-chat";
 import type { StudioTask, TaskPatch } from "./task-model";
-import { sessionToBackfillSession, taskActivityTime, visibleTasks } from "./task-model";
+import { taskActivityTime, visibleTasks } from "./task-model";
 
 export function useTasks({
   connectionId,
-  sessions,
-  sessionSnapshotVersion,
-  workspaceMap,
 }: {
   connectionId: string | null;
-  sessions: NormalizedSession[];
-  sessionSnapshotVersion: number;
-  workspaceMap: Map<string, string>;
 }) {
   const [tasks, setTasks] = useState<StudioTask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,28 +40,9 @@ export function useTasks({
     }
   }, [connectionId]);
 
-  const backfill = useCallback(async () => {
-    if (!connectionId) return;
-    const bindings = Array.from(workspaceMap.entries());
-    try {
-      const next = await taskBackfillSessions(
-        connectionId,
-        sessions.map(sessionToBackfillSession),
-        bindings,
-      );
-      setTasks(next);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [connectionId, sessions, workspaceMap]);
-
   useEffect(() => {
     void refresh();
   }, [refresh]);
-
-  useEffect(() => {
-    if (connectionId && sessionSnapshotVersion > 0) void backfill();
-  }, [backfill, connectionId, sessionSnapshotVersion]);
 
   useEffect(() => {
     if (!connectionId) return;

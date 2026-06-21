@@ -110,7 +110,6 @@ export function TaskDetail({
       initialSessionId={task.session_id}
       workspaceDir={mode === "acp" ? task.workspace_root : null}
       onWorkspaceRoot={onWorkspaceRoot}
-      taskId={task.id}
       taskTitle={task.title}
       onTaskSession={task.session_id ? undefined : linkSession}
       onTaskTitle={(title) => void onPatchTask(task.id, { title })}

@@ -1,14 +1,18 @@
 import {
   Activity,
   Bot,
+  ChevronDown,
   CheckCircle2,
   Clock3,
+  Ellipsis,
   FolderOpen,
   Gauge,
   Inbox,
   ListTodo,
   Pencil,
+  Search,
   Settings,
+  SquarePen,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
@@ -16,9 +20,12 @@ import { useLingui } from "@lingui/react/macro";
 import { useConnections } from "@/app/connection-context";
 import { useWorkspace } from "@/app/workspace-context";
 import type { StudioTask } from "@/features/tasks/task-model";
-import { taskActivityTime, taskStatusClass, taskStatusLabel } from "@/features/tasks/task-model";
+import { taskActivityTime } from "@/features/tasks/task-model";
 import { workspacePathLabel } from "./path-labels";
 import type { WorkspacePage } from "./types";
+
+const TASK_READ_ACTIVITY_STORAGE_KEY = "zeroclaw:workspace:task-read-activity";
+const DEFAULT_VISIBLE_TASKS = 5;
 
 interface WorkSidebarProps {
   page: WorkspacePage;
@@ -33,10 +40,16 @@ interface WorkSidebarProps {
   createControl: ReactNode;
   onProject: (path: string) => void;
   onPickRoot: () => void;
+  onNewProjectSession: () => void;
 }
 
 interface TaskMenuState {
   task: StudioTask;
+  x: number;
+  y: number;
+}
+
+interface ProjectMenuState {
   x: number;
   y: number;
 }
@@ -54,35 +67,53 @@ export function WorkSidebar({
   createControl,
   onProject,
   onPickRoot,
+  onNewProjectSession,
 }: WorkSidebarProps) {
   const { t } = useLingui();
   const { active, health, activation } = useConnections();
   const { root, recentRoots, selectedFiles } = useWorkspace();
   const [taskMenu, setTaskMenu] = useState<TaskMenuState | null>(null);
+  const [projectMenu, setProjectMenu] = useState<ProjectMenuState | null>(null);
+  const [taskSearch, setTaskSearch] = useState("");
+  const [workspaceTasksOpen, setWorkspaceTasksOpen] = useState(true);
+  const [taskExplorerOpen, setTaskExplorerOpen] = useState(false);
+  const [readTaskActivity, setReadTaskActivity] = useState<Record<string, string>>(() =>
+    loadReadTaskActivity(),
+  );
   const workspaceActive = page === "compose";
+  const normalizedTaskSearch = taskSearch.trim().toLocaleLowerCase();
+  const appliedTaskSearch = taskExplorerOpen ? normalizedTaskSearch : "";
   const currentWorkspaceTasks = useMemo(
     () =>
       root
         ? [...tasks]
             .filter((task) => task.workspace_root === root)
+            .filter((task) => taskMatchesSearch(task, appliedTaskSearch, root))
             .sort((a, b) => taskActivityTime(b).localeCompare(taskActivityTime(a)))
-            .slice(0, 5)
         : [],
-    [root, tasks],
+    [appliedTaskSearch, root, tasks],
   );
+  const visibleWorkspaceTasks = taskExplorerOpen
+    ? currentWorkspaceTasks
+    : currentWorkspaceTasks.slice(0, DEFAULT_VISIBLE_TASKS);
   const recentTasks = useMemo(
     () =>
       [...tasks]
         .filter((task) => !root || task.workspace_root !== root)
+        .filter((task) => taskMatchesSearch(task, appliedTaskSearch, root))
         .sort((a, b) => {
           const aProjectRank = taskProjectRank(a, root);
           const bProjectRank = taskProjectRank(b, root);
           if (aProjectRank !== bProjectRank) return aProjectRank - bProjectRank;
           return taskActivityTime(b).localeCompare(taskActivityTime(a));
-        })
-        .slice(0, 8),
-    [root, tasks],
+        }),
+    [appliedTaskSearch, root, tasks],
   );
+  const visibleRecentTasks = taskExplorerOpen
+    ? recentTasks
+    : recentTasks.slice(0, DEFAULT_VISIBLE_TASKS);
+  const hasTaskSearch = taskExplorerOpen && normalizedTaskSearch.length > 0;
+  const hasTaskSearchResults = currentWorkspaceTasks.length > 0 || recentTasks.length > 0;
 
   useEffect(() => {
     if (!taskMenu) return;
@@ -95,6 +126,35 @@ export function WorkSidebar({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [taskMenu]);
 
+  useEffect(() => {
+    if (!projectMenu) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setProjectMenu(null);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [projectMenu]);
+
+  useEffect(() => {
+    setWorkspaceTasksOpen(true);
+    setTaskExplorerOpen(false);
+    setTaskSearch("");
+  }, [root]);
+
+  useEffect(() => {
+    const activeTask = tasks.find((task) => task.id === activeTaskId);
+    if (!activeTask) return;
+    const activity = taskActivityTime(activeTask);
+    setReadTaskActivity((current) => {
+      if (current[activeTask.id] === activity) return current;
+      const next = { ...current, [activeTask.id]: activity };
+      saveReadTaskActivity(next);
+      return next;
+    });
+  }, [activeTaskId, tasks]);
+
   function openTaskMenu(task: StudioTask, event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
@@ -102,6 +162,23 @@ export function WorkSidebar({
       task,
       x: Math.min(event.clientX, window.innerWidth - 180),
       y: Math.min(event.clientY, window.innerHeight - 92),
+    });
+  }
+
+  function openProjectMenu(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setProjectMenu({
+      x: Math.min(event.clientX, window.innerWidth - 180),
+      y: Math.min(event.clientY, window.innerHeight - 112),
+    });
+  }
+
+  function toggleTaskExplorer() {
+    setTaskExplorerOpen((open) => {
+      const next = !open;
+      if (!next) setTaskSearch("");
+      return next;
     });
   }
 
@@ -167,12 +244,37 @@ export function WorkSidebar({
             />
           </NavGroup>
 
-          <NavGroup label={t`Workspace`}>
+          <NavGroup
+            label={t`Workspace`}
+            action={
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={openProjectMenu}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-cyan-300"
+                  title={t`Project actions`}
+                  aria-label={t`Project actions`}
+                >
+                  <Ellipsis size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onNewProjectSession}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-cyan-300"
+                  title={root ? t`New project session` : t`New general session`}
+                  aria-label={root ? t`New project session` : t`New general session`}
+                >
+                  <SquarePen size={13} />
+                </button>
+              </div>
+            }
+          >
             {root ? (
               <button
                 type="button"
-                onClick={() => onProject(root)}
+                onClick={() => setWorkspaceTasksOpen((open) => !open)}
                 title={root}
+                aria-expanded={workspaceTasksOpen}
                 className={`mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
                   workspaceActive
                     ? "bg-cyan-400/10 text-cyan-100"
@@ -181,6 +283,12 @@ export function WorkSidebar({
               >
                 <FolderOpen size={13} className="text-cyan-300" />
                 <span className="min-w-0 flex-1 truncate">{workspacePathLabel(root)}</span>
+                <ChevronDown
+                  size={12}
+                  className={`shrink-0 text-neutral-500 transition ${
+                    workspaceTasksOpen ? "" : "-rotate-90"
+                  }`}
+                />
               </button>
             ) : (
               <button
@@ -206,9 +314,26 @@ export function WorkSidebar({
                   <span className="min-w-0 flex-1 truncate">{workspacePathLabel(path)}</span>
                 </button>
               ))}
-            {currentWorkspaceTasks.length > 0 && (
+            {workspaceTasksOpen && taskExplorerOpen && (
+              <label className="relative mt-2 block">
+                <Search
+                  size={12}
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500"
+                />
+                <input
+                  type="search"
+                  value={taskSearch}
+                  onChange={(event) => setTaskSearch(event.target.value)}
+                  placeholder={t`Search chats...`}
+                  aria-label={t`Search chats`}
+                  autoFocus
+                  className="h-8 w-full rounded-md border border-white/10 bg-white/[0.03] pl-7 pr-2 text-xs text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-cyan-400/40 focus:bg-cyan-400/[0.06]"
+                />
+              </label>
+            )}
+            {workspaceTasksOpen && currentWorkspaceTasks.length > 0 && (
               <div className="mt-1 space-y-1 border-l border-cyan-400/20 pl-2">
-                {currentWorkspaceTasks.map((task) => (
+                {visibleWorkspaceTasks.map((task) => (
                   <SidebarTaskButton
                     key={task.id}
                     task={task}
@@ -219,6 +344,13 @@ export function WorkSidebar({
                     onContextMenu={(event) => openTaskMenu(task, event)}
                   />
                 ))}
+                {currentWorkspaceTasks.length > DEFAULT_VISIBLE_TASKS && (
+                  <ShowMoreButton
+                    expanded={taskExplorerOpen}
+                    hiddenCount={currentWorkspaceTasks.length - DEFAULT_VISIBLE_TASKS}
+                    onClick={toggleTaskExplorer}
+                  />
+                )}
               </div>
             )}
             {selectedFiles.length > 0 && (
@@ -228,6 +360,12 @@ export function WorkSidebar({
             )}
           </NavGroup>
 
+          {hasTaskSearch && !hasTaskSearchResults && (
+            <div className="-mt-3 mb-5 rounded-md border border-dashed border-white/10 p-2 text-xs text-neutral-600">
+              {t`No matching chats.`}
+            </div>
+          )}
+
           {(tasks.length === 0 || recentTasks.length > 0) && (
             <NavGroup label={t`Recent Tasks`}>
               {tasks.length === 0 ? (
@@ -235,16 +373,29 @@ export function WorkSidebar({
                   {t`No tasks yet.`}
                 </div>
               ) : (
-                recentTasks.map((task) => (
-                  <SidebarTaskButton
-                    key={task.id}
-                    task={task}
-                    active={activeTaskId === task.id}
-                    label={taskProjectLabel(task, root)}
-                    onClick={() => onTask(task)}
-                    onContextMenu={(event) => openTaskMenu(task, event)}
-                  />
-                ))
+                <>
+                  {visibleRecentTasks.map((task) => (
+                    <SidebarTaskButton
+                      key={task.id}
+                      task={task}
+                      active={activeTaskId === task.id}
+                      label={taskProjectLabel(task, root)}
+                      unread={
+                        task.status === "done" &&
+                        readTaskActivity[task.id] !== taskActivityTime(task)
+                      }
+                      onClick={() => onTask(task)}
+                      onContextMenu={(event) => openTaskMenu(task, event)}
+                    />
+                  ))}
+                  {recentTasks.length > DEFAULT_VISIBLE_TASKS && (
+                    <ShowMoreButton
+                      expanded={taskExplorerOpen}
+                      hiddenCount={recentTasks.length - DEFAULT_VISIBLE_TASKS}
+                      onClick={toggleTaskExplorer}
+                    />
+                  )}
+                </>
               )}
             </NavGroup>
           )}
@@ -305,7 +456,79 @@ export function WorkSidebar({
           </div>
         </>
       )}
+
+      {projectMenu && (
+        <>
+          <button
+            type="button"
+            aria-label={t`Close`}
+            className="fixed inset-0 z-40 cursor-default bg-transparent"
+            onClick={() => setProjectMenu(null)}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setProjectMenu(null);
+            }}
+          />
+          <div
+            role="menu"
+            aria-label={t`Project actions`}
+            className="fixed z-50 w-48 overflow-hidden rounded-md border border-white/10 bg-[#071120] py-1 text-xs text-neutral-200 shadow-xl shadow-black/40"
+            style={{ left: projectMenu.x, top: projectMenu.y }}
+          >
+            {root && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setProjectMenu(null);
+                  onProject(root);
+                }}
+                className="flex w-full items-center gap-2 px-2.5 py-2 text-left hover:bg-white/[0.06] hover:text-cyan-200"
+              >
+                <FolderOpen size={13} className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{t`Open current project`}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setProjectMenu(null);
+                onPickRoot();
+              }}
+              className="flex w-full items-center gap-2 px-2.5 py-2 text-left hover:bg-white/[0.06] hover:text-cyan-200"
+            >
+              <FolderOpen size={13} className="shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{t`Open project...`}</span>
+            </button>
+          </div>
+        </>
+      )}
     </>
+  );
+}
+
+function ShowMoreButton({
+  expanded,
+  hiddenCount,
+  onClick,
+}: {
+  expanded: boolean;
+  hiddenCount: number;
+  onClick: () => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-xs text-neutral-500 transition hover:bg-white/[0.05] hover:text-neutral-200"
+    >
+      {expanded ? t`Show less` : t`Show more`}
+      {!expanded && hiddenCount > 0 && (
+        <span className="ml-1 text-[10px] text-neutral-600">({hiddenCount})</span>
+      )}
+    </button>
   );
 }
 
@@ -314,6 +537,7 @@ function SidebarTaskButton({
   active,
   label,
   compact = false,
+  unread = false,
   onClick,
   onContextMenu,
 }: {
@@ -321,6 +545,7 @@ function SidebarTaskButton({
   active: boolean;
   label: string;
   compact?: boolean;
+  unread?: boolean;
   onClick: () => void;
   onContextMenu: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
@@ -349,28 +574,57 @@ function SidebarTaskButton({
       type="button"
       onClick={onClick}
       onContextMenu={onContextMenu}
-      className={`mb-1 flex w-full items-start gap-2 rounded-md px-2 py-2 text-left transition ${
+      className={`mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition ${
         active
           ? "bg-cyan-400/10 text-cyan-100"
           : "text-neutral-300 hover:bg-white/[0.05] hover:text-neutral-100"
       }`}
+      title={`${task.title} · ${label}`}
     >
-      <Bot size={13} className="mt-0.5 shrink-0 text-cyan-300" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium">{task.title}</span>
-        <span className="mt-1 flex flex-wrap items-center gap-1">
-          <span
-            className={`inline-flex rounded border px-1.5 py-0.5 text-[10px] ${taskStatusClass(
-              task.status,
-            )}`}
-          >
-            {taskStatusLabel(task.status)}
-          </span>
-          <span className="max-w-full truncate text-[10px] text-neutral-500">{label}</span>
-        </span>
-      </span>
+      <Bot size={13} className="shrink-0 text-cyan-300" />
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">{task.title}</span>
+      {unread && (
+        <span className="size-2 shrink-0 rounded-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.45)]" />
+      )}
     </button>
   );
+}
+
+function taskMatchesSearch(task: StudioTask, query: string, root: string | null) {
+  if (!query) return true;
+  const searchable = [
+    task.title,
+    task.mode,
+    task.status,
+    task.workspace_root,
+    task.workspace_root ? workspacePathLabel(task.workspace_root) : "General",
+    taskProjectLabel(task, root),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLocaleLowerCase();
+  return searchable.includes(query);
+}
+
+function loadReadTaskActivity() {
+  try {
+    const raw = localStorage.getItem(TASK_READ_ACTIVITY_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, string>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveReadTaskActivity(value: Record<string, string>) {
+  try {
+    localStorage.setItem(TASK_READ_ACTIVITY_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // Non-critical: the in-memory unread indicator still updates for this session.
+  }
 }
 
 function taskProjectRank(task: StudioTask, root: string | null) {
@@ -385,10 +639,23 @@ function taskProjectLabel(task: StudioTask, root: string | null) {
   return workspacePathLabel(task.workspace_root);
 }
 
-function NavGroup({ label, children }: { label: string; children: ReactNode }) {
+function NavGroup({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section className="mb-5">
-      <h2 className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">{label}</h2>
+      <div className="mb-2 flex items-center gap-2">
+        <h2 className="min-w-0 flex-1 text-[10px] uppercase tracking-wide text-neutral-500">
+          {label}
+        </h2>
+        {action}
+      </div>
       <div className="space-y-1">{children}</div>
     </section>
   );

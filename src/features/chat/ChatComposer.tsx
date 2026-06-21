@@ -12,6 +12,7 @@ interface SelectOption {
 
 export function ChatComposer({
   variant,
+  mode,
   files,
   maxAttachmentBytes,
   maxAttachmentRequestBytes,
@@ -37,8 +38,10 @@ export function ChatComposer({
   agentOptions,
   onAgentChange,
   sending,
+  sendDisabled,
 }: {
   variant: "center" | "footer";
+  mode: "chat" | "acp";
   files: ContextAttachmentDraft[];
   maxAttachmentBytes: number | null;
   maxAttachmentRequestBytes: number | null;
@@ -64,6 +67,7 @@ export function ChatComposer({
   agentOptions: SelectOption[];
   onAgentChange: (agent: string) => void;
   sending: boolean;
+  sendDisabled?: boolean;
 }) {
   const { t } = useLingui();
   return (
@@ -96,6 +100,7 @@ export function ChatComposer({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
+                if (sendDisabled) return;
                 onSubmit();
               }
             }}
@@ -114,15 +119,18 @@ export function ChatComposer({
                 : "flex flex-wrap items-center gap-2"
             }
           >
-            <WorkspaceMenu
-              open={workspaceMenuOpen}
-              onOpen={onWorkspaceMenuOpen}
-              workspaceRoot={workspaceRoot}
-              workspaceName={workspaceName}
-              recentRoots={recentRoots}
-              onSelectWorkspaceRoot={onSelectWorkspaceRoot}
-              onPickWorkspaceRoot={onPickWorkspaceRoot}
-            />
+            {!hasMessages && (
+              <WorkspaceMenu
+                mode={mode}
+                open={workspaceMenuOpen}
+                onOpen={onWorkspaceMenuOpen}
+                workspaceRoot={workspaceRoot}
+                workspaceName={workspaceName}
+                recentRoots={recentRoots}
+                onSelectWorkspaceRoot={onSelectWorkspaceRoot}
+                onPickWorkspaceRoot={onPickWorkspaceRoot}
+              />
+            )}
             <button
               type="button"
               onClick={onPickFiles}
@@ -152,7 +160,7 @@ export function ChatComposer({
             <button
               type="button"
               onClick={onSubmit}
-              disabled={sending}
+              disabled={sendDisabled ?? sending}
               className="flex items-center gap-1 rounded bg-sky-400 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-cyan-300 disabled:opacity-50"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
@@ -166,6 +174,7 @@ export function ChatComposer({
 }
 
 function WorkspaceMenu({
+  mode,
   open,
   onOpen,
   workspaceRoot,
@@ -174,6 +183,7 @@ function WorkspaceMenu({
   onSelectWorkspaceRoot,
   onPickWorkspaceRoot,
 }: {
+  mode: "chat" | "acp";
   open: boolean;
   onOpen: (open: boolean | ((open: boolean) => boolean)) => void;
   workspaceRoot: string | null;
@@ -183,6 +193,7 @@ function WorkspaceMenu({
   onPickWorkspaceRoot: () => void;
 }) {
   const { t } = useLingui();
+  const generalLabel = mode === "acp" ? t`General code task` : t`General chat`;
   return (
     <div className="relative">
       <button
@@ -213,7 +224,7 @@ function WorkspaceMenu({
             }`}
           >
             <FolderOpen size={12} className="text-neutral-500" />
-            <span className="min-w-0 flex-1 truncate">{t`General task run`}</span>
+            <span className="min-w-0 flex-1 truncate">{generalLabel}</span>
           </button>
           {recentRoots.slice(0, 8).map((path) => (
             <button

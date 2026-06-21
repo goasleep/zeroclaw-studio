@@ -16,7 +16,7 @@ import { WorkDashboard } from "./workspace-shell/WorkDashboard";
 import { WorkCreatePopover } from "./workspace-shell/WorkCreatePopover";
 import { TasksPage } from "./workspace-shell/TasksPage";
 import { TaskDetail } from "./workspace-shell/TaskDetail";
-import { ApprovalsPage, type PendingApproval } from "./workspace-shell/ApprovalsPage";
+import { ApprovalsPage } from "./workspace-shell/ApprovalsPage";
 import { AutomationsPage } from "./workspace-shell/AutomationsPage";
 import { RuntimeDetail } from "./workspace-shell/RuntimeDetail";
 import { ChatPanel } from "@/features/chat/ChatPanel";
@@ -25,17 +25,15 @@ import { isSettingsSection } from "./workspace-shell/settings-sections";
 import { useTaskSessions } from "./workspace-shell/use-task-sessions";
 import { useWorkspaceCommands } from "./workspace-shell/use-workspace-commands";
 import type { RuntimeTab, SettingsSection, WorkspacePage } from "./workspace-shell/types";
-import {
-  createDraftTask,
-  type StudioTask,
-  type TaskPatch,
-} from "@/features/tasks/task-model";
+import { createDraftTask, type StudioTask, type TaskPatch } from "@/features/tasks/task-model";
 import { useTasks } from "@/features/tasks/use-tasks";
+import { useApprovals } from "@/features/approvals/use-approvals";
+import type { PendingApproval } from "@/api/tauri";
 
 export function WorkspaceShell() {
   const { t } = useLingui();
   const { root, recentRoots, addFiles, setRoot, connectionId } = useWorkspace();
-  const { active } = useConnections();
+  const { active, connections, activate } = useConnections();
   const [page, setPage] = useState<WorkspacePage>("dashboard");
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("app");
   const [runtimeTab, setRuntimeTab] = useState<RuntimeTab>("overview");
@@ -47,18 +45,13 @@ export function WorkspaceShell() {
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [pendingTaskSessionId, setPendingTaskSessionId] = useState<string | null>(null);
-  const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [automationCount, setAutomationCount] = useState(0);
   const composeTitleRef = useRef("New chat");
   const composeWorkspaceRootRef = useRef<string | null>(null);
   const promotedComposeSessionRef = useRef<string | null>(null);
   const taskSessions = useTaskSessions();
-  const tasks = useTasks({
-    connectionId,
-    sessions: taskSessions.allSessions,
-    sessionSnapshotVersion: taskSessions.snapshotVersion,
-    workspaceMap: taskSessions.workspaceMap,
-  });
+  const tasks = useTasks({ connectionId });
+  const approvals = useApprovals();
 
   const activeTask = useMemo(
     () => tasks.tasks.find((task) => task.id === activeTaskId) ?? null,
@@ -243,7 +236,7 @@ export function WorkspaceShell() {
   );
 
   const openComposer = useCallback(
-    async (workspaceRoot: string | null = root) => {
+    async (workspaceRoot: string | null = null) => {
       if (workspaceRoot) await setRoot(workspaceRoot);
       composeTitleRef.current = t`New chat`;
       composeWorkspaceRootRef.current = workspaceRoot;
@@ -254,7 +247,7 @@ export function WorkspaceShell() {
       setPage("compose");
       window.requestAnimationFrame(focusComposer);
     },
-    [focusComposer, root, setRoot, t],
+    [focusComposer, setRoot, t],
   );
 
   const openProjectRoot = useCallback(
@@ -280,7 +273,6 @@ export function WorkspaceShell() {
       await tasks.linkSession(saved.id, sessionId);
       void taskSessions.refresh();
       setActiveTaskId(saved.id);
-      setPage("task");
     },
     [activeAgent, agents, connectionId, taskSessions, tasks],
   );
@@ -309,7 +301,7 @@ export function WorkspaceShell() {
   const createTaskFromCommand = useCallback(
     async (workspaceRoot: string | null, mode: "chat" | "acp" = "chat") => {
       if (mode === "chat") {
-        await openComposer(workspaceRoot);
+        await openComposer(null);
         return;
       }
       if (workspaceRoot) await setRoot(workspaceRoot);
@@ -336,7 +328,6 @@ export function WorkspaceShell() {
     setComposeWorkspaceRoot(null);
     composeWorkspaceRootRef.current = null;
     promotedComposeSessionRef.current = null;
-    setApprovals([]);
     setPage("dashboard");
   }, [connectionId]);
 
@@ -348,19 +339,6 @@ export function WorkspaceShell() {
       setPendingTaskSessionId(null);
     }
   }, [openTask, pendingTaskSessionId, tasks.tasks]);
-
-  useEffect(() => {
-    function onApproval(e: Event) {
-      const detail = (e as CustomEvent<PendingApproval>).detail;
-      if (!detail?.requestId) return;
-      setApprovals((prev) => [
-        detail,
-        ...prev.filter((approval) => approval.requestId !== detail.requestId),
-      ]);
-    }
-    window.addEventListener("zeroclaw://task-approval-request", onApproval);
-    return () => window.removeEventListener("zeroclaw://task-approval-request", onApproval);
-  }, []);
 
   useWorkspaceCommands({
     activeTaskWorkspaceRoot: root,
@@ -381,6 +359,19 @@ export function WorkspaceShell() {
   function openTaskId(taskId: string) {
     const task = tasks.tasks.find((item) => item.id === taskId);
     if (task) void openTask(task);
+  }
+
+  async function openApproval(approval: PendingApproval) {
+    if (active?.id !== approval.connection_id) {
+      await activate(approval.connection_id);
+      setPendingTaskSessionId(approval.session_id);
+      return;
+    }
+    if (approval.task_id) {
+      openTaskId(approval.task_id);
+      return;
+    }
+    setPendingTaskSessionId(approval.session_id);
   }
 
   function renameTask(task: StudioTask) {
@@ -468,12 +459,12 @@ export function WorkspaceShell() {
     );
   }
 
-  function renderNewChatControl(workspaceRoot: string | null = root) {
+  function renderNewChatControl() {
     return (
       <button
         type="button"
         disabled={!active}
-        onClick={() => void openComposer(workspaceRoot)}
+        onClick={() => void openComposer(null)}
         className="inline-flex items-center gap-1.5 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <MessageSquare size={13} />
@@ -488,7 +479,7 @@ export function WorkspaceShell() {
         <button
           type="button"
           disabled={!active}
-          onClick={() => void openComposer(root)}
+          onClick={() => void openComposer(null)}
           className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md bg-sky-400 px-3 py-2 text-xs font-medium text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <MessageSquare size={13} />
@@ -559,8 +550,8 @@ export function WorkspaceShell() {
             tasks={tasks.visibleTasks}
             loading={tasks.loading}
             error={tasks.error}
-            approvalCount={approvals.length}
-            renderCreateControl={() => renderNewChatControl(root)}
+            approvalCount={approvals.approvals.length}
+            renderCreateControl={() => renderNewChatControl()}
             onTask={(task) => void openTask(task)}
             onPage={setPage}
           />
@@ -572,7 +563,7 @@ export function WorkspaceShell() {
             loading={tasks.loading}
             error={tasks.error}
             currentRoot={root}
-            renderCreateControl={() => renderNewChatControl(root)}
+            renderCreateControl={() => renderNewChatControl()}
             onTask={(task) => void openTask(task)}
             onRenameTask={renameTask}
           />
@@ -597,11 +588,11 @@ export function WorkspaceShell() {
       case "approvals":
         return (
           <ApprovalsPage
-            approvals={approvals}
-            onOpenTask={openTaskId}
-            onResolved={(requestId) =>
-              setApprovals((prev) => prev.filter((approval) => approval.requestId !== requestId))
-            }
+            approvals={approvals.approvals}
+            connections={connections}
+            error={approvals.error}
+            onOpenApproval={(approval) => void openApproval(approval)}
+            onRespond={approvals.respond}
           />
         );
       case "automations":
@@ -665,7 +656,7 @@ export function WorkspaceShell() {
             page={page}
             tasks={tasks.visibleTasks}
             activeTaskId={activeTaskId}
-            approvalCount={approvals.length}
+            approvalCount={approvals.approvals.length}
             automationCount={automationCount}
             onPage={setPage}
             onTask={(task) => void openTask(task)}
@@ -674,6 +665,7 @@ export function WorkspaceShell() {
             createControl={renderSidebarCreateControl()}
             onProject={(path) => void openProjectRoot(path)}
             onPickRoot={() => void pickProject()}
+            onNewProjectSession={() => void openComposer(root)}
           />
           {renderPage()}
         </div>
