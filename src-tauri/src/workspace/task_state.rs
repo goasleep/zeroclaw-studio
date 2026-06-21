@@ -235,7 +235,18 @@ impl TaskStateStore {
     ) -> Result<Vec<StudioTask>> {
         let connection_id = validated_segment("connection id", connection_id)?.to_string();
         let workspace_by_session: HashMap<_, _> = workspace_bindings.into_iter().collect();
+        let current_session_ids: HashSet<String> = sessions
+            .iter()
+            .map(|session| session.session_id.clone())
+            .collect();
         let mut state = self.state.write().await;
+        state.tasks.retain(|_, task| {
+            task.connection_id != connection_id
+                || task
+                    .session_id
+                    .as_ref()
+                    .map_or(true, |session_id| current_session_ids.contains(session_id))
+        });
         let existing_sessions: HashSet<String> = state
             .tasks
             .values()
@@ -244,6 +255,9 @@ impl TaskStateStore {
             .collect();
 
         for session in sessions {
+            if !backfill_session_visible(&session) {
+                continue;
+            }
             if existing_sessions.contains(&session.session_id) {
                 continue;
             }
@@ -363,6 +377,10 @@ fn normalized_tags(tags: Vec<String>) -> Vec<String> {
         out.push(tag.to_string());
     }
     out
+}
+
+fn backfill_session_visible(session: &TaskBackfillSession) -> bool {
+    session.message_count.map_or(true, |count| count > 0)
 }
 
 fn non_empty(value: String) -> Option<String> {
@@ -488,5 +506,43 @@ mod tests {
         assert_eq!(tasks.len(), 1);
         assert_eq!(tasks[0].title, "Research");
         assert_eq!(tasks[0].workspace_root.as_deref(), Some("/repo"));
+    }
+
+    #[tokio::test]
+    async fn backfill_prunes_missing_sessions_but_retains_invisible_current_sessions() {
+        let store = TaskStateStore::new();
+        let mut stale = task("stale", "conn-a");
+        stale.session_id = Some("stale-session".into());
+        store.upsert(stale).await.unwrap();
+        let mut invisible = task("invisible", "conn-a");
+        invisible.session_id = Some("empty-session".into());
+        store.upsert(invisible).await.unwrap();
+        store.upsert(task("draft", "conn-a")).await.unwrap();
+
+        let tasks = store
+            .backfill_sessions(
+                "conn-a",
+                vec![TaskBackfillSession {
+                    session_id: "empty-session".into(),
+                    name: "Empty".into(),
+                    agent_alias: None,
+                    created_at: None,
+                    updated_at: None,
+                    last_message_at: None,
+                    message_count: Some(0),
+                }],
+                Vec::new(),
+            )
+            .await
+            .unwrap();
+        let ids = tasks
+            .iter()
+            .map(|task| task.id.as_str())
+            .collect::<Vec<_>>();
+
+        assert!(!ids.contains(&"stale"));
+        assert!(ids.contains(&"invisible"));
+        assert!(ids.contains(&"draft"));
+        assert!(!ids.contains(&"session-empty-session"));
     }
 }

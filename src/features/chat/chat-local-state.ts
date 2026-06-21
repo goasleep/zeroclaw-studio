@@ -1,8 +1,10 @@
 import type { ChatMode } from "@/api/ws-chat";
 import {
   chatLocalAssignSessionWorkspace,
+  chatLocalForgetSession,
   chatLocalGetSelectedSession,
   chatLocalListSessionWorkspaces,
+  chatLocalPruneMissingSessions,
   chatLocalSetSelectedSession,
   workspaceImportLegacyState,
 } from "@/api/tauri";
@@ -50,6 +52,19 @@ export async function assignSessionWorkspace(
   await migrateLegacyLocalState(connectionId);
   if (!workspaceRoot) return;
   await chatLocalAssignSessionWorkspace(connectionId, sessionId, workspaceRoot);
+}
+
+export async function forgetSessionLocalState(connectionId: string, sessionId: string) {
+  await migrateLegacyLocalState(connectionId);
+  await chatLocalForgetSession(connectionId, sessionId);
+}
+
+export async function pruneMissingSessionLocalState(
+  connectionId: string,
+  sessionIds: string[],
+) {
+  await migrateLegacyLocalState(connectionId);
+  await chatLocalPruneMissingSessions(connectionId, sessionIds);
 }
 
 export async function loadSessionWorkspaceMap(connectionId: string) {

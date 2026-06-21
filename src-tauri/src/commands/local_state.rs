@@ -74,3 +74,33 @@ pub async fn chat_local_assign_session_workspace<R: Runtime>(
         .map_err(|e| e.to_string())?;
     store.save(&app).await.map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn chat_local_forget_session<R: Runtime>(
+    app: AppHandle<R>,
+    store: State<'_, SharedLocalStateStore>,
+    connection_id: String,
+    session_id: String,
+) -> Result<(), String> {
+    store
+        .forget_session(&connection_id, &session_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    store.save(&app).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn chat_local_prune_missing_sessions<R: Runtime>(
+    app: AppHandle<R>,
+    store: State<'_, SharedLocalStateStore>,
+    connection_id: String,
+    session_ids: Vec<String>,
+) -> Result<(), String> {
+    store
+        .prune_missing_sessions(&connection_id, session_ids)
+        .await
+        .map_err(|e| e.to_string())?;
+    store.save(&app).await.map_err(|e| e.to_string())
+}

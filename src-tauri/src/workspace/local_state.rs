@@ -213,6 +213,52 @@ impl LocalStateStore {
         bindings.sort_by(|a, b| a.session_id.cmp(&b.session_id));
         Ok(bindings)
     }
+
+    pub async fn forget_session(&self, connection_id: &str, session_id: &str) -> Result<()> {
+        let connection_id = validated_segment("connection id", connection_id)?.to_string();
+        let session_id = validated_segment("session id", session_id)?.to_string();
+        let mut state = self.state.write().await;
+        remove_session_local_refs(&mut state, &connection_id, |candidate| {
+            candidate == session_id
+        });
+        Ok(())
+    }
+
+    pub async fn prune_missing_sessions(
+        &self,
+        connection_id: &str,
+        session_ids: Vec<String>,
+    ) -> Result<()> {
+        let connection_id = validated_segment("connection id", connection_id)?.to_string();
+        let valid_sessions = session_ids
+            .into_iter()
+            .map(|session_id| validated_segment("session id", &session_id).map(str::to_string))
+            .collect::<Result<std::collections::HashSet<_>>>()?;
+        let mut state = self.state.write().await;
+        remove_session_local_refs(&mut state, &connection_id, |candidate| {
+            !valid_sessions.contains(candidate)
+        });
+        Ok(())
+    }
+}
+
+fn remove_session_local_refs<F>(
+    state: &mut PersistedLocalState,
+    connection_id: &str,
+    should_remove: F,
+) where
+    F: Fn(&str) -> bool,
+{
+    let prefix = format!("{connection_id}:");
+    state.session_workspaces.retain(|key, _| {
+        let Some(session_id) = key.strip_prefix(&prefix) else {
+            return true;
+        };
+        !should_remove(session_id)
+    });
+    state.selected_sessions.retain(|key, session_id| {
+        !selected_key_belongs_to_connection(key, connection_id) || !should_remove(session_id)
+    });
 }
 
 fn migrate_legacy_workspace_state(
@@ -318,6 +364,15 @@ fn session_workspace_key(connection_id: &str, session_id: &str) -> Result<String
     let connection_id = validated_segment("connection id", connection_id)?;
     let session_id = validated_segment("session id", session_id)?;
     Ok(format!("{connection_id}:{session_id}"))
+}
+
+fn selected_key_belongs_to_connection(key: &str, connection_id: &str) -> bool {
+    let Some(scope) = key.strip_prefix("selected:") else {
+        return false;
+    };
+    serde_json::from_str::<(String, String, String, String)>(scope)
+        .map(|(stored_connection_id, _, _, _)| stored_connection_id == connection_id)
+        .unwrap_or(false)
 }
 
 fn validated_segment<'a>(label: &str, value: &'a str) -> Result<&'a str> {
@@ -458,6 +513,115 @@ mod tests {
                     workspace_root: "/repo/b".into(),
                 },
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn forget_session_removes_selected_and_workspace_refs_for_connection() {
+        let store = LocalStateStore::new();
+
+        store
+            .set_selected_session(
+                "conn-a",
+                Some("/repo/a"),
+                "chat",
+                "zeroclaw",
+                Some("session-a".into()),
+            )
+            .await
+            .unwrap();
+        store
+            .set_selected_session(
+                "conn-b",
+                Some("/repo/b"),
+                "chat",
+                "zeroclaw",
+                Some("session-a".into()),
+            )
+            .await
+            .unwrap();
+
+        store.forget_session("conn-a", "session-a").await.unwrap();
+
+        assert!(
+            store
+                .selected_session("conn-a", Some("/repo/a"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            store.session_workspaces("conn-a").await.unwrap(),
+            Vec::<SessionWorkspaceBinding>::new()
+        );
+        assert_eq!(
+            store
+                .selected_session("conn-b", Some("/repo/b"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("session-a")
+        );
+        assert_eq!(
+            store.session_workspaces("conn-b").await.unwrap(),
+            vec![SessionWorkspaceBinding {
+                session_id: "session-a".into(),
+                workspace_root: "/repo/b".into(),
+            }]
+        );
+    }
+
+    #[tokio::test]
+    async fn prune_missing_sessions_removes_only_stale_refs() {
+        let store = LocalStateStore::new();
+
+        store
+            .set_selected_session(
+                "conn-a",
+                Some("/repo/a"),
+                "chat",
+                "zeroclaw",
+                Some("keep".into()),
+            )
+            .await
+            .unwrap();
+        store
+            .set_selected_session(
+                "conn-a",
+                Some("/repo/stale"),
+                "chat",
+                "zeroclaw",
+                Some("stale".into()),
+            )
+            .await
+            .unwrap();
+
+        store
+            .prune_missing_sessions("conn-a", vec!["keep".into()])
+            .await
+            .unwrap();
+
+        assert_eq!(
+            store
+                .selected_session("conn-a", Some("/repo/a"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .as_deref(),
+            Some("keep")
+        );
+        assert!(
+            store
+                .selected_session("conn-a", Some("/repo/stale"), "chat", "zeroclaw")
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            store.session_workspaces("conn-a").await.unwrap(),
+            vec![SessionWorkspaceBinding {
+                session_id: "keep".into(),
+                workspace_root: "/repo/a".into(),
+            }]
         );
     }
 

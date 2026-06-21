@@ -399,6 +399,22 @@ async chatLocalAssignSessionWorkspace(connectionId: string, sessionId: string, w
     else return { status: "error", error: e  as any };
 }
 },
+async chatLocalForgetSession(connectionId: string, sessionId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_forget_session", { connectionId, sessionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async chatLocalPruneMissingSessions(connectionId: string, sessionIds: string[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("chat_local_prune_missing_sessions", { connectionId, sessionIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async taskList(connectionId: string) : Promise<Result<StudioTask[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("task_list", { connectionId }) };

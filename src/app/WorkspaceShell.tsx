@@ -56,7 +56,8 @@ export function WorkspaceShell() {
   const taskSessions = useTaskSessions();
   const tasks = useTasks({
     connectionId,
-    sessions: taskSessions.sessions,
+    sessions: taskSessions.allSessions,
+    sessionSnapshotVersion: taskSessions.snapshotVersion,
     workspaceMap: taskSessions.workspaceMap,
   });
 
@@ -394,19 +395,34 @@ export function WorkspaceShell() {
     );
     if (!confirmed) return;
 
+    const wasActiveTask = activeTaskId === task.id;
+    const wasPendingSession = Boolean(task.session_id && pendingTaskSessionId === task.session_id);
+    let localRemoved = false;
     try {
-      if (task.session_id) {
-        await taskSessions.remove(task.session_id);
-      }
       await tasks.removeLocal(task.id);
-      if (activeTaskId === task.id) {
+      localRemoved = true;
+      if (wasActiveTask) {
         setActiveTaskId(null);
         setPage("dashboard");
       }
-      if (pendingTaskSessionId === task.session_id) {
+      if (wasPendingSession) {
         setPendingTaskSessionId(null);
       }
+      if (task.session_id) {
+        await taskSessions.remove(task.session_id);
+        await taskSessions.forgetLocal(task.session_id);
+      }
     } catch (err) {
+      if (localRemoved) {
+        await tasks.upsert(task).catch(() => undefined);
+        if (wasActiveTask) {
+          setActiveTaskId(task.id);
+          setPage("task");
+        }
+        if (wasPendingSession) {
+          setPendingTaskSessionId(task.session_id ?? null);
+        }
+      }
       window.alert(err instanceof Error ? err.message : String(err));
     }
   }

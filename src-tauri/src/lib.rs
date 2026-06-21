@@ -286,6 +286,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::local_state::chat_local_set_selected_session::<tauri::Wry>,
         commands::local_state::chat_local_list_session_workspaces,
         commands::local_state::chat_local_assign_session_workspace::<tauri::Wry>,
+        commands::local_state::chat_local_forget_session::<tauri::Wry>,
+        commands::local_state::chat_local_prune_missing_sessions::<tauri::Wry>,
         commands::task_state::task_list,
         commands::task_state::task_upsert::<tauri::Wry>,
         commands::task_state::task_patch::<tauri::Wry>,
@@ -329,9 +331,11 @@ fn install_app_menu(app: &tauri::AppHandle<tauri::Wry>) -> tauri::Result<()> {
         MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_MODELS_PROVIDERS, "Models & Providers")
             .build(app)?;
     let agents = MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_AGENTS, "Agents").build(app)?;
-    let runtime_safety =
-        MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_RUNTIME_SAFETY, "Runtime Profiles & Safety")
-            .build(app)?;
+    let runtime_safety = MenuItemBuilder::with_id(
+        CMD_SETTINGS_OPEN_RUNTIME_SAFETY,
+        "Runtime Profiles & Safety",
+    )
+    .build(app)?;
     let tools_skills =
         MenuItemBuilder::with_id(CMD_SETTINGS_OPEN_TOOLS_SKILLS, "Tools & Skills").build(app)?;
     let logs = MenuItemBuilder::with_id(CMD_DIAGNOSTICS_OPEN_LOGS, "Logs").build(app)?;

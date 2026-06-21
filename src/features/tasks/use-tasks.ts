@@ -15,10 +15,12 @@ import { sessionToBackfillSession, visibleTasks } from "./task-model";
 export function useTasks({
   connectionId,
   sessions,
+  sessionSnapshotVersion,
   workspaceMap,
 }: {
   connectionId: string | null;
   sessions: NormalizedSession[];
+  sessionSnapshotVersion: number;
   workspaceMap: Map<string, string>;
 }) {
   const [tasks, setTasks] = useState<StudioTask[]>([]);
@@ -64,8 +66,8 @@ export function useTasks({
   }, [refresh]);
 
   useEffect(() => {
-    if (sessions.length > 0) void backfill();
-  }, [backfill, sessions.length]);
+    if (connectionId && sessionSnapshotVersion > 0) void backfill();
+  }, [backfill, connectionId, sessionSnapshotVersion]);
 
   const upsert = useCallback(async (task: StudioTask) => {
     const saved = await taskUpsert(task);

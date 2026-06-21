@@ -275,6 +275,12 @@ export const chatLocalAssignSessionWorkspace = (
   workspaceRoot: string,
 ) => unwrap(commands.chatLocalAssignSessionWorkspace(connectionId, sessionId, workspaceRoot));
 
+export const chatLocalForgetSession = (connectionId: string, sessionId: string) =>
+  unwrap(commands.chatLocalForgetSession(connectionId, sessionId));
+
+export const chatLocalPruneMissingSessions = (connectionId: string, sessionIds: string[]) =>
+  unwrap(commands.chatLocalPruneMissingSessions(connectionId, sessionIds));
+
 // ---- Studio-owned task metadata ----
 
 export const taskList = (connectionId: string) => unwrap(commands.taskList(connectionId));
