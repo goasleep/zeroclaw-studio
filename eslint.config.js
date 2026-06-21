@@ -55,6 +55,8 @@ export default [
       "playwright.browser.config.ts",
       "wdio.tauri.conf.mjs",
       "eslint.config.js",
+      "install-git-hooks.js",
+      "pre-commit-format.js",
       "scripts/**/*.{js,mjs}",
       "tests/e2e/browser/*.mjs",
     ],

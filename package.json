@@ -20,6 +20,7 @@
     "i18n:check": "lingui extract --clean --overwrite && lingui compile --namespace es --output-prefix \"\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "prepare": "node install-git-hooks.js",
     "preview": "vite preview",
     "smoke:inner-zeroclaw": "node scripts/smoke-inner-zeroclaw.mjs",
     "smoke:inner-zeroclaw:features": "pnpm fetch:zeroclaw-sidecar:offline && pnpm smoke:inner-zeroclaw -- --features",
