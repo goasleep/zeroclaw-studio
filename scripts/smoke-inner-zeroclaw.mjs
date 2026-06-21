@@ -421,7 +421,9 @@ async function main() {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const target = args.target ?? currentTarget();
   if (!manifest.targets[target]) {
-    throw new Error(`unsupported target ${target}; supported: ${Object.keys(manifest.targets).join(", ")}`);
+    throw new Error(
+      `unsupported target ${target}; supported: ${Object.keys(manifest.targets).join(", ")}`,
+    );
   }
 
   const binaryPath = binaryPathForTarget(target);

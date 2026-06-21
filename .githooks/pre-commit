@@ -1,2 +1,2 @@
 #!/bin/sh
-node pre-commit-format.js
+node scripts/pre-commit-format.mjs
