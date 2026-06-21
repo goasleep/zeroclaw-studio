@@ -139,8 +139,8 @@ supported by the pinned runtime.
   (that's `zeroclaw-desktop`, a thin WebView shell of the gateway's web UI).
   This is a separate, fuller client.
 - Not a fork of `zeroclaw`. It has no Rust-level coupling to the main repo
-  crates; it only depends on the gateway HTTP/WS contract and (optionally,
-  for managed connections) the `zeroclaw` binary.
+  crates; it only depends on the gateway HTTP, WebSocket, and SSE contract and
+  (optionally, for managed connections) the `zeroclaw` binary.
 
 ## Install
 
@@ -199,6 +199,10 @@ ZeroClaw Studio talks to the gateway over HTTP, WebSocket, and SSE. Gateway
 compatibility is not stable yet; gateway contract changes should be tested
 against the matching `zeroclaw` build.
 
+ZeroClaw Studio 0.1.1 is currently tested against `zeroclaw v0.8.0`, which is
+also the version bundled in release builds for the app-private inner runtime.
+Other `zeroclaw` versions have not been compatibility-tested yet.
+
 ## Platform support
 
 The project targets current stable Tauri 2 desktop platforms:
@@ -223,7 +227,7 @@ Requirements:
 - Tauri 2 system dependencies for your OS
 
 ```bash
-pnpm install
+pnpm run dev:init
 pnpm desktop:dev
 ```
 
@@ -304,8 +308,10 @@ Contributions are welcome while the project is still taking shape. Start with
 relevant docs when changing gateway behavior, native capabilities, or reused
 upstream code.
 
-The npm package and Rust crate are intentionally not published. Desktop
-releases are distributed through GitHub Releases.
+If you run into a bug, compatibility issue, or confusing setup path, please
+open a GitHub issue with the app version, `zeroclaw` version, platform, and any
+safe-to-share logs. If the project is useful to you, a star helps other people
+find it.
 
 ## License
 
