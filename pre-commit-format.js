@@ -18,7 +18,11 @@ function splitNullTerminated(output) {
 }
 
 function matchesPrettierTarget(file) {
-  return /^src\/.+\.(?:ts|tsx|css)$/.test(file) || /^[^/]+\.(?:html|json|js|ts)$/.test(file);
+  return (
+    /^src\/.+\.(?:ts|tsx|css)$/.test(file) ||
+    /^scripts\/.+\.(?:js|mjs|ts)$/.test(file) ||
+    /^[^/]+\.(?:html|json|js|mjs|ts)$/.test(file)
+  );
 }
 
 const stagedFiles = splitNullTerminated(

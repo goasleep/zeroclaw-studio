@@ -7,7 +7,7 @@ Thanks for considering a contribution.
 ```bash
 git clone https://github.com/<you>/zeroclaw-studio
 cd zeroclaw-studio
-pnpm install
+pnpm run dev:init
 pnpm desktop:dev
 ```
 
@@ -52,8 +52,10 @@ bindings.
 - Match existing comment density and idiom — don't over-comment new code.
 - Run `pnpm format` for frontend and root config changes; `.editorconfig`
   defines shared editor defaults.
-- `pnpm install` configures the repo's Git hooks. The pre-commit hook formats
-  staged frontend and root config files with Prettier and re-stages them.
+- `pnpm run dev:init` installs dependencies and configures the repo's Git hooks.
+  `pnpm install` also configures hooks through the package `prepare` script.
+  The pre-commit hook formats staged frontend, script, and root config files
+  with Prettier and re-stages them.
 - Reused code from the main `zeroclaw-labs/zeroclaw` repo gets logged in
   `docs/reuse-attribution.md` with its origin path.
 - New gateway endpoints get noted in `docs/gateway-protocol-notes.md` so
