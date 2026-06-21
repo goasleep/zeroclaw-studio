@@ -46,6 +46,9 @@ export const queryKeys = {
     status: (capability: string, prefix: string, alias?: string | null) =>
       ["setup", "status", capability, prefix, alias ?? null] as const,
   },
+  app: {
+    logs: (paused: boolean) => ["app", "logs", { paused }] as const,
+  },
   gateway: {
     status: (connectionId: string | null) => ["gateway", connectionId, "status"] as const,
     health: (connectionId: string | null) => ["gateway", connectionId, "health"] as const,

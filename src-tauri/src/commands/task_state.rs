@@ -9,9 +9,13 @@ use tauri::{AppHandle, Runtime, State};
 #[specta::specta]
 pub async fn task_list(
     store: State<'_, SharedTaskStateStore>,
-    connection_id: String,
+    connection_id: Option<String>,
 ) -> Result<Vec<StudioTask>, String> {
-    store.list(&connection_id).await.map_err(|e| e.to_string())
+    if let Some(connection_id) = connection_id {
+        store.list(&connection_id).await.map_err(|e| e.to_string())
+    } else {
+        Ok(store.list_all().await)
+    }
 }
 
 #[tauri::command]

@@ -50,6 +50,14 @@ async prepareChatAttachments(req: PrepareChatAttachmentsRequest) : Promise<Resul
     else return { status: "error", error: e  as any };
 }
 },
+async appLogTail(limit: number | null) : Promise<Result<AppLogTail, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("app_log_tail", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async listConnections() : Promise<Result<Connection[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_connections") };
@@ -415,7 +423,31 @@ async chatLocalPruneMissingSessions(connectionId: string, sessionIds: string[]) 
     else return { status: "error", error: e  as any };
 }
 },
-async taskList(connectionId: string) : Promise<Result<StudioTask[], string>> {
+async runtimeSummariesList() : Promise<Result<RuntimeSummary[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("runtime_summaries_list") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async approvalList(connectionId: string | null) : Promise<Result<PendingApproval[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("approval_list", { connectionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async approvalRespond(connectionId: string, sessionId: string, requestId: string, decision: ApprovalDecision) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("approval_respond", { connectionId, sessionId, requestId, decision }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async taskList(connectionId: string | null) : Promise<Result<StudioTask[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("task_list", { connectionId }) };
 } catch (e) {
@@ -486,6 +518,9 @@ async taskBackfillSessions(connectionId: string, sessions: TaskBackfillSession[]
 export type AgentSummary = { alias: string; label: string; picker_badge: string | null; enabled: boolean; dispatchable: boolean; missing: string[]; model_provider: string; risk_profile: string; runtime_profile: string; channels: string[]; skill_bundles: string[]; knowledge_bundles: string[]; mcp_bundles: string[]; cron_jobs: string[]; peer_groups: string[] }
 export type AgentWorkspaceAgent = { alias: string; workspace_path: string; workspace_exists: boolean; file_count: number }
 export type AgentWorkspaceEntry = { name: string; path: string; isDir: boolean; size: number | null }
+export type AppLogEntry = { timestamp: string; severity_text: string; target: string; message: string }
+export type AppLogTail = { path: string; entries: AppLogEntry[] }
+export type ApprovalDecision = "approve" | "deny" | "always"
 export type AuthConfig = { mode: AuthMode; 
 /**
  * Stored bearer token. Persisted alongside the connection (Phase 2 will
@@ -555,6 +590,7 @@ export type Lifecycle =
  */
 "remote"
 export type PairResult = { outcome: string; token: string | null }
+export type PendingApproval = { connection_id: string; request_id: string; session_id: string; task_id?: string | null; task_title?: string | null; tool?: string | null; arguments_summary?: string | null; workspace_root?: string | null; agent_alias?: string | null; created_at: string }
 export type PinnedResult = { kind: PinnedResultKind; label: string; value: string; created_at: string }
 export type PinnedResultKind = "message" | "file" | "text"
 export type PrepareChatAttachmentsRequest = { paths: string[]; connection_id: string }
@@ -573,6 +609,8 @@ export type RuntimeSource =
  * A gateway owned outside this desktop app.
  */
 "attached"
+export type RuntimeSummary = { connection_id: string; status: RuntimeSyncStatus; healthy: boolean; last_seen_at: string | null; running_count: number; approval_count: number; failed_count: number; automation_count: number; sync_error: string | null }
+export type RuntimeSyncStatus = "unknown" | "online" | "unavailable"
 export type SessionWorkspaceBinding = { session_id: string; workspace_root: string }
 export type SetupAction = { id: SetupActionId; label: string; description: string; command: string[]; requires_confirmation: boolean }
 export type SetupActionId = "browser_install_agent_browser" | "browser_install_chrome_for_testing" | "docker_pull_alpine"

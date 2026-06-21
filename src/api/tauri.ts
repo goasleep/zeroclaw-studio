@@ -15,13 +15,16 @@
 import { commands } from "./bindings";
 import type { Result } from "./bindings";
 import type {
+  ApprovalDecision,
   ChatCloseRequest,
   ChatConnectRequest,
   ChatFileEntry,
   ChatSendRequest,
   Connection,
   GatewayHttpRequest,
+  PendingApproval,
   PrepareChatAttachmentsRequest,
+  RuntimeSummary,
   SetupActionRequest,
   SetupContext,
   StudioTask,
@@ -51,6 +54,9 @@ export type {
   ChatFileEntry,
   ChatMode,
   AgentSummary,
+  AppLogEntry,
+  AppLogTail,
+  ApprovalDecision,
   ConfigSummaries,
   ConfigSummaryError,
   ConnectionProbeResult,
@@ -67,12 +73,14 @@ export type {
   Lifecycle,
   PairResult,
   PrepareChatAttachmentsRequest,
+  PendingApproval,
   SessionWorkspaceBinding,
   SshConfig,
   SupervisorStatus,
   Transport,
   RiskProfileSummary,
   RuntimeProfileSummary,
+  RuntimeSummary,
   StudioTask,
   WorkspaceGitStatus,
   WorkspaceLocalState,
@@ -93,6 +101,15 @@ export interface HealthEvent {
 export interface TasksUpdatedEvent {
   connection_id: string;
   tasks: StudioTask[];
+}
+
+export interface RuntimeSummariesUpdatedEvent {
+  summaries: RuntimeSummary[];
+}
+
+export interface ApprovalsUpdatedEvent {
+  connection_id: string;
+  approvals: PendingApproval[];
 }
 
 /**
@@ -164,6 +181,20 @@ export const runtimeStart = (id: string) => unwrap(commands.runtimeStart(id));
 export const runtimeStop = () => unwrap(commands.runtimeStop());
 
 export const runtimeStatus = () => unwrap(commands.runtimeStatus());
+
+export const appLogTail = (limit: number | null = null) => unwrap(commands.appLogTail(limit));
+
+export const runtimeSummariesList = () => unwrap(commands.runtimeSummariesList());
+
+export const approvalList = (connectionId: string | null = null) =>
+  unwrap(commands.approvalList(connectionId));
+
+export const approvalRespond = (
+  connectionId: string,
+  sessionId: string,
+  requestId: string,
+  decision: ApprovalDecision,
+) => unwrap(commands.approvalRespond(connectionId, sessionId, requestId, decision));
 
 // ---- Local setup / doctor commands ----
 
@@ -288,7 +319,8 @@ export const chatLocalPruneMissingSessions = (connectionId: string, sessionIds: 
 
 // ---- Studio-owned task metadata ----
 
-export const taskList = (connectionId: string) => unwrap(commands.taskList(connectionId));
+export const taskList = (connectionId: string | null = null) =>
+  unwrap(commands.taskList(connectionId));
 
 export const taskUpsert = (task: StudioTask) => unwrap(commands.taskUpsert(task));
 

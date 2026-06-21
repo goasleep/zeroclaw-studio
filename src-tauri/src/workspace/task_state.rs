@@ -183,6 +183,13 @@ impl TaskStateStore {
         Ok(tasks)
     }
 
+    pub async fn list_all(&self) -> Vec<StudioTask> {
+        let state = self.state.read().await;
+        let mut tasks = state.tasks.values().cloned().collect::<Vec<_>>();
+        tasks.sort_by_key(|task| Reverse(task_sort_key(task)));
+        tasks
+    }
+
     pub async fn observer_candidates(&self, connection_id: &str) -> Result<Vec<StudioTask>> {
         let connection_id = validated_segment("connection id", connection_id)?;
         let state = self.state.read().await;

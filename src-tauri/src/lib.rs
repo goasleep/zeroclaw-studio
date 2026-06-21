@@ -51,6 +51,8 @@ pub fn run() {
     let workspace_state = Arc::new(WorkspaceState::default());
     let local_state = LocalStateStore::new();
     let task_state = TaskStateStore::new();
+    let runtime_summaries = workspace::task_observer::RuntimeSummaryStore::new();
+    let approval_state = workspace::task_observer::ApprovalStateStore::new();
     let watcher: Arc<WatcherHandle> = Arc::new(WatcherHandle::default());
     let chat_manager = chat::ChatSessionManager::new();
 
@@ -121,6 +123,8 @@ pub fn run() {
         .manage(workspace_state.clone())
         .manage(local_state.clone())
         .manage(task_state.clone())
+        .manage(runtime_summaries.clone())
+        .manage(approval_state.clone())
         .manage(watcher.clone())
         .manage(chat_manager.clone())
         .manage(http_client.clone())
@@ -132,6 +136,8 @@ pub fn run() {
             let workspace_state = workspace_state.clone();
             let local_state = local_state.clone();
             let task_state = task_state.clone();
+            let runtime_summaries = runtime_summaries.clone();
+            let approval_state = approval_state.clone();
             move |app| {
                 let app_handle = app.handle().clone();
                 let book_for_setup = book.clone();
@@ -139,6 +145,8 @@ pub fn run() {
                 let workspace_state_for_setup = workspace_state.clone();
                 let local_state_for_setup = local_state.clone();
                 let task_state_for_setup = task_state.clone();
+                let runtime_summaries_for_setup = runtime_summaries.clone();
+                let approval_state_for_setup = approval_state.clone();
                 let http_client_for_observer = http_client.clone();
                 install_app_menu(app.handle())?;
                 install_tray(app.handle())?;
@@ -201,10 +209,13 @@ pub fn run() {
                         )
                         .await;
                     }
-                    workspace::task_observer::spawn_task_observer(
+                    workspace::task_observer::spawn_runtime_observer(
                         app_handle,
                         book_for_setup,
                         task_state_for_setup,
+                        local_state_for_setup,
+                        runtime_summaries_for_setup,
+                        approval_state_for_setup,
                         http_client_for_observer,
                     );
                 });
@@ -251,6 +262,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::chat::chat_disconnect,
         commands::chat::chat_capabilities,
         commands::chat::prepare_chat_attachments,
+        commands::app_log::app_log_tail::<tauri::Wry>,
         commands::connection::list_connections,
         commands::connection::get_active_connection,
         commands::connection::upsert_connection::<tauri::Wry>,
@@ -295,6 +307,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         commands::local_state::chat_local_assign_session_workspace::<tauri::Wry>,
         commands::local_state::chat_local_forget_session::<tauri::Wry>,
         commands::local_state::chat_local_prune_missing_sessions::<tauri::Wry>,
+        commands::observer::runtime_summaries_list,
+        commands::observer::approval_list,
+        commands::observer::approval_respond::<tauri::Wry>,
         commands::task_state::task_list,
         commands::task_state::task_upsert::<tauri::Wry>,
         commands::task_state::task_patch::<tauri::Wry>,
