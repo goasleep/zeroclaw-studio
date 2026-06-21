@@ -4,17 +4,20 @@ export function Switch({
   checked,
   onCheckedChange,
   label,
+  disabled,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="inline-flex items-center gap-2">
       <SwitchPrimitive.Root
         checked={checked}
         onCheckedChange={onCheckedChange}
-        className="relative h-6 w-11 rounded-full border border-white/10 bg-[#020818]/90 transition data-[state=checked]:border-emerald-500/40 data-[state=checked]:bg-emerald-500/20"
+        disabled={disabled}
+        className="relative h-6 w-11 rounded-full border border-white/10 bg-[#020818]/90 transition data-[state=checked]:border-emerald-500/40 data-[state=checked]:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <SwitchPrimitive.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-neutral-500 transition data-[state=checked]:translate-x-5 data-[state=checked]:bg-emerald-300" />
       </SwitchPrimitive.Root>

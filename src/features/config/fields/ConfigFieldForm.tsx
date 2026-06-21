@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, Code2, Loader2, Save, Wrench } from "lucide-react";
+import { Check, ChevronRight, Code2, Loader2, RotateCcw, Save, Wrench } from "lucide-react";
 import { apiConfigList, type ConfigListEntry } from "@/api/config";
 import { Select } from "@/ui/select";
 import { Switch } from "@/ui/switch";
@@ -35,6 +35,9 @@ export function ConfigFieldForm({
     registerForm,
     savePrefix,
     stageField,
+    resetField,
+    unresetField,
+    isFieldReset,
     validationErrors: globalValidationErrors,
     resetVersion,
     savedVersion,
@@ -91,7 +94,9 @@ export function ConfigFieldForm({
     void load();
   }, [load]);
 
-  const dirtyEntries = entries.filter((entry) => draft[entry.path] !== seed[entry.path]);
+  const dirtyEntries = entries.filter(
+    (entry) => draft[entry.path] !== seed[entry.path] || isFieldReset(entry.path),
+  );
   const tabs = useMemo(() => groupFields(entries), [entries]);
   const setupTargets = useMemo(() => setupTargetsForPrefix(target.prefix), [target.prefix]);
 
@@ -138,6 +143,22 @@ export function ConfigFieldForm({
       [entry.path]: value,
     }));
     stageField(target.prefix, target.title, entry, seed[entry.path] ?? "", value);
+  }
+
+  function resetEntry(entry: ConfigListEntry) {
+    if (isFieldReset(entry.path)) {
+      unresetField(entry.path);
+      setDraft((current) => ({
+        ...current,
+        [entry.path]: seed[entry.path] ?? "",
+      }));
+      return;
+    }
+    resetField(target.prefix, target.title, entry);
+    setDraft((current) => ({
+      ...current,
+      [entry.path]: "",
+    }));
   }
 
   const combinedValidationErrors = {
@@ -247,8 +268,10 @@ export function ConfigFieldForm({
                         entry={entry}
                         value={draft[entry.path] ?? ""}
                         dirty={draft[entry.path] !== seed[entry.path]}
+                        reset={isFieldReset(entry.path)}
                         error={combinedValidationErrors[entry.path]}
                         onChange={(value) => updateField(entry, value)}
+                        onReset={() => resetEntry(entry)}
                       />
                     ))}
                   </div>
@@ -356,23 +379,28 @@ function FieldRow({
   entry,
   value,
   dirty,
+  reset,
   error,
   onChange,
+  onReset,
 }: {
   entry: ConfigListEntry;
   value: string;
   dirty: boolean;
+  reset: boolean;
   error?: string;
   onChange: (value: string) => void;
+  onReset: () => void;
 }) {
   const label = leafLabel(entry.path);
   const dependency = dependencyAction(entry, value);
+  const resetDisabled = !reset && !entry.populated && !dirty;
   return (
     <div className="grid gap-3 px-4 py-3 text-xs lg:grid-cols-[230px_minmax(0,1fr)]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-medium text-neutral-200">{label}</span>
-          {dirty && <Badge label="edited" />}
+          {reset ? <Badge label="reset" /> : dirty && <Badge label="edited" />}
           {fieldBadges(entry).map((badge) => (
             <Badge key={badge} label={badge} />
           ))}
@@ -386,8 +414,34 @@ function FieldRow({
         </div>
       </div>
       <div className="min-w-0">
-        <FieldInput entry={entry} value={value} onChange={onChange} />
-        {entry.is_secret && entry.populated && value.length === 0 && (
+        <div className="flex min-w-0 items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <FieldInput
+              entry={entry}
+              value={reset ? "" : value}
+              disabled={reset}
+              onChange={onChange}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={resetDisabled}
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-[11px] transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              reset
+                ? "border-amber-300/25 text-amber-200 hover:bg-amber-300/10"
+                : "border-white/10 text-neutral-400 hover:border-cyan-400/50 hover:text-cyan-300"
+            }`}
+            title={reset ? "Undo reset" : "Reset field"}
+          >
+            <RotateCcw size={12} />
+            {reset ? "Undo" : "Reset"}
+          </button>
+        </div>
+        {reset && (
+          <p className="mt-1 text-[11px] text-amber-200">This field will be unset when you save.</p>
+        )}
+        {!reset && entry.is_secret && entry.populated && value.length === 0 && (
           <p className="mt-1 text-[11px] text-neutral-500">
             Secret is already set. Type a new value only when you want to replace it.
           </p>
@@ -402,10 +456,12 @@ function FieldRow({
 function FieldInput({
   entry,
   value,
+  disabled,
   onChange,
 }: {
   entry: ConfigListEntry;
   value: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   if (entry.kind === "bool") {
@@ -414,6 +470,7 @@ function FieldInput({
         checked={value === "true"}
         onCheckedChange={(checked) => onChange(checked ? "true" : "false")}
         label={value === "true" ? "true" : "false"}
+        disabled={disabled}
       />
     );
   }
@@ -423,6 +480,7 @@ function FieldInput({
       <Select
         value={value || "__unset__"}
         onValueChange={(next) => onChange(next === "__unset__" ? "" : next)}
+        disabled={disabled}
         options={[
           { value: "__unset__", label: "unset" },
           ...entry.enum_variants.map((variant) => ({ value: variant, label: variant })),
@@ -437,6 +495,7 @@ function FieldInput({
       <input
         type="number"
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-cyan-400"
       />
@@ -447,6 +506,7 @@ function FieldInput({
     return (
       <textarea
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         rows={5}
         spellCheck={false}
@@ -460,6 +520,7 @@ function FieldInput({
       <input
         type="password"
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         placeholder={entry.populated ? "Secret is set. Type to replace." : "Enter secret value"}
         className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none placeholder:text-neutral-600 focus:border-cyan-400 outline-none focus:border-cyan-400"
@@ -471,6 +532,7 @@ function FieldInput({
   return multiline ? (
     <textarea
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       rows={4}
       className="w-full resize-y rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-xs leading-relaxed text-neutral-100 outline-none focus:border-cyan-400"
@@ -479,6 +541,7 @@ function FieldInput({
     <input
       type="text"
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className="w-full max-w-xl rounded-md border border-white/10 bg-[#020818]/90 px-3 py-2 font-mono text-sm text-neutral-100 outline-none focus:border-cyan-400"
     />

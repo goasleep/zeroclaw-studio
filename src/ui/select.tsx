@@ -14,19 +14,21 @@ export function Select({
   onValueChange,
   placeholder,
   className = "",
+  disabled,
 }: {
   value: string;
   options: SelectOption[];
   onValueChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const { t } = useLingui();
 
   return (
-    <SelectPrimitive.Root value={value} onValueChange={onValueChange}>
+    <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectPrimitive.Trigger
-        className={`inline-flex min-w-0 items-center justify-between gap-2 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300 outline-none transition hover:border-white/20 focus:border-cyan-400 ${className}`}
+        className={`inline-flex min-w-0 items-center justify-between gap-2 rounded-md border border-white/10 bg-[#020818]/90 px-2 py-1.5 text-xs text-neutral-300 outline-none transition hover:border-white/20 focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       >
         <SelectPrimitive.Value placeholder={placeholder ?? t`Select`} />
         <SelectPrimitive.Icon asChild>

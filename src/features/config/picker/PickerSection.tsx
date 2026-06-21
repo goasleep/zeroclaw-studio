@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
-import { Loader2, Plus, Search } from "lucide-react";
+import { Loader2, Plus, Search, Trash2 } from "lucide-react";
 import {
+  apiConfigDeleteMapKey,
   apiConfigPicker,
   apiConfigSelectItem,
   type ConfigSectionInfo,
@@ -10,10 +11,16 @@ import {
 import { EmptyState, ErrorBox, LoadingInline } from "@/ui/feedback";
 import { AgentSetupWizard } from "@/features/chat/AgentSetupWizard";
 import type { FormTarget } from "../types";
+import { ResourceDeleteDialog } from "../ResourceDeleteDialog";
 import { OneTierAliasManager } from "../alias/OneTierAliasManager";
 import { ModelConnectionsPanel } from "./ModelConnectionsPanel";
 import { ChannelConnectionsPanel } from "./ChannelConnectionsPanel";
 import { TypedAliasPanel } from "./TypedAliasPanel";
+import {
+  type ConfigResourceRef,
+  isDeletableResourceItem,
+  resourceRefFromSectionItem,
+} from "../config-resource";
 import {
   choiceCountLabel,
   createButtonLabel,
@@ -48,6 +55,8 @@ export function PickerSection({
   const [creatingItem, setCreatingItem] = useState(false);
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [openingKey, setOpeningKey] = useState<string | null>(null);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ConfigResourceRef | null>(null);
   const [inlineTarget, setInlineTarget] = useState<FormTarget | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const typed =
@@ -168,6 +177,34 @@ export function PickerSection({
     if (!selectedItem || filtered.some((item) => item.key === selectedItem.key)) return filtered;
     return [selectedItem, ...filtered];
   }, [filtered, selectedItem]);
+  const selectedBackendDeleteRef =
+    selectedItem && !oneTier && !typed && isDeletableResourceItem(section, selectedItem)
+      ? resourceRefFromSectionItem(section, selectedItem)
+      : null;
+
+  async function deleteResource(ref: ConfigResourceRef) {
+    setDeletingKey(ref.resourcePath);
+    setError(null);
+    try {
+      await apiConfigDeleteMapKey(ref.deleteParentPath, ref.deleteKey);
+      setItems((current) => current.filter((item) => item.key !== ref.deleteKey));
+      setSelectedItem((current) => (current?.key === ref.deleteKey ? null : current));
+      setInlineTarget(null);
+      setShowCreateItem(false);
+      setDeleteTarget(null);
+      setReloadKey((key) => key + 1);
+      onSaved();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setDeletingKey(null);
+    }
+  }
+
+  function requestDeleteOneTierItem(item: PickerItem) {
+    const ref = resourceRefFromSectionItem(section, item);
+    if (ref) setDeleteTarget(ref);
+  }
 
   if (section.key === "providers.models" && typed) {
     return (
@@ -253,12 +290,14 @@ export function PickerSection({
           setShowCreateItem(true);
         }}
         onOpenItem={(item) => void openOneTierItem(item)}
+        onDeleteItem={requestDeleteOneTierItem}
         onCreateItem={() => void createOneTierItem()}
         onCloseDrawer={() => {
           setShowCreateItem(false);
           setInlineTarget(null);
         }}
         onSaved={onSaved}
+        deletingKey={deletingKey}
         createContent={
           section.key === "agents" ? (
             <AgentSetupWizard
@@ -336,6 +375,24 @@ export function PickerSection({
           </label>
         </div>
 
+        {selectedBackendDeleteRef && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(selectedBackendDeleteRef)}
+              disabled={deletingKey === selectedBackendDeleteRef.resourcePath}
+              className="inline-flex items-center gap-1.5 rounded-md border border-red-500/30 px-2.5 py-1.5 text-xs text-red-300 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deletingKey === selectedBackendDeleteRef.resourcePath ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Trash2 size={12} />
+              )}
+              Delete resource
+            </button>
+          </div>
+        )}
+
         {oneTier && (
           <div className="mt-3 grid gap-2 rounded-md border border-dashed border-white/10 bg-white/[0.025] p-2 sm:grid-cols-[auto_minmax(160px,1fr)_auto] sm:items-center">
             <div className="flex items-center gap-2 text-xs font-medium text-neutral-300">
@@ -404,6 +461,14 @@ export function PickerSection({
           />
         )}
       </div>
+      {deleteTarget && (
+        <ResourceDeleteDialog
+          resource={deleteTarget}
+          busy={deletingKey === deleteTarget.resourcePath}
+          onCancel={() => setDeleteTarget(null)}
+          onDelete={() => void deleteResource(deleteTarget)}
+        />
+      )}
     </div>
   );
 }

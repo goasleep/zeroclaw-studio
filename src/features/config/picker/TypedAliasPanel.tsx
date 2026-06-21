@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { ChevronRight, Loader2, Plus, Trash2 } from "lucide-react";
 import {
+  apiConfigDeleteMapKey,
   apiConfigList,
   apiConfigSelectItem,
   type ConfigSectionInfo,
@@ -8,6 +9,8 @@ import {
 } from "@/api/config";
 import { ErrorBox } from "@/ui/feedback";
 import type { FormTarget } from "../types";
+import { ResourceDeleteDialog } from "../ResourceDeleteDialog";
+import { type ConfigResourceRef, resourceRefFromSectionItem } from "../config-resource";
 import { aliasesFromEntries, errorMessage } from "../section-utils";
 
 export function TypedAliasPanel({
@@ -26,6 +29,8 @@ export function TypedAliasPanel({
   const [alias, setAlias] = useState("default");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [deletingAlias, setDeletingAlias] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ConfigResourceRef | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadAliases = useCallback(async () => {
@@ -65,6 +70,28 @@ export function TypedAliasPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function deleteAlias(ref: ConfigResourceRef) {
+    setDeletingAlias(ref.deleteKey);
+    setError(null);
+    try {
+      await apiConfigDeleteMapKey(ref.deleteParentPath, ref.deleteKey);
+      setAliases((current) => current.filter((name) => name !== ref.deleteKey));
+      setAlias((current) => (current === ref.deleteKey ? "default" : current));
+      setDeleteTarget(null);
+      onSaved();
+      await loadAliases();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setDeletingAlias(null);
+    }
+  }
+
+  function requestDeleteAlias(name: string) {
+    const ref = resourceRefFromSectionItem(section, item, { alias: name });
+    if (ref) setDeleteTarget(ref);
   }
 
   return (
@@ -129,8 +156,62 @@ export function TypedAliasPanel({
             Open alias
           </button>
         </section>
+        {aliases.length > 0 && (
+          <section className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-white/[0.025]">
+            {aliases.map((name) => {
+              const deleting = deletingAlias === name;
+              return (
+                <div
+                  key={name}
+                  className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(180px,1fr)_auto] md:items-center"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-mono text-xs text-neutral-100">
+                      {name}
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-[10px] text-neutral-500">
+                      {prefix}.{name}
+                    </span>
+                  </span>
+                  <span className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void openAlias(name)}
+                      disabled={busy || deleting}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-400/50 hover:text-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronRight size={13} />
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestDeleteAlias(name)}
+                      disabled={busy || deleting}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-neutral-500 transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={`Delete ${name}`}
+                    >
+                      {deleting ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={13} />
+                      )}
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
+          </section>
+        )}
         {error && <ErrorBox message={error} />}
       </div>
+      {deleteTarget && (
+        <ResourceDeleteDialog
+          resource={deleteTarget}
+          busy={deletingAlias === deleteTarget.deleteKey}
+          onCancel={() => setDeleteTarget(null)}
+          onDelete={() => void deleteAlias(deleteTarget)}
+        />
+      )}
     </div>
   );
 }

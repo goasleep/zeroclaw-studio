@@ -71,9 +71,9 @@ interface ConfigDraftContextValue {
   saveAll: () => Promise<void>;
   savePrefix: (prefix: string) => Promise<boolean>;
   discardAll: () => void;
-  stageRemoval: (prefix: string, title: string, path: string, label: string) => void;
-  unstageRemoval: (path: string) => void;
-  isRemovalStaged: (path: string) => boolean;
+  resetField: (prefix: string, title: string, entry: ConfigListEntry) => void;
+  unresetField: (path: string) => void;
+  isFieldReset: (path: string) => boolean;
   refreshStatus: () => Promise<void>;
   reloadDaemon: () => Promise<void>;
 }
@@ -170,6 +170,11 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
         const { [entry.path]: _removed, ...next } = current;
         return next;
       });
+      setRemovals((current) => {
+        if (!current[entry.path]) return current;
+        const { [entry.path]: _removed, ...next } = current;
+        return next;
+      });
       setFields((current) => {
         const next = { ...current };
         if (draft === seed) {
@@ -183,25 +188,31 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const stageRemoval = useCallback((prefix: string, title: string, path: string, label: string) => {
+  const resetField = useCallback((prefix: string, title: string, entry: ConfigListEntry) => {
     setMessage(null);
     setError(null);
+    setValidationErrors((current) => {
+      if (!current[entry.path]) return current;
+      const { [entry.path]: _removed, ...next } = current;
+      return next;
+    });
     setFields((current) => {
-      const next: Record<string, StagedField> = {};
-      const childPrefix = `${path}.`;
-      for (const [fieldPath, staged] of Object.entries(current)) {
-        if (fieldPath === path || fieldPath.startsWith(childPrefix)) continue;
-        next[fieldPath] = staged;
-      }
+      if (!current[entry.path]) return current;
+      const { [entry.path]: _removed, ...next } = current;
       return next;
     });
     setRemovals((current) => ({
       ...current,
-      [path]: { prefix, title, path, label },
+      [entry.path]: {
+        prefix,
+        title,
+        path: entry.path,
+        label: entry.path.split(".").pop() ?? entry.path,
+      },
     }));
   }, []);
 
-  const unstageRemoval = useCallback((path: string) => {
+  const unresetField = useCallback((path: string) => {
     setRemovals((current) => {
       if (!current[path]) return current;
       const { [path]: _removed, ...next } = current;
@@ -209,7 +220,7 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const isRemovalStaged = useCallback((path: string) => Boolean(removals[path]), [removals]);
+  const isFieldReset = useCallback((path: string) => Boolean(removals[path]), [removals]);
 
   const refreshStatus = useCallback(async () => {
     const [reload, drift] = await Promise.all([
@@ -357,9 +368,9 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
       saveAll,
       savePrefix,
       discardAll,
-      stageRemoval,
-      unstageRemoval,
-      isRemovalStaged,
+      resetField,
+      unresetField,
+      isFieldReset,
       refreshStatus,
       reloadDaemon,
     }),
@@ -381,9 +392,9 @@ export function ConfigDraftProvider({ children }: { children: ReactNode }) {
       saveAll,
       savePrefix,
       discardAll,
-      stageRemoval,
-      unstageRemoval,
-      isRemovalStaged,
+      resetField,
+      unresetField,
+      isFieldReset,
       refreshStatus,
       reloadDaemon,
     ],

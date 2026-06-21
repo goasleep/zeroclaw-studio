@@ -8,6 +8,7 @@ import {
   Plus,
   Search,
   Settings,
+  Trash2,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -57,9 +58,11 @@ export function OneTierAliasManager({
   onNewItemNameChange,
   onStartCreate,
   onOpenItem,
+  onDeleteItem,
   onCreateItem,
   onCloseDrawer,
   onSaved,
+  deletingKey,
   createContent,
 }: {
   section: ConfigSectionInfo;
@@ -78,9 +81,11 @@ export function OneTierAliasManager({
   onNewItemNameChange: (value: string) => void;
   onStartCreate: () => void;
   onOpenItem: (item: PickerItem) => void;
+  onDeleteItem: (item: PickerItem) => void;
   onCreateItem: () => void;
   onCloseDrawer: () => void;
   onSaved: () => void;
+  deletingKey: string | null;
   createContent?: ReactNode;
 }) {
   const noun = entryNoun(section);
@@ -220,6 +225,8 @@ export function OneTierAliasManager({
                 summaryKind={summaryKind}
                 summaries={summaryState.data}
                 onOpenItem={onOpenItem}
+                onDeleteItem={onDeleteItem}
+                deletingKey={deletingKey}
               />
             )}
           </div>
@@ -274,6 +281,8 @@ function AliasRows({
   summaryKind,
   summaries,
   onOpenItem,
+  onDeleteItem,
+  deletingKey,
 }: {
   section: ConfigSectionInfo;
   items: PickerItem[];
@@ -282,6 +291,8 @@ function AliasRows({
   summaryKind: SummaryKind | null;
   summaries: ConfigSummaryRows | null;
   onOpenItem: (item: PickerItem) => void;
+  onDeleteItem: (item: PickerItem) => void;
+  deletingKey: string | null;
 }) {
   const summaryByAlias = useMemo(() => {
     const map = new Map<string, AgentSummary | RiskProfileSummary | RuntimeProfileSummary>();
@@ -299,6 +310,8 @@ function AliasRows({
         openingKey={openingKey}
         summaries={summaryByAlias as Map<string, AgentSummary>}
         onOpenItem={onOpenItem}
+        onDeleteItem={onDeleteItem}
+        deletingKey={deletingKey}
       />
     );
   }
@@ -308,12 +321,11 @@ function AliasRows({
       {items.map((item) => {
         const selected = selectedKey === item.key;
         const busy = openingKey === item.key;
+        const deleting = deletingKey === `${section.key}.${item.key}`;
         const summary = summaryByAlias.get(item.key);
         return (
-          <button
+          <div
             key={item.key}
-            type="button"
-            onClick={() => onOpenItem(item)}
             className={`grid w-full gap-3 px-4 py-3 text-left transition md:grid-cols-[minmax(170px,0.9fr)_minmax(260px,1.6fr)_auto] md:items-center ${
               selected ? "bg-cyan-400/10" : "hover:bg-white/[0.04] hover:text-neutral-100"
             }`}
@@ -332,7 +344,9 @@ function AliasRows({
                   {section.key}.{item.key}
                 </span>
               </span>
-              {busy ? <Loader2 size={12} className="animate-spin text-neutral-500" /> : null}
+              {busy || deleting ? (
+                <Loader2 size={12} className="animate-spin text-neutral-500" />
+              ) : null}
             </div>
 
             <div className="min-w-0">
@@ -345,15 +359,32 @@ function AliasRows({
               )}
             </div>
 
-            <div className="flex min-w-0 items-center justify-between gap-3 md:justify-end">
+            <div className="flex min-w-0 items-center justify-between gap-2 md:justify-end">
               {summaryBadge(summary, item) && (
                 <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-neutral-400">
                   {summaryBadge(summary, item)}
                 </span>
               )}
-              <ChevronRight size={14} className="shrink-0 text-neutral-500" />
+              <button
+                type="button"
+                onClick={() => onOpenItem(item)}
+                disabled={busy || deleting}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 text-neutral-400 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={`Open ${item.label || item.key}`}
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDeleteItem(item)}
+                disabled={busy || deleting}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 text-neutral-500 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={`Delete ${item.label || item.key}`}
+              >
+                {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              </button>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
@@ -366,12 +397,16 @@ function AgentAliasRows({
   openingKey,
   summaries,
   onOpenItem,
+  onDeleteItem,
+  deletingKey,
 }: {
   items: PickerItem[];
   selectedKey: string | null;
   openingKey: string | null;
   summaries: Map<string, AgentSummary>;
   onOpenItem: (item: PickerItem) => void;
+  onDeleteItem: (item: PickerItem) => void;
+  deletingKey: string | null;
 }) {
   return (
     <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
@@ -379,6 +414,7 @@ function AgentAliasRows({
         const summary = summaries.get(item.key);
         const selected = selectedKey === item.key;
         const busy = openingKey === item.key;
+        const deleting = deletingKey === `agents.${item.key}`;
         return (
           <section
             key={item.key}
@@ -441,7 +477,7 @@ function AgentAliasRows({
               </div>
             ) : null}
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               <AgentActionButton
                 icon={MessageSquare}
                 label="Chat"
@@ -456,6 +492,13 @@ function AgentAliasRows({
                 label="Config"
                 busy={busy}
                 onClick={() => onOpenItem(item)}
+              />
+              <AgentActionButton
+                icon={Trash2}
+                label="Delete"
+                tone="danger"
+                busy={deleting}
+                onClick={() => onDeleteItem(item)}
               />
               <AgentActionButton
                 icon={FolderOpen}
@@ -478,11 +521,13 @@ function AgentActionButton({
   icon: Icon,
   label,
   busy,
+  tone = "default",
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   busy?: boolean;
+  tone?: "default" | "danger";
   onClick: () => void;
 }) {
   return (
@@ -490,7 +535,11 @@ function AgentActionButton({
       type="button"
       onClick={onClick}
       disabled={busy}
-      className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md border border-white/10 px-2 py-1.5 text-[11px] text-neutral-300 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+      className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-[11px] disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === "danger"
+          ? "border-white/10 text-neutral-400 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+          : "border-white/10 text-neutral-300 hover:border-cyan-400/50 hover:bg-cyan-400/10 hover:text-cyan-200"
+      }`}
       title={label}
     >
       {busy ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Icon size={12} />}
